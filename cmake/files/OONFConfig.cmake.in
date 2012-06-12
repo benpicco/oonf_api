@@ -1,0 +1,21 @@
+# - Config file for the OONF package
+# It defines the following variables
+#  OONF_INCLUDE_DIRS - include directories for OONF
+#  OONF_CMAKE_FILE - file with OONF cmake functions
+
+# get this files directory
+get_filename_component(OONF_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+if(EXISTS "${OONF_CMAKE_DIR}/CMakeCache.txt")
+   # In build tree
+   include("${OONF_CMAKE_DIR}/OONFBuildTreeSettings.cmake")
+else()
+   set(OONF_INCLUDE_DIRS "${OONF_CMAKE_DIR}/@CONF_REL_INCLUDE_DIR@")
+endif()
+ 
+# Our library dependencies (contains definitions for IMPORTED targets)
+include("${OONF_CMAKE_DIR}/OONFLibraryDepends.cmake")
+
+# import build functions for app plugins
+SET (OONF_BUILD_LIBRARY "${OONF_CMAKE_DIR}/OONFBuildLibrary.cmake")
+message("build library: ${OONF_BUILD_LIBRARY}")

@@ -44,14 +44,8 @@
 
 #include "common/common_types.h"
 
-struct olsr_builddata {
-  const char *app_name;
-  const char *version;
-  const char *versionstring_trailer;
-  const char *help_prefix;
-  const char *help_suffix;
-
-  const char *default_config;
+struct olsr_libdata {
+  const char *lib_version;
 
   const char *git_commit;
   const char *git_change;
@@ -63,6 +57,6 @@ struct olsr_builddata {
   const char *sharedlibrary_postfix;
 };
 
-EXPORT extern const struct olsr_builddata *olsr_builddata_get(void);
+EXPORT extern const struct olsr_libdata *olsr_libdata_get(void);
 
 #endif /* BUILDDATA_H_ */

@@ -56,13 +56,13 @@
  * This force gcc to always inline, which prevents errors
  * with option -Os
  */
-#ifndef INLINE
-#ifdef __GNUC__
-#define INLINE inline __attribute__((always_inline))
-#else
+//#ifndef INLINE
+//#ifdef __GNUC__
+//#define INLINE inline __attribute__((always_inline))
+//#else
 #define INLINE inline
-#endif
-#endif
+//#endif
+//#endif
 
 /* printf size_t modifiers*/
 

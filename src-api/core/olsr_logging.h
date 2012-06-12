@@ -49,7 +49,7 @@ struct log_handler_entry;
 #include "common/common_types.h"
 #include "common/autobuf.h"
 #include "common/list.h"
-#include "builddata/data.h"
+#include "olsr_libdata.h"
 
 /**
  * defines the severity of a logging event
@@ -100,6 +100,25 @@ struct log_parameters {
   int prefixLength;
 };
 
+struct olsr_appdata {
+  const char *app_name;
+  const char *app_version;
+  const char *versionstring_trailer;
+  const char *help_prefix;
+  const char *help_suffix;
+
+  const char *default_config;
+
+  const char *git_commit;
+  const char *git_change;
+
+  const char *builddate;
+  const char *buildsystem;
+
+  const char *sharedlibrary_prefix;
+  const char *sharedlibrary_postfix;
+};
+
 /**
  * these macros should be used to generate OLSR logging output
  * the OLSR_severity_NH() variants don't print the timestamp/file/line header,
@@ -118,7 +137,7 @@ struct log_parameters {
 
 #define _OLSR_LOG(severity, source, no_header, format, args...) do { if (olsr_log_mask_test(log_global_mask, source, severity)) olsr_log(severity, source, no_header, __FILE__, __LINE__, format, ##args); } while(0)
 
-#ifdef REMOVE_LOG_DEBUG
+#if MAX_LOGGING_LEVEL < 1
 #define OLSR_DEBUG(source, format, args...) do { } while(0)
 #define OLSR_DEBUG_NH(source, format, args...) do { } while(0)
 #else
@@ -126,7 +145,7 @@ struct log_parameters {
 #define OLSR_DEBUG_NH(source, format, args...) _OLSR_LOG(LOG_SEVERITY_DEBUG, source, true, format, ##args)
 #endif
 
-#ifdef REMOVE_LOG_INFO
+#if MAX_LOGGING_LEVEL < 2
 #define OLSR_INFO(source, format, args...) do { } while(0)
 #define OLSR_INFO_NH(source, format, args...) do { } while(0)
 #else
@@ -134,7 +153,7 @@ struct log_parameters {
 #define OLSR_INFO_NH(source, format, args...) _OLSR_LOG(LOG_SEVERITY_INFO, source, true, format, ##args)
 #endif
 
-#ifdef REMOVE_LOG_WARN
+#if MAX_LOGGING_LEVEL < 3
 #define OLSR_WARN(source, format, args...) do { } while(0)
 #define OLSR_WARN_NH(source, format, args...) do { } while(0)
 #else
@@ -164,7 +183,7 @@ EXPORT extern uint8_t log_global_mask[LOG_MAXIMUM_SOURCES];
 EXPORT extern const char *LOG_SOURCE_NAMES[LOG_MAXIMUM_SOURCES];
 EXPORT extern const char *LOG_SEVERITY_NAMES[LOG_SEVERITY_MAX+1];
 
-EXPORT int olsr_log_init(const struct olsr_builddata *, enum log_severity)
+EXPORT int olsr_log_init(const struct olsr_appdata *, enum log_severity)
   __attribute__((warn_unused_result));
 EXPORT void olsr_log_cleanup(void);
 
@@ -179,7 +198,8 @@ EXPORT void olsr_log_unregister_source(int index);
 
 EXPORT void olsr_log_updatemask(void);
 
-EXPORT const struct olsr_builddata *olsr_log_get_builddata(void);
+EXPORT const struct olsr_appdata *olsr_log_get_appdata(void);
+EXPORT const struct olsr_libdata *olsr_log_get_libdata(void);
 EXPORT void olsr_log_printversion(struct autobuf *abuf);
 
 EXPORT const char *olsr_log_get_walltime(void);

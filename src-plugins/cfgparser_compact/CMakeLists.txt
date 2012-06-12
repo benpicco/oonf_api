@@ -1,6 +1,7 @@
-# set library name
-SET (libname "cfgparser_compact")
-SET (source "${CMAKE_CURRENT_SOURCE_DIR}/src/cfgparser_compact.c")
+# set library parameters
+SET (source "src/cfgparser_compact.c")
+SET (include false)
+SET (linkto false)
 
-# use generic plugin cmake file
-include (../CMake.plugin)
+# use generic plugin maker
+oonf_create_plugin("cfgparser_compact" ${source} false false)

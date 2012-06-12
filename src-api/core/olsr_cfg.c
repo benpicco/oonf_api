@@ -87,7 +87,7 @@ static struct cfg_schema_entry global_entries[] = {
   CFG_MAP_BOOL(olsr_config_global, ipv6, "ipv6", "yes",
       "Set to true to enable ipv6 support in program."),
 
-  CFG_MAP_STRINGLIST(olsr_config_global, plugin, "plugin", "",
+  CFG_MAP_STRINGLIST(olsr_config_global, plugin, CFG_GLOBAL_PLUGIN, "",
       "Set list of plugins to be loaded by daemon. Some might need configuration options."),
 };
 

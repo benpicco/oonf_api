@@ -2,12 +2,12 @@ function(compile_config_test executable source)
     # create executable
     ADD_EXECUTABLE(${executable} ${source})
 
-    TARGET_LINK_LIBRARIES(${executable} ${OONF_LIBPREFIX}_config)
-    TARGET_LINK_LIBRARIES(${executable} ${OONF_LIBPREFIX}_common)
+    TARGET_LINK_LIBRARIES(${executable} oonf_config)
+    TARGET_LINK_LIBRARIES(${executable} oonf_common)
 
     # link regex for windows and android
     IF (WIN32 OR ANDROID)
-        TARGET_LINK_LIBRARIES(${executable} ${OONF_LIBPREFIX}_regex)
+        TARGET_LINK_LIBRARIES(${executable} oonf_regex)
     ENDIF(WIN32 OR ANDROID)
 
     # link extra win32 libs

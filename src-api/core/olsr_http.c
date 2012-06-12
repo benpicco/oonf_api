@@ -45,9 +45,9 @@
 
 #include "config/cfg_schema.h"
 
-#include "builddata/data.h"
 #include "olsr.h"
 #include "olsr_cfg.h"
+#include "olsr_libdata.h"
 #include "olsr_logging.h"
 #include "olsr_netaddr_acl.h"
 #include "olsr_stream_socket.h"
@@ -416,7 +416,7 @@ _create_http_error(struct olsr_stream_session *session,
     enum olsr_http_result error) {
   abuf_appendf(&session->out, "<html><head><title>%s %s http server</title></head>"
       "<body><h1>HTTP error %d: %s</h1></body></html>",
-      olsr_log_get_builddata()->app_name, olsr_log_get_builddata()->version,
+      olsr_log_get_appdata()->app_name, olsr_log_get_appdata()->app_version,
       error, _get_headertype_string(error));
   _create_http_header(session, error, NULL);
 }
@@ -513,9 +513,9 @@ _create_http_header(struct olsr_stream_session *session,
 
   /* Server version */
   abuf_appendf(&buf, "Server: %s %s %s\r\n",
-      olsr_log_get_builddata()->version,
-      olsr_log_get_builddata()->builddate,
-      olsr_log_get_builddata()->buildsystem);
+      olsr_log_get_appdata()->app_version,
+      olsr_log_get_appdata()->builddate,
+      olsr_log_get_appdata()->buildsystem);
 
   /* connection-type */
   abuf_puts(&buf, "Connection: closed\r\n");

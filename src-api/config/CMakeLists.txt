@@ -1,20 +1,16 @@
-SET(OLSRD_CONFIG_SRCS cfg_cmd.c
+SET(OONF_CONFIG_SRCS cfg_cmd.c
                       cfg_db.c
                       cfg_io.c
                       cfg_parser.c
                       cfg_schema.c
                       cfg.c)
 
-ADD_LIBRARY(static_config STATIC ${OLSRD_CONFIG_SRCS})
-ADD_LIBRARY(${OONF_LIBPREFIX}_config SHARED ${OLSRD_CONFIG_SRCS})
+SET(OONF_CONFIG_INCLUDES cfg_cmd.h
+                          cfg_db.h
+                          cfg_io.h
+                          cfg_parser.h
+                          cfg_schema.h
+                          cfg.h)
 
-IF(WIN32)
-    TARGET_LINK_LIBRARIES(static_config static_common)
-    TARGET_LINK_LIBRARIES(${OONF_LIBPREFIX}_config ${OONF_LIBPREFIX}_common)
-
-    TARGET_LINK_LIBRARIES(static_config static_regex)
-    TARGET_LINK_LIBRARIES(${OONF_LIBPREFIX}_config ${OONF_LIBPREFIX}_regex)
-
-    TARGET_LINK_LIBRARIES(static_config ws2_32 iphlpapi)
-    TARGET_LINK_LIBRARIES(${OONF_LIBPREFIX}_config ws2_32 iphlpapi)
-ENDIF(WIN32)
+oonf_create_library("config" "${OONF_CONFIG_SRCS}" "${OONF_CONFIG_INCLUDES}" false)
+    

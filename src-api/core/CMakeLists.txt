@@ -1,3 +1,27 @@
+# make sure that olsr_libdata is rebuild everytimes 
+SET(GEN_DATA_C ${PROJECT_BINARY_DIR}/olsr_libdata.c)
+
+ADD_CUSTOM_TARGET(LibCleanData ALL
+    COMMAND ${CMAKE_COMMAND} -E remove ${GEN_DATA_C}
+    COMMENT "Remove old library builddata"
+)
+
+ADD_CUSTOM_COMMAND (
+    OUTPUT ${GEN_DATA_C}
+    COMMAND ${CMAKE_COMMAND}
+        -DSRC=${CMAKE_CURRENT_SOURCE_DIR}/olsr_libdata.c.in
+        -DDST=${GEN_DATA_C}
+        -DGIT=${OONF_SOURCE_DIRECTORY}/.git
+        -DOONF_LIB_VERSION=${OONF_LIB_VERSION}
+        -DCMAKE_SYSTEM=${CMAKE_SYSTEM}
+        -DCMAKE_SHARED_LIBRARY_PREFIX=${CMAKE_SHARED_LIBRARY_PREFIX}
+        -DCMAKE_SHARED_LIBRARY_SUFFIX=${CMAKE_SHARED_LIBRARY_SUFFIX}
+        -P ${CMAKE_SOURCE_DIR}/cmake/generate_builddata.cmake
+    DEPENDS LibCleanData
+    WORKING_DIRECTORY ${OONF_SOURCE_DIRECTORY}
+    COMMENT "Create new library builddata"
+)
+
 SET(OONF_CORE_SRCS olsr_callbacks.c
                    olsr_cfg.c
                    olsr_clock.c
@@ -13,9 +37,28 @@ SET(OONF_CORE_SRCS olsr_callbacks.c
                    olsr_stream_socket.c
                    olsr_telnet.c
                    olsr_timer.c
-                   olsr.c)
+                   olsr.c
+                   ${GEN_DATA_C})
 
-# add os_specific source files
+SET(OONF_CORE_INCLUDES olsr_callbacks.h
+                       olsr_cfg.h
+                       olsr_clock.h
+                       olsr_http.h
+                       olsr_interface.h
+                       olsr_logging_cfg.h
+                       olsr_logging.h
+                       olsr_memcookie.h
+                       olsr_netaddr_acl.h
+                       olsr_packet_socket.h
+                       olsr_plugins.h
+                       olsr_socket.h
+                       olsr_stream_socket.h
+                       olsr_telnet.h
+                       olsr_timer.h
+                       olsr.h
+                       olsr_libdata.h)
+
+# add os_specific source(include files
 # TODO: add BSD and WIN32
 IF(LINUX)
     SET(OONF_CORE_SRCS ${OONF_CORE_SRCS}
@@ -29,28 +72,11 @@ IF(LINUX)
                        os_linux/os_system_linux.c
                        os_linux/os_routing_linux.c
                        os_linux/os_clock_linux.c)
+    SET(OONF_CORE_INCLUDES ${OONF_CORE_INCLUDES}
+                           os_linux/os_net_linux.h
+                           os_linux/os_system_linux.h
+                           os_linux/os_routing_linux.h
+                           os_linux/os_clock_linux.h)
 ENDIF(LINUX)
 
-IF(ANDROID)
-    include_directories(src/android)
-ENDIF(ANDROID)
-
-ADD_LIBRARY(static_core STATIC ${OONF_CORE_SRCS})
-ADD_LIBRARY(${OONF_LIBPREFIX}_core SHARED ${OONF_CORE_SRCS})
-
-TARGET_LINK_LIBRARIES(static_core rt)
-TARGET_LINK_LIBRARIES(${OONF_LIBPREFIX}_core rt)
-
-IF(WIN32)
-    TARGET_LINK_LIBRARIES(static_core static_common)
-    TARGET_LINK_LIBRARIES(${OONF_LIBPREFIX}_core ${OONF_LIBPREFIX}_common)
-
-    TARGET_LINK_LIBRARIES(static_core static_regex)
-    TARGET_LINK_LIBRARIES(${OONF_LIBPREFIX}_core ${OONF_LIBPREFIX}_regex)
-
-    TARGET_LINK_LIBRARIES(static_core static_config)
-    TARGET_LINK_LIBRARIES(${OONF_LIBPREFIX}_core ${OONF_LIBPREFIX}_config)
-
-    TARGET_LINK_LIBRARIES(static_core ws2_32 iphlpapi)
-    TARGET_LINK_LIBRARIES(${OONF_LIBPREFIX}_core ws2_32 iphlpapi)
-ENDIF(WIN32)
+oonf_create_library("core" "${OONF_CORE_SRCS}" "${OONF_CORE_INCLUDES}" "rt")

@@ -49,11 +49,11 @@
 #include "common/autobuf.h"
 #include "common/list.h"
 #include "common/string.h"
-#include "builddata/data.h"
-#include "os_system.h"
-#include "os_syslog.h"
+#include "olsr_libdata.h"
 #include "olsr_logging.h"
 #include "olsr.h"
+#include "os_system.h"
+#include "os_syslog.h"
 
 #define FOR_ALL_LOGHANDLERS(handler, iterator) list_for_each_element_safe(&_handler_list, handler, node, iterator)
 
@@ -61,7 +61,8 @@ uint8_t log_global_mask[LOG_MAXIMUM_SOURCES];
 
 static struct list_entity _handler_list;
 static struct autobuf _logbuffer;
-static const struct olsr_builddata *_builddata;
+static const struct olsr_appdata *_appdata;
+static const struct olsr_libdata *_libdata;
 static uint8_t _default_mask;
 static size_t _max_sourcetext_len, _max_severitytext_len, _source_count;
 
@@ -102,7 +103,7 @@ OLSR_SUBSYSTEM_STATE(_logging_state);
  * @return -1 if an error happened, 0 otherwise
  */
 int
-olsr_log_init(const struct olsr_builddata *data, enum log_severity def_severity)
+olsr_log_init(const struct olsr_appdata *data, enum log_severity def_severity)
 {
   enum log_severity sev;
   enum log_source src;
@@ -111,7 +112,8 @@ olsr_log_init(const struct olsr_builddata *data, enum log_severity def_severity)
   if (olsr_subsystem_is_initialized(&_logging_state))
     return 0;
 
-  _builddata = data;
+  _appdata = data;
+  _libdata = olsr_libdata_get();
   _source_count = LOG_CORESOURCE_COUNT;
 
   list_init_head(&_handler_list);
@@ -262,11 +264,19 @@ olsr_log_get_sourcecount(void) {
 }
 
 /**
- * @return pointer to application builddata
+ * @return pointer to application data
  */
-const struct olsr_builddata *
-olsr_log_get_builddata(void) {
-  return _builddata;
+const struct olsr_appdata *
+olsr_log_get_appdata(void) {
+  return _appdata;
+}
+
+/**
+ * @return pointer to library data
+ */
+const struct olsr_libdata *
+olsr_log_get_libdata(void) {
+  return _libdata;
 }
 
 /**
@@ -277,13 +287,19 @@ void
 olsr_log_printversion(struct autobuf *abuf) {
   abuf_appendf(abuf," %s version %s (%s)\n"
             " Built on %s\n"
-            " Git: %s\n"
-            "      %s\n"
-            "%s",
-            _builddata->app_name, _builddata->version,
-            _builddata->builddate, _builddata->buildsystem,
-            _builddata->git_commit, _builddata->git_change,
-            _builddata->versionstring_trailer);
+            " Application commit: %s\n",
+            _appdata->app_name,
+            _appdata->app_version,
+            _appdata->builddate, _appdata->buildsystem,
+            _appdata->git_commit);
+  if (_appdata->git_change[0]) {
+    abuf_appendf(abuf, "      %s\n", _appdata->git_change);
+  }
+  abuf_appendf(abuf, " Library commit: %s\n", _libdata->git_commit);
+  if (_libdata->git_change[0]) {
+    abuf_appendf(abuf, "      %s\n", _libdata->git_change);
+  }
+  abuf_puts(abuf, _appdata->versionstring_trailer);
 }
 
 /**

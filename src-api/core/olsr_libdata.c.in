@@ -39,59 +39,22 @@
  *
  */
 
-#include "common/common_types.h"
-#include "olsr_logging_cfg.h"
-#include "olsr.h"
-#include "olsr_setup.h"
+#include "olsr_libdata.h"
 
-/* define the logging sources that are part of debug level 1 */
-static enum log_source _level_1_sources[] = {
-  LOG_MAIN,
+static struct olsr_libdata _libdata = {
+  .lib_version = "${OONF_VERSION}",
+  
+  .git_commit = "${OONF_LIB_GIT}",
+  .git_change = "${OONF_LIB_CHANGE}",
+  
+  .builddate = __DATE__" "__TIME__,
+  .buildsystem = "${CMAKE_SYSTEM}",
+  
+  .sharedlibrary_prefix = "${CMAKE_SHARED_LIBRARY_PREFIX}oonf_",
+  .sharedlibrary_postfix = "${CMAKE_SHARED_LIBRARY_SUFFIX}",
 };
 
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_setup_state);
-
-/**
- * Allocate resources for the user of the framework
- * @return -1 if an error happened, 0 otherwise
- */
-int
-olsr_setup_init(void) {
-  if (olsr_subsystem_is_initialized(&_setup_state))
-    return 0;
-
-  /* add custom service setup here */
-
-
-  /* no error happened */
-  olsr_subsystem_init(&_setup_state);
-  return 0;
-}
-
-/**
- * Cleanup all resources allocated by setup initialization
- */
-void
-olsr_setup_cleanup(void) {
-  if (olsr_subsystem_cleanup(&_setup_state))
-    return;
-
-  /* add cleanup for custom services here */
-}
-
-/**
- * @return number of logging sources for debug level 1
- */
-size_t
-olsr_setup_get_level1count(void) {
-  return ARRAYSIZE(_level_1_sources);
-}
-
-/**
- * @return array of logging sources for debug level 1
- */
-enum log_source *
-olsr_setup_get_level1_logs(void) {
-  return _level_1_sources;
+const struct olsr_libdata *
+olsr_libdata_get(void) {
+  return &_libdata;
 }

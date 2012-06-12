@@ -59,6 +59,7 @@ struct olsr_config_global {
 
 /* section types for configuration */
 #define CFG_SECTION_GLOBAL   "global"
+#define CFG_GLOBAL_PLUGIN    "plugin"
 
 EXPORT extern struct olsr_config_global config_global;
 

@@ -51,9 +51,7 @@
 #include "common/avl_comp.h"
 #include "common/template.h"
 
-#include "builddata/data.h"
-#include "builddata/plugin_static.h"
-
+#include "olsr_libdata.h"
 #include "olsr_logging.h"
 #include "olsr_plugins.h"
 #include "olsr.h"
@@ -63,15 +61,22 @@ enum {
   IDX_DLOPEN_LIB,
   IDX_DLOPEN_PATH,
   IDX_DLOPEN_PRE,
+  IDX_DLOPEN_PRELIB,
   IDX_DLOPEN_POST,
+  IDX_DLOPEN_POSTLIB,
   IDX_DLOPEN_VER,
+  IDX_DLOPEN_VERLIB,
 };
 
 static const char *dlopen_patterns[] = {
   "%PATH%/%PRE%%LIB%%POST%.%VER%",
+  "%PATH%/%PRELIB%%LIB%%POSTLIB%.%VERLIB%",
   "%PATH%/%PRE%%LIB%%POST%",
+  "%PATH%/%PRELIB%%LIB%%POSTLIB%",
   "%PRE%%LIB%%POST%.%VER%",
+  "%PRELIB%%LIB%%POSTLIB%.%VERLIB%",
   "%PRE%%LIB%%POST%",
+  "%PRELIB%%LIB%%POSTLIB%",
 };
 
 /* Local functions */
@@ -80,11 +85,14 @@ static bool plugin_tree_initialized = false;
 
 /* library loading patterns */
 static struct abuf_template_data _dlopen_data[] = {
-  [IDX_DLOPEN_LIB]  =  { .key = "LIB" },
-  [IDX_DLOPEN_PATH] =  { .key = "PATH", .value = "." },
-  [IDX_DLOPEN_PRE]  =  { .key = "PRE" },
-  [IDX_DLOPEN_POST] =  { .key = "POST" },
-  [IDX_DLOPEN_VER]  =  { .key = "VER" },
+  [IDX_DLOPEN_LIB]     =  { .key = "LIB" },
+  [IDX_DLOPEN_PATH]    =  { .key = "PATH", .value = "." },
+  [IDX_DLOPEN_PRE]     =  { .key = "PRE" },
+  [IDX_DLOPEN_PRELIB]  =  { .key = "PRELIB" },
+  [IDX_DLOPEN_POST]    =  { .key = "POST" },
+  [IDX_DLOPEN_POSTLIB] =  { .key = "POSTLIB" },
+  [IDX_DLOPEN_VER]     =  { .key = "VER" },
+  [IDX_DLOPEN_VERLIB]  =  { .key = "VERLIB" },
 };
 
 static void _init_plugin_tree(void);
@@ -106,11 +114,13 @@ olsr_plugins_init(void) {
 
   /* load predefined values for dlopen templates */
   _dlopen_data[IDX_DLOPEN_PRE].value =
-      olsr_log_get_builddata()->sharedlibrary_prefix;
+      olsr_log_get_appdata()->sharedlibrary_prefix;
   _dlopen_data[IDX_DLOPEN_POST].value =
-      olsr_log_get_builddata()->sharedlibrary_postfix;
+      olsr_log_get_appdata()->sharedlibrary_postfix;
   _dlopen_data[IDX_DLOPEN_VER].value =
-      olsr_log_get_builddata()->version;
+      olsr_log_get_appdata()->app_version;
+
+  // TODO: add library data
 }
 
 /**
@@ -160,8 +170,6 @@ int
 olsr_plugins_init_static(void) {
   struct olsr_plugin *p, *it;
   int error = 0;
-
-  assert(!avl_is_empty(&plugin_tree));
 
   OLSR_FOR_ALL_PLUGIN_ENTRIES(p, it) {
     if (olsr_plugins_load(p->name) == NULL) {
