@@ -46,11 +46,11 @@
 
 #include "common/avl.h"
 #include "common/common_types.h"
-#include "olsr_clock.h"
-#include "olsr_logging.h"
-#include "olsr_memcookie.h"
-#include "olsr_timer.h"
-#include "olsr.h"
+#include "core/olsr_clock.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_memcookie.h"
+#include "core/olsr_timer.h"
+#include "core/olsr.h"
 
 /* Number of hierarchies of buckets */
 #define BUCKET_DEPTH          3

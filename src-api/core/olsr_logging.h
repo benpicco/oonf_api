@@ -49,7 +49,7 @@ struct log_handler_entry;
 #include "common/common_types.h"
 #include "common/autobuf.h"
 #include "common/list.h"
-#include "olsr_libdata.h"
+#include "core/olsr_libdata.h"
 
 /**
  * defines the severity of a logging event

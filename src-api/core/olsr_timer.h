@@ -46,7 +46,7 @@
 #include "common/list.h"
 #include "common/avl.h"
 
-#include "olsr_clock.h"
+#include "core/olsr_clock.h"
 
 /* prototype for timer callback */
 typedef void (*timer_cb_func) (void *);

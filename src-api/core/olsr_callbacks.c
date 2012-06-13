@@ -47,9 +47,9 @@
 #include "common/list.h"
 #include "common/avl.h"
 #include "common/avl_comp.h"
-#include "olsr.h"
-#include "olsr_logging.h"
-#include "olsr_callbacks.h"
+#include "core/olsr.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_callbacks.h"
 
 static const char *_unknown_key(struct olsr_callback_str *, void *);
 

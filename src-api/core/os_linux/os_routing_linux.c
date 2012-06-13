@@ -51,10 +51,10 @@
 #include <unistd.h>
 
 #include "common/common_types.h"
-#include "olsr_timer.h"
-#include "olsr.h"
-#include "os_routing.h"
-#include "os_system.h"
+#include "core/olsr_timer.h"
+#include "core/olsr.h"
+#include "core/os_routing.h"
+#include "core/os_system.h"
 
 /* ip forwarding */
 #define PROC_IPFORWARD_V4 "/proc/sys/net/ipv4/ip_forward"

@@ -46,7 +46,7 @@
 #include "config/cfg_schema.h"
 #include "config/cfg_db.h"
 
-#include "olsr_logging.h"
+#include "core/olsr_logging.h"
 
 #define CFG_VALIDATE_LOGSOURCE(p_name, p_def, p_help, args...) _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = olsr_logcfg_schema_validate, .cb_valhelp = olsr_logcfg_schema_help, ##args )
 

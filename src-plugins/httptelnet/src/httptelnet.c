@@ -43,12 +43,13 @@
 #include "common/autobuf.h"
 
 #include "config/cfg_schema.h"
-#include "olsr_cfg.h"
-#include "olsr_http.h"
-#include "olsr_logging.h"
-#include "olsr_plugins.h"
-#include "olsr_telnet.h"
-#include "olsr.h"
+
+#include "core/olsr_cfg.h"
+#include "core/olsr_http.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_plugins.h"
+#include "core/olsr_telnet.h"
+#include "core/olsr.h"
 
 /* constants */
 #define _CFG_SECTION "httptelnet"

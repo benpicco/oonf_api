@@ -42,8 +42,8 @@
 #include <time.h>
 
 #include "common/common_types.h"
-#include "olsr.h"
-#include "os_clock.h"
+#include "core/olsr.h"
+#include "core/os_clock.h"
 
 /* type of clock source to be used */
 #if defined(CLOCK_MONOTONIC_RAW) || defined (CLOCK_MONOTONIC)

@@ -47,10 +47,10 @@
 #include "common/list.h"
 #include "common/netaddr.h"
 
-#include "olsr_memcookie.h"
-#include "olsr_netaddr_acl.h"
-#include "olsr_socket.h"
-#include "olsr_timer.h"
+#include "core/olsr_memcookie.h"
+#include "core/olsr_netaddr_acl.h"
+#include "core/olsr_socket.h"
+#include "core/olsr_timer.h"
 
 enum olsr_stream_session_state {
   STREAM_SESSION_ACTIVE,

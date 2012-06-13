@@ -51,10 +51,10 @@
 #include "common/avl_comp.h"
 #include "common/template.h"
 
-#include "olsr_libdata.h"
-#include "olsr_logging.h"
-#include "olsr_plugins.h"
-#include "olsr.h"
+#include "core/olsr_libdata.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_plugins.h"
+#include "core/olsr.h"
 
 /* constants */
 enum {

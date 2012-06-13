@@ -53,8 +53,8 @@
 #include "config/cfg_db.h"
 #include "config/cfg_parser.h"
 #include "config/cfg.h"
-#include "olsr_cfg.h"
-#include "olsr_plugins.h"
+#include "core/olsr_cfg.h"
+#include "core/olsr_plugins.h"
 
 #include <stdio.h>
 

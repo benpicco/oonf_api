@@ -45,8 +45,8 @@
 #include "common/common_types.h"
 #include "common/avl.h"
 #include "common/list.h"
-#include "olsr_netaddr_acl.h"
-#include "olsr_stream_socket.h"
+#include "core/olsr_netaddr_acl.h"
+#include "core/olsr_stream_socket.h"
 
 enum olsr_telnet_result {
   TELNET_RESULT_ACTIVE,

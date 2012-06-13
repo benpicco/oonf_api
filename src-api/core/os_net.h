@@ -47,8 +47,8 @@
 
 #include "common/common_types.h"
 #include "common/netaddr.h"
-#include "olsr_logging.h"
-#include "olsr_interface.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_interface.h"
 
 /* prototypes for all os_net functions */
 EXPORT int os_net_init(void) __attribute__((warn_unused_result));
@@ -74,11 +74,11 @@ static INLINE int os_select(
     int num, fd_set *r,fd_set *w,fd_set *e, struct timeval *timeout);
 
 #if defined(__linux__)
-#include "os_linux/os_net_linux.h"
+#include "core/os_linux/os_net_linux.h"
 #elif defined (BSD)
-#include "os_bsd/os_net_bsd.h"
+#include "core/os_bsd/os_net_bsd.h"
 #elif defined (_WIN32)
-#include "os_win32/os_net_win32.h"
+#include "core/os_win32/os_net_win32.h"
 #else
 #error "Unknown operation system"
 #endif

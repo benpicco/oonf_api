@@ -41,10 +41,10 @@
 
 #include <syslog.h>
 
-#include "olsr_libdata.h"
-#include "olsr_logging.h"
-#include "os_syslog.h"
-#include "olsr.h"
+#include "core/olsr_libdata.h"
+#include "core/olsr_logging.h"
+#include "core/os_syslog.h"
+#include "core/olsr.h"
 
 OLSR_SUBSYSTEM_STATE(_os_log_state);
 

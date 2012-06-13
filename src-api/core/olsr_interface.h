@@ -53,7 +53,7 @@
 #include "common/list.h"
 #include "common/netaddr.h"
 
-#include "olsr_timer.h"
+#include "core/olsr_timer.h"
 
 struct olsr_interface_data {
   /* Interface addresses with mesh-wide scope (at least) */

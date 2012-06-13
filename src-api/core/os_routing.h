@@ -47,17 +47,17 @@
 
 #include "common/common_types.h"
 #include "common/list.h"
-#include "olsr_interface.h"
-#include "olsr_logging.h"
-#include "olsr_timer.h"
-#include "os_system.h"
+#include "core/olsr_interface.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_timer.h"
+#include "core/os_system.h"
 
 #if defined(__linux__)
-#include "os_linux/os_routing_linux.h"
+#include "core/os_linux/os_routing_linux.h"
 #elif defined (BSD)
-#include "os_bsd/os_routing_bsd.h"
+#include "core/os_bsd/os_routing_bsd.h"
 #elif defined (_WIN32)
-#include "os_win32/os_routing_win32.h"
+#include "core/os_win32/os_routing_win32.h"
 #else
 #error "Unknown operation system"
 #endif

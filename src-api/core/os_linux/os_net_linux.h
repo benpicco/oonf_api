@@ -45,7 +45,7 @@
 #include <sys/select.h>
 #include <unistd.h>
 
-#include "olsr_interface.h"
+#include "core/olsr_interface.h"
 
 /**
  * Close a file descriptor

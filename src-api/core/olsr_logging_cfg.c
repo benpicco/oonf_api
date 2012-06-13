@@ -49,11 +49,11 @@
 #include "config/cfg_db.h"
 #include "config/cfg.h"
 
-#include "olsr_logging.h"
-#include "olsr_logging_cfg.h"
-#include "olsr_cfg.h"
-#include "olsr.h"
-#include "os_syslog.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_logging_cfg.h"
+#include "core/olsr_cfg.h"
+#include "core/olsr.h"
+#include "core/os_syslog.h"
 
 #define LOG_SECTION     "log"
 #define LOG_LEVEL_ENTRY "level"

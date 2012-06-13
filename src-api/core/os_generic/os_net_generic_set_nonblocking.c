@@ -41,7 +41,7 @@
 
 #include <fcntl.h>
 
-#include "os_net.h"
+#include "core/os_net.h"
 
 /**
  * Set a socket to non-blocking mode

@@ -46,18 +46,18 @@
 #include <sys/time.h>
 
 #include "common/common_types.h"
-#include "olsr_logging.h"
-#include "olsr_interface.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_interface.h"
 
 #define MSEC_PER_SEC 1000
 #define USEC_PER_MSEC 1000
 
 #if defined(__linux__)
-#include "os_linux/os_system_linux.h"
+#include "core/os_linux/os_system_linux.h"
 #elif defined (BSD)
-#include "os_bsd/os_system_bsd.h"
+#include "core/os_bsd/os_system_bsd.h"
 #elif defined (_WIN32)
-#include "os_win32/os_system_win32.h"
+#include "core/os_win32/os_system_win32.h"
 #else
 #error "Unknown operation system"
 #endif

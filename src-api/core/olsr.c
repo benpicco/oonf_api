@@ -39,7 +39,7 @@
  *
  */
 
-#include "olsr.h"
+#include "core/olsr.h"
 
 static bool _running = true;
 

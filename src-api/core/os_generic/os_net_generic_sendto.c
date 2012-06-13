@@ -43,7 +43,7 @@
 
 #include "common/common_types.h"
 #include "common/netaddr.h"
-#include "os_net.h"
+#include "core/os_net.h"
 
 /**
  * Sends data to an UDP socket.

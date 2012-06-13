@@ -48,10 +48,10 @@
 #include "config/cfg_schema.h"
 #include "config/cfg.h"
 
-#include "os_clock.h"
-#include "olsr_logging.h"
-#include "olsr_clock.h"
-#include "olsr.h"
+#include "core/os_clock.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_clock.h"
+#include "core/olsr.h"
 
 /* absolute monotonic clock measured in milliseconds compared to start time */
 static uint64_t now_times;

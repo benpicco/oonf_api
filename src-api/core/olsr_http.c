@@ -45,14 +45,14 @@
 
 #include "config/cfg_schema.h"
 
-#include "olsr.h"
-#include "olsr_cfg.h"
-#include "olsr_libdata.h"
-#include "olsr_logging.h"
-#include "olsr_netaddr_acl.h"
-#include "olsr_stream_socket.h"
-#include "os_system.h"
-#include "olsr_http.h"
+#include "core/olsr.h"
+#include "core/olsr_cfg.h"
+#include "core/olsr_libdata.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_netaddr_acl.h"
+#include "core/olsr_stream_socket.h"
+#include "core/os_system.h"
+#include "core/olsr_http.h"
 
 /* Http text constants */
 static const char HTTP_VERSION_1_0[] = "HTTP/1.0";

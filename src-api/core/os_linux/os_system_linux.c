@@ -57,10 +57,10 @@
 
 #include "common/common_types.h"
 #include "common/string.h"
-#include "olsr_interface.h"
-#include "olsr_socket.h"
-#include "olsr.h"
-#include "os_system.h"
+#include "core/olsr_interface.h"
+#include "core/olsr_socket.h"
+#include "core/olsr.h"
+#include "core/os_system.h"
 
 #ifndef SOL_NETLINK
 #define SOL_NETLINK 270

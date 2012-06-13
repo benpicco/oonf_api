@@ -43,7 +43,7 @@
 #define OS_SYSLOG_H_
 
 #include "common/common_types.h"
-#include "olsr_logging.h"
+#include "core/olsr_logging.h"
 
 EXPORT void os_syslog_init(void);
 EXPORT void os_syslog_cleanup(void);

@@ -47,11 +47,11 @@
 
 #include "common/common_types.h"
 
-#include "olsr_cfg.h"
-#include "olsr_interface.h"
-#include "olsr_logging.h"
-#include "olsr.h"
-#include "os_net.h"
+#include "core/olsr_cfg.h"
+#include "core/olsr_interface.h"
+#include "core/olsr_logging.h"
+#include "core/olsr.h"
+#include "core/os_net.h"
 
 static int _ioctl_v4, _ioctl_v6;
 

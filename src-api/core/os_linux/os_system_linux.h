@@ -45,7 +45,7 @@
 #include <linux/netlink.h>
 
 #include "common/netaddr.h"
-#include "olsr_socket.h"
+#include "core/olsr_socket.h"
 
 struct os_system_netlink {
   struct olsr_socket_entry socket;

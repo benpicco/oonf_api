@@ -46,7 +46,7 @@
 #include "config/cfg_schema.h"
 #include "config/cfg.h"
 
-#include "olsr_netaddr_acl.h"
+#include "core/olsr_netaddr_acl.h"
 
 static int _handle_control_cmd(struct olsr_netaddr_acl *, const char *);
 static bool _is_in_array(struct netaddr *, size_t, struct netaddr *);

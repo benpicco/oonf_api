@@ -39,7 +39,7 @@
  *
  */
 
-#include "olsr_libdata.h"
+#include "core/olsr_libdata.h"
 
 static struct olsr_libdata _libdata = {
   .lib_version = "${OONF_VERSION}",

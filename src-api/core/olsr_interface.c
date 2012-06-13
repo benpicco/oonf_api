@@ -46,13 +46,13 @@
 #include "common/netaddr.h"
 #include "common/string.h"
 
-#include "olsr_interface.h"
-#include "olsr_logging.h"
-#include "olsr_timer.h"
-#include "olsr.h"
-#include "os_net.h"
-#include "os_system.h"
-#include "os_routing.h"
+#include "core/olsr_interface.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_timer.h"
+#include "core/olsr.h"
+#include "core/os_net.h"
+#include "core/os_system.h"
+#include "core/os_routing.h"
 
 /* timeinterval to delay change in interface to trigger actions */
 #define OLSR_INTERFACE_CHANGE_INTERVAL 100

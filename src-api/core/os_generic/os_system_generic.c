@@ -42,9 +42,9 @@
 #include <syslog.h>
 
 #include "builddata/data.h"
-#include "olsr_logging.h"
-#include "os_system.h"
-#include "olsr.h"
+#include "core/olsr_logging.h"
+#include "core/os_system.h"
+#include "core/olsr.h"
 
 #if OS_SYSTEM_LOG == OS_GENERIC
 /* we only need this subsystem state here in the generic case */

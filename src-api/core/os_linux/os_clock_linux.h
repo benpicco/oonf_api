@@ -42,7 +42,7 @@
 #ifndef OS_CLOCK_LINUX_H_
 #define OS_CLOCK_LINUX_H_
 
-#include <os_clock.h>
+#include "core/os_clock.h"
 
 /**
  * Inline wrapper around gettimeofday

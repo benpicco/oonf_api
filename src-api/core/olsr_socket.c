@@ -47,13 +47,13 @@
 
 #include "common/avl.h"
 #include "common/avl_comp.h"
-#include "olsr_cfg.h"
-#include "olsr_clock.h"
-#include "olsr_logging.h"
-#include "os_net.h"
-#include "olsr_socket.h"
-#include "olsr_timer.h"
-#include "olsr.h"
+#include "core/olsr_cfg.h"
+#include "core/olsr_clock.h"
+#include "core/olsr_logging.h"
+#include "core/os_net.h"
+#include "core/olsr_socket.h"
+#include "core/olsr_timer.h"
+#include "core/olsr.h"
 
 /* List of all active sockets in scheduler */
 struct list_entity socket_head;

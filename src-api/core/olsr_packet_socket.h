@@ -46,9 +46,9 @@
 #include "common/list.h"
 #include "common/autobuf.h"
 #include "common/netaddr.h"
-#include "olsr_interface.h"
-#include "olsr_netaddr_acl.h"
-#include "olsr_socket.h"
+#include "core/olsr_interface.h"
+#include "core/olsr_netaddr_acl.h"
+#include "core/olsr_socket.h"
 
 #ifndef _WIN32
 #include <net/if.h>

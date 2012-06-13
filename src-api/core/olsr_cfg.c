@@ -46,11 +46,11 @@
 #include "config/cfg_schema.h"
 #include "config/cfg.h"
 
-#include "olsr_logging.h"
-#include "olsr_plugins.h"
-#include "olsr_socket.h"
-#include "olsr_cfg.h"
-#include "olsr.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_plugins.h"
+#include "core/olsr_socket.h"
+#include "core/olsr_cfg.h"
+#include "core/olsr.h"
 
 /* static prototypes */
 static int _cb_validate_global(struct cfg_schema_section *, const char *section_name,

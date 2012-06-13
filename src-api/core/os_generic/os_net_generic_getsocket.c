@@ -44,8 +44,8 @@
 
 #include "common/common_types.h"
 #include "common/netaddr.h"
-#include "olsr_logging.h"
-#include "os_net.h"
+#include "core/olsr_logging.h"
+#include "core/os_net.h"
 
 /**
  * Creates a new socket and configures it

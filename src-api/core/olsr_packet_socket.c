@@ -46,11 +46,11 @@
 #include "common/list.h"
 #include "common/autobuf.h"
 #include "common/netaddr.h"
-#include "os_net.h"
-#include "olsr_cfg.h"
-#include "olsr_logging.h"
-#include "olsr_packet_socket.h"
-#include "olsr.h"
+#include "core/os_net.h"
+#include "core/olsr_cfg.h"
+#include "core/olsr_logging.h"
+#include "core/olsr_packet_socket.h"
+#include "core/olsr.h"
 
 static struct list_entity packet_sockets = { NULL, NULL };
 static char input_buffer[65536];
