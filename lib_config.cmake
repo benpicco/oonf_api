@@ -2,6 +2,10 @@
 #### API configuration ####
 ###########################
 
+# set CMAKE build type for api and plugins
+# (Debug, Release, MinSizeRel)
+set (CMAKE_BUILD_TYPE Debug)
+
 # maximum logging level
 set(OONF_MAX_LOGGING_LEVEL debug CACHE STRING "Maximum logging level compiled into OONF API (none, warn, info, debug)")
 

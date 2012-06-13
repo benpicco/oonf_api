@@ -120,7 +120,12 @@ olsr_plugins_init(void) {
   _dlopen_data[IDX_DLOPEN_VER].value =
       olsr_log_get_appdata()->app_version;
 
-  // TODO: add library data
+  _dlopen_data[IDX_DLOPEN_PRELIB].value =
+      olsr_log_get_libdata()->sharedlibrary_prefix;
+  _dlopen_data[IDX_DLOPEN_POSTLIB].value =
+      olsr_log_get_libdata()->sharedlibrary_postfix;
+  _dlopen_data[IDX_DLOPEN_VERLIB].value =
+      olsr_log_get_libdata()->lib_version;
 }
 
 /**

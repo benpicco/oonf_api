@@ -278,9 +278,9 @@ struct cfg_schema_entry {
   bool delta_changed;
 };
 
-EXPORT const char *CFGLIST_BOOL_TRUE[4];
-EXPORT const char *CFGLIST_BOOL[8];
-EXPORT const char *CFG_SCHEMA_SECTIONMODE[CFG_SSMODE_MAX];
+EXPORT extern const char *CFGLIST_BOOL_TRUE[4];
+EXPORT extern const char *CFGLIST_BOOL[8];
+EXPORT extern const char *CFG_SCHEMA_SECTIONMODE[CFG_SSMODE_MAX];
 
 EXPORT void cfg_schema_add(struct cfg_schema *schema);
 

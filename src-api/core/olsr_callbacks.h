@@ -102,16 +102,16 @@ struct olsr_callback_consumer {
 EXPORT extern struct avl_tree olsr_callback_provider_tree;
 EXPORT const char *OLSR_CALLBACK_EVENTS[3];
 
-void olsr_callback_init(void);
-void olsr_callback_cleanup(void);
+EXPORT void olsr_callback_init(void);
+EXPORT void olsr_callback_cleanup(void);
 
-int EXPORT(olsr_callback_add)(struct olsr_callback_provider *);
-void EXPORT(olsr_callback_remove)(struct olsr_callback_provider *);
+EXPORT int olsr_callback_add(struct olsr_callback_provider *);
+EXPORT void olsr_callback_remove(struct olsr_callback_provider *);
 
-int EXPORT(olsr_callback_register_consumer)(struct olsr_callback_consumer *);
-void EXPORT(olsr_callback_unregister_consumer)(struct olsr_callback_consumer *);
+EXPORT int olsr_callback_register_consumer(struct olsr_callback_consumer *);
+EXPORT void olsr_callback_unregister_consumer(struct olsr_callback_consumer *);
 
-void EXPORT(olsr_callback_event)(struct olsr_callback_provider *, void *, enum olsr_callback_event);
+EXPORT void olsr_callback_event(struct olsr_callback_provider *, void *, enum olsr_callback_event);
 
 /**
  * @param name callback provider name

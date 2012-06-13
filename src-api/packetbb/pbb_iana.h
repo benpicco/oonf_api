@@ -62,10 +62,10 @@ EXPORT extern const struct netaddr PBB_MANET_MULTICAST_V6;
  * text variants of the constants above for defaults in
  * configuration sections
  */
-EXPORT extern const char *PBB_MANET_IPPROTO_TXT;
-EXPORT extern const char *PBB_MANET_UDP_PORT_TXT;
-EXPORT extern const char *PBB_MANET_MULTICAST_V4_TXT;
-EXPORT extern const char *PBB_MANET_MULTICAST_V6_TXT;
+EXPORT extern const char PBB_MANET_IPPROTO_TXT[];
+EXPORT extern const char PBB_MANET_UDP_PORT_TXT[];
+EXPORT extern const char PBB_MANET_MULTICAST_V4_TXT[];
+EXPORT extern const char PBB_MANET_MULTICAST_V6_TXT[];
 
 /*
  * this is a list of all globally defined IANA

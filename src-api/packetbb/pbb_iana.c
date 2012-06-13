@@ -55,7 +55,7 @@ const struct netaddr PBB_MANET_MULTICAST_V6 = {
   .prefix_len = 0,
 };
 
-const char *PBB_MANET_IPPROTO_TXT = "138";
-const char *PBB_MANET_UDP_PORT_TXT = "269";
-const char *PBB_MANET_MULTICAST_V4_TXT = "224.0.0.109";
-const char *PBB_MANET_MULTICAST_V6_TXT = "ff02::6d";
+const char PBB_MANET_IPPROTO_TXT[] = "138";
+const char PBB_MANET_UDP_PORT_TXT[] = "269";
+const char PBB_MANET_MULTICAST_V4_TXT[] = "224.0.0.109";
+const char PBB_MANET_MULTICAST_V6_TXT[] = "ff02::6d";

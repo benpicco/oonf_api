@@ -18,4 +18,3 @@ include("${OONF_CMAKE_DIR}/OONFLibraryDepends.cmake")
 
 # import build functions for app plugins
 SET (OONF_BUILD_LIBRARY "${OONF_CMAKE_DIR}/OONFBuildLibrary.cmake")
-message("build library: ${OONF_BUILD_LIBRARY}")
