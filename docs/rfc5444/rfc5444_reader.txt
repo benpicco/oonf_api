@@ -1,27 +1,25 @@
-PacketBB (RFC 5444) handler library
+RFC 5444 handler library
 Copyright (c) 2010 Henning Rogge <hrogge@googlemail.com>
 
-The pbb library is a combined parser and generator for RFC 5444
-(Generalized Mobile Ad Hoc Network (MANET) Packet/Message Format),
-also known as "packetbb".
-The library is split into a separate reader and writer part, both
+The rfc 5444 library is a combined parser and generator for the
+'Generalized Mobile Ad Hoc Network (MANET) Packet/Message Format'.The library is split into a separate reader and writer part, both
 of them use a generic avl-tree and double-linked list implementation.
 
 The reader and writer allow multiple independent code blocks to read
-overlapping parts of a PacketBB data stream and assemble packets and
+overlapping parts of a RFC 5444 data stream and assemble packets and
 messages together. This allow API users to separate different sub-
 protocol in their codebase (e.g. NHDP and OLSRv2).
 
 
 =======================
-    PacketBB reader
+    RFC 5444 reader
 =======================
 
 1) general information
 1.1) using the reader
-1.2) pbb_reader_tlvblock_context
-1.3) pbb_reader_tlvblock_entry
-1.4) order of callbacks while parsing a packetbb stream
+1.2) rfc5444_reader_tlvblock_context
+1.3) rfc5444_reader_tlvblock_entry
+1.4) order of callbacks while parsing a rfc5444 stream
 2) block callback
 2.1) setting up a Block Callback
 2.2) implementing the block callback
@@ -32,16 +30,16 @@ protocol in their codebase (e.g. NHDP and OLSRv2).
 1) General information
 **********************
 
-The basic blocks of information of packetbb are addresses of 1 to 16
+The basic blocks of information of rfc5444 are addresses of 1 to 16
 bytes and tlvs. TLV is a shortcut for type-length-value. Each piece
 of data which is not included in packet, message or address header
 has a type and a length field, which allows a parser which does not
 know this TLV to skip to the next TLV without being forced to stop
 parsing the data stream.
  
-The PacketBB reader is based on the concept of tlv-block consumers
-as the basic entities for reading PacketBB. TLV-blocks can exist on
-three different levels of hierarchy in PacketBB:
+The RFC 5444 reader is based on the concept of tlv-block consumers
+as the basic entities for reading RFC 5444. TLV-blocks can exist on
+three different levels of hierarchy in RFC 5444:
 
   * packet TLVs
   * message TLVs
@@ -56,7 +54,7 @@ define a set of TLVs it's interested in. The parser collects all
 TLV data defined in the set and calls the block_callback.
 Hence the processing is block-oriented.
 
-The other callbacks allow a more stream oriented handling of packetbb
+The other callbacks allow a more stream oriented handling of rfc5444
 data:
 
  * start_callback
@@ -73,20 +71,20 @@ stop processing the current context or the whole packet, which allows
 creating of security or semantic checking consumers.
 
 Both block and stream callbacks return two kind of data structures,
-pbb_reader_tlvblock_context and pbb_reader_tlvblock_entry. The block
+rfc5444_reader_tlvblock_context and rfc5444_reader_tlvblock_entry. The block
 callback initializes a pointer to the second one for each
-pbb_reader_tlvblock_consumer_entry it finds in the packetbb stream.
+rfc5444_reader_tlvblock_consumer_entry it finds in the rfc5444 stream.
 
 
 1,1) Using the reader
 *********************
 
-The packetbb reader is very simple to use.
+The rfc5444 reader is very simple to use.
 
-First the user has to allocate a packetbb reader context with
-pbb_reader_init(). All functions of the reader require a pointer to this
+First the user has to allocate a rfc5444 reader context with
+rfc5444_reader_init(). All functions of the reader require a pointer to this
 context as a parameter.
-If you don't need the reader anymore, call pbb_reader_cleanup() to
+If you don't need the reader anymore, call rfc5444_reader_cleanup() to
 free all allocated memory of the reader including the reader context
 itself.
 
@@ -94,21 +92,21 @@ After allocating the context you can register and unregister all
 necessary callbacks to the reader, as long as you do this outside
 of the reader callbacks itself!
 
-To parse binary packetbb, just call pbb_reader_handle_packet(). 
+To parse binary rfc5444, just call rfc5444_reader_handle_packet(). 
 
 Example:
   see example/example_reader.c:
 
   (...)
-  struct pbb_reader *context;
+  struct rfc5444_reader *context;
 
-  context = pbb_reader_init();
+  context = rfc5444_reader_init();
   assert(context);
   (...)
 
 
 
-1.2) pbb_reader_tlvblock_context
+1.2) rfc5444_reader_tlvblock_context
 ********************************
 
 There is a second context: the tlvblock context tells the callback about the
@@ -135,7 +133,7 @@ The whole struct is read-only, DO NOT MODIFY the fields inside
 a callback.
 
 
-1.3) pbb_reader_tlvblock_entry
+1.3) rfc5444_reader_tlvblock_entry
 ******************************
 
 The tlvblock entry contains the data about a single tlv. It
@@ -148,7 +146,7 @@ The whole struct is read-only, DO NOT MODIFY the fields inside
 a callback.
 
 
-1.4) Order of callbacks while parsing a packetbb stream
+1.4) Order of callbacks while parsing a rfc5444 stream
 *******************************************************
 
 The total order of callbacks can be described as:
@@ -232,11 +230,11 @@ structure unnecessary.
 2.1) Setting up a Block Callback
 ********************************
 
-The first option to parse packetbb data is the block_callback.
+The first option to parse rfc5444 data is the block_callback.
 The block_callback is initialized by an array of
-pbb_reader_tlvblock_consumer_entry objects.
+rfc5444_reader_tlvblock_consumer_entry objects.
 
-struct pbb_reader_tlvblock_consumer_entry consumer[] = {
+struct rfc5444_reader_tlvblock_consumer_entry consumer[] = {
     { .type = 4 },
     { .type = 1, .match_type_ext = true, .type_ext = 1 },
     { .type = 2, .mandatory = true },
@@ -244,11 +242,11 @@ struct pbb_reader_tlvblock_consumer_entry consumer[] = {
 };
 
 ...
-    struct pbb_reader *context;
-    struct pbb_reader_tlvblock_consumer *consumer;
+    struct rfc5444_reader *context;
+    struct rfc5444_reader_tlvblock_consumer *consumer;
     ....
     
-    consumer = pbb_reader_add_message_consumer(context,
+    consumer = rfc5444_reader_add_message_consumer(context,
       consumer, ARRAYSIZE(consumer),
       2, /* msg type */
       1  /* order */);
@@ -263,7 +261,7 @@ in addition to the tlv type, which can be combined:
  * copy_value (void *) and copy_value_maxlen (size_t)
 
 By setting mandatory to 'true' in an entry of the
-pbb_reader_tlvblock_consumer_entry array the consumer tells the parser that
+rfc5444_reader_tlvblock_consumer_entry array the consumer tells the parser that
 the TLV is mandatory. The parser keeps track if all mandatory TLVs
 are available and tells the consumer this by a callback parameter.
 
@@ -283,26 +281,26 @@ prevent a buffer overflow.
 
 The block callback has three parameters. The first is a pointer to the
 tlvblock consumer object returned by the register function. The second
-one is a pointer to a pbb_reader_tlvblock_context object, which contains the
+one is a pointer to a rfc5444_reader_tlvblock_context object, which contains the
 packet sequence number, the decoded content of the message header (for
 message and address consumers) and the current address (only for address
 consumers). The last parameter mandatory_missing is true if one of the
 tlv entries marked as mandatory is missing.
 
-enum pbb_result
-callback(struct pbb_reader_tlvblock_consumer *consumer,
-      struct pbb_reader_tlvblock_context *context,
+enum rfc5444_result
+callback(struct rfc5444_reader_tlvblock_consumer *consumer,
+      struct rfc5444_reader_tlvblock_context *context,
       bool mandatory_missing) {
     ...
-    return PBB_OKAY;
+    return RFC5444_OKAY;
 }
 
 For each tlv in the block with a corresponding array entry, the parser
-initializes a pbb_reader_tlvblock_entry pointer in the entry which contains
+initializes a rfc5444_reader_tlvblock_entry pointer in the entry which contains
 all data about the original tlv, including type(ext), value and/or
 indices.
 
-The default return value of the block callback is PBB_OKAY, which tells
+The default return value of the block callback is RFC5444_OKAY, which tells
 the parser that everything is right and the next callback should be called.
 
 See README.dropcontext for other return values.
@@ -314,37 +312,37 @@ See README.dropcontext for other return values.
 The stream callbacks are a group of three callbacks that are similar
 to a SAX XML parser. The consumer gets one callback when its
 context (the packet, message or address) starts, one callback for each
-TLV inside the context (with a pointer to a pbb_reader_tlvblock_context and
-a pbb_reader_tlvblock_entry object) and one callback when the context ends.
+TLV inside the context (with a pointer to a rfc5444_reader_tlvblock_context and
+a rfc5444_reader_tlvblock_entry object) and one callback when the context ends.
 
-enum pbb_result
-my_start_callback(struct pbb_reader_tlvblock_consumer *,
-       struct pbb_reader_tlvblock_context *context) {
+enum rfc5444_result
+my_start_callback(struct rfc5444_reader_tlvblock_consumer *,
+       struct rfc5444_reader_tlvblock_context *context) {
     ...
-    return PBB_OKAY;
+    return RFC5444_OKAY;
 }
 
-enum pbb_result
-my_tlv_callback(struct pbb_reader_tlvblock_entry *,
-      struct pbb_reader_tlvblock_context *context) {
+enum rfc5444_result
+my_tlv_callback(struct rfc5444_reader_tlvblock_entry *,
+      struct rfc5444_reader_tlvblock_context *context) {
     ...
-    return PBB_OKAY;
+    return RFC5444_OKAY;
 }
 
-enum pbb_result
-my_end_callback(struct pbb_reader_tlvblock_consumer *, 
-      struct pbb_reader_tlvblock_context *context,
+enum rfc5444_result
+my_end_callback(struct rfc5444_reader_tlvblock_consumer *, 
+      struct rfc5444_reader_tlvblock_context *context,
       bool dropped);
     ...
-    return PBB_OKAY;
+    return RFC5444_OKAY;
 }
 
 ...
-    struct pbb_reader *context;
-    struct pbb_reader_tlvblock_consumer *consumer;
+    struct rfc5444_reader *context;
+    struct rfc5444_reader_tlvblock_consumer *consumer;
     ....
     
-    consumer = pbb_reader_add_message_consumer(context,
+    consumer = rfc5444_reader_add_message_consumer(context,
       consumer, ARRAYSIZE(consumer),
       2, /* msg type */
       1  /* order */);
@@ -359,7 +357,7 @@ but are more complex to use for most protocol implementations.
 The end callback has an additional boolean parameter called drop, which tells
 the callback that the context has been dropped by an earlier callback.
 
-The default return value of this callbacks is PBB_OKAY, which tells
+The default return value of this callbacks is RFC5444_OKAY, which tells
 the parser that everything is right and the next callback should be called.
 
 See README.dropcontext for other return values.

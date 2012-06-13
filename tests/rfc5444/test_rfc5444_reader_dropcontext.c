@@ -1,5 +1,5 @@
 /*
- * PacketBB handler library (see RFC 5444)
+ * RFC 5444 handler library
  * Copyright (c) 2010 Henning Rogge <hrogge@googlemail.com>
  * All rights reserved.
  *
@@ -41,8 +41,8 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "packetbb/pbb_reader.h"
-#include "packetbb/pbb_api_config.h"
+#include "rfc5444/rfc5444_reader.h"
+#include "rfc5444/rfc5444_api_config.h"
 
 #define PRINT_CB 1
 
@@ -54,12 +54,12 @@
  * TLV type 1
  * TLV type 2
  */
-static struct pbb_reader_tlvblock_consumer_entry consumer_entries[] = {
+static struct rfc5444_reader_tlvblock_consumer_entry consumer_entries[] = {
   { .type = 1 },
   { .type = 2 }
 };
 
-/* packetbb test message */
+/* rfc5444 test message */
 static uint8_t testpacket[] = {
 /* packet with tlvblock, but without sequence number */
     0x04,
@@ -82,24 +82,24 @@ static uint8_t testpacket[] = {
     0, 4, 1, 0, 2, 0,
 };
 
-static struct pbb_reader context;
-static struct pbb_reader_tlvblock_consumer packet_consumer[2];
-static struct pbb_reader_tlvblock_consumer msg1_consumer[2];
-static struct pbb_reader_tlvblock_consumer msg1_addr_consumer[2];
-static struct pbb_reader_tlvblock_consumer msg2_consumer;
+static struct rfc5444_reader context;
+static struct rfc5444_reader_tlvblock_consumer packet_consumer[2];
+static struct rfc5444_reader_tlvblock_consumer msg1_consumer[2];
+static struct rfc5444_reader_tlvblock_consumer msg1_addr_consumer[2];
+static struct rfc5444_reader_tlvblock_consumer msg2_consumer;
 
-static enum pbb_result result_start_packet[2];
-static enum pbb_result result_start_message[2];
-static enum pbb_result result_start_address[2][2];
-static enum pbb_result result_blockcb_packet[2];
-static enum pbb_result result_blockcb_message[2];
-static enum pbb_result result_blockcb_address[2][2];
-static enum pbb_result result_end_packet[2];
-static enum pbb_result result_end_message[2];
-static enum pbb_result result_end_address[2][2];
-static enum pbb_result result_tlv_packet[2][2];
-static enum pbb_result result_tlv_message[2][2];
-static enum pbb_result result_tlv_address[2][2][2];
+static enum rfc5444_result result_start_packet[2];
+static enum rfc5444_result result_start_message[2];
+static enum rfc5444_result result_start_address[2][2];
+static enum rfc5444_result result_blockcb_packet[2];
+static enum rfc5444_result result_blockcb_message[2];
+static enum rfc5444_result result_blockcb_address[2][2];
+static enum rfc5444_result result_end_packet[2];
+static enum rfc5444_result result_end_message[2];
+static enum rfc5444_result result_end_address[2][2];
+static enum rfc5444_result result_tlv_packet[2][2];
+static enum rfc5444_result result_tlv_message[2][2];
+static enum rfc5444_result result_tlv_address[2][2][2];
 
 static int callback_index;
 
@@ -128,9 +128,9 @@ static bool droptlv_blocktlv_packet[2][2];
 static bool droptlv_blocktlv_message[2][2];
 static bool droptlv_blocktlv_address[2][2][2];
 
-static enum pbb_result
-cb_blocktlv_packet(struct pbb_reader_tlvblock_consumer *consumer,
-      struct pbb_reader_tlvblock_context *c __attribute__ ((unused))) {
+static enum rfc5444_result
+cb_blocktlv_packet(struct rfc5444_reader_tlvblock_consumer *consumer,
+      struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
   int oi = consumer->order - 1;
 
 #ifdef PRINT_CB
@@ -148,9 +148,9 @@ cb_blocktlv_packet(struct pbb_reader_tlvblock_consumer *consumer,
   return result_blockcb_packet[oi];
 }
 
-static enum pbb_result
-cb_blocktlv_message(struct pbb_reader_tlvblock_consumer *consumer,
-      struct pbb_reader_tlvblock_context *c __attribute__ ((unused))) {
+static enum rfc5444_result
+cb_blocktlv_message(struct rfc5444_reader_tlvblock_consumer *consumer,
+      struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
   int oi = consumer->order - 1;
 
 #ifdef PRINT_CB
@@ -168,19 +168,19 @@ cb_blocktlv_message(struct pbb_reader_tlvblock_consumer *consumer,
   return result_blockcb_message[oi];
 }
 
-static enum pbb_result
-cb_blocktlv_message2(struct pbb_reader_tlvblock_consumer *consumer __attribute__ ((unused)),
-      struct pbb_reader_tlvblock_context *c __attribute__ ((unused))) {
+static enum rfc5444_result
+cb_blocktlv_message2(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__ ((unused)),
+      struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
 #ifdef PRINT_CB
   printf("%s: message 2 blocktlv: %d\n", __func__, callback_index);
 #endif
   idxcb_blocktlv_message2 = callback_index++;
-  return PBB_OKAY;
+  return RFC5444_OKAY;
 }
 
-static enum pbb_result
-cb_blocktlv_address(struct pbb_reader_tlvblock_consumer *consumer,
-      struct pbb_reader_tlvblock_context *ctx) {
+static enum rfc5444_result
+cb_blocktlv_address(struct rfc5444_reader_tlvblock_consumer *consumer,
+      struct rfc5444_reader_tlvblock_context *ctx) {
   uint8_t ai = ctx->addr[3] - 1;
   int oi = consumer->order - 1;
 
@@ -199,9 +199,9 @@ cb_blocktlv_address(struct pbb_reader_tlvblock_consumer *consumer,
   return result_blockcb_address[oi][ai];
 }
 
-static enum pbb_result
-cb_start_packet(struct pbb_reader_tlvblock_consumer *consumer,
-    struct pbb_reader_tlvblock_context *c __attribute__ ((unused))) {
+static enum rfc5444_result
+cb_start_packet(struct rfc5444_reader_tlvblock_consumer *consumer,
+    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
   int oi = consumer->order - 1;
 
 #ifdef PRINT_CB
@@ -211,9 +211,9 @@ cb_start_packet(struct pbb_reader_tlvblock_consumer *consumer,
   return result_start_packet[oi];
 }
 
-static enum pbb_result
-cb_start_message(struct pbb_reader_tlvblock_consumer *consumer,
-    struct pbb_reader_tlvblock_context *c __attribute__ ((unused))) {
+static enum rfc5444_result
+cb_start_message(struct rfc5444_reader_tlvblock_consumer *consumer,
+    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
   int oi = consumer->order - 1;
 
 #ifdef PRINT_CB
@@ -223,9 +223,9 @@ cb_start_message(struct pbb_reader_tlvblock_consumer *consumer,
   return result_start_message[oi];
 }
 
-static enum pbb_result
-cb_start_addr(struct pbb_reader_tlvblock_consumer *consumer,
-    struct pbb_reader_tlvblock_context *ctx) {
+static enum rfc5444_result
+cb_start_addr(struct rfc5444_reader_tlvblock_consumer *consumer,
+    struct rfc5444_reader_tlvblock_context *ctx) {
   int oi = consumer->order - 1;
   uint8_t ai = ctx->addr[3] - 1;
 
@@ -236,10 +236,10 @@ cb_start_addr(struct pbb_reader_tlvblock_consumer *consumer,
   return result_start_address[oi][ai];
 }
 
-static enum pbb_result
-cb_tlv_packet(struct pbb_reader_tlvblock_consumer *consumer,
-    struct pbb_reader_tlvblock_entry *tlv,
-    struct pbb_reader_tlvblock_context *c __attribute__ ((unused))) {
+static enum rfc5444_result
+cb_tlv_packet(struct rfc5444_reader_tlvblock_consumer *consumer,
+    struct rfc5444_reader_tlvblock_entry *tlv,
+    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
   int oi = consumer->order - 1;
   int ti = tlv->type - 1;
 
@@ -250,10 +250,10 @@ cb_tlv_packet(struct pbb_reader_tlvblock_consumer *consumer,
   return result_tlv_packet[oi][ti];
 }
 
-static enum pbb_result
-cb_tlv_message(struct pbb_reader_tlvblock_consumer *consumer,
-    struct pbb_reader_tlvblock_entry *tlv,
-    struct pbb_reader_tlvblock_context *c __attribute__ ((unused))) {
+static enum rfc5444_result
+cb_tlv_message(struct rfc5444_reader_tlvblock_consumer *consumer,
+    struct rfc5444_reader_tlvblock_entry *tlv,
+    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
   int oi = consumer->order - 1;
   int ti = tlv->type - 1;
 
@@ -264,10 +264,10 @@ cb_tlv_message(struct pbb_reader_tlvblock_consumer *consumer,
   return result_tlv_message[oi][ti];
 }
 
-static enum pbb_result
-cb_tlv_address(struct pbb_reader_tlvblock_consumer *consumer,
-    struct pbb_reader_tlvblock_entry *tlv,
-    struct pbb_reader_tlvblock_context *ctx) {
+static enum rfc5444_result
+cb_tlv_address(struct rfc5444_reader_tlvblock_consumer *consumer,
+    struct rfc5444_reader_tlvblock_entry *tlv,
+    struct rfc5444_reader_tlvblock_context *ctx) {
   int oi = consumer->order - 1;
   uint8_t ai = ctx->addr[3] - 1;
   int ti = tlv->type - 1;
@@ -279,9 +279,9 @@ cb_tlv_address(struct pbb_reader_tlvblock_consumer *consumer,
   return result_tlv_address[oi][ai][ti];
 }
 
-static enum pbb_result
-cb_end_packet(struct pbb_reader_tlvblock_consumer *consumer,
-    struct pbb_reader_tlvblock_context *c __attribute__ ((unused)),
+static enum rfc5444_result
+cb_end_packet(struct rfc5444_reader_tlvblock_consumer *consumer,
+    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused)),
     bool dropped __attribute__ ((unused))) {
   int oi = consumer->order - 1;
 
@@ -292,9 +292,9 @@ cb_end_packet(struct pbb_reader_tlvblock_consumer *consumer,
   return result_end_packet[oi];
 }
 
-static enum pbb_result
-cb_end_message(struct pbb_reader_tlvblock_consumer *consumer,
-    struct pbb_reader_tlvblock_context *c __attribute__ ((unused)),
+static enum rfc5444_result
+cb_end_message(struct rfc5444_reader_tlvblock_consumer *consumer,
+    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused)),
     bool dropped __attribute__ ((unused))) {
   int oi = consumer->order - 1;
 
@@ -305,9 +305,9 @@ cb_end_message(struct pbb_reader_tlvblock_consumer *consumer,
   return result_end_message[oi];
 }
 
-static enum pbb_result
-cb_end_addr(struct pbb_reader_tlvblock_consumer *consumer,
-    struct pbb_reader_tlvblock_context *ctx,
+static enum rfc5444_result
+cb_end_addr(struct rfc5444_reader_tlvblock_consumer *consumer,
+    struct rfc5444_reader_tlvblock_context *ctx,
     bool dropped __attribute__ ((unused))) {
   int oi = consumer->order - 1;
   uint8_t ai = ctx->addr[3] - 1;
@@ -319,25 +319,25 @@ cb_end_addr(struct pbb_reader_tlvblock_consumer *consumer,
   return result_end_address[oi][ai];
 }
 
-static enum pbb_result
-cb_start_message2(struct pbb_reader_tlvblock_consumer *consumer __attribute__ ((unused)),
-    struct pbb_reader_tlvblock_context *c __attribute__ ((unused))) {
+static enum rfc5444_result
+cb_start_message2(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__ ((unused)),
+    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
 #ifdef PRINT_CB
   printf("%s: message 2 start: %d\n", __func__, callback_index);
 #endif
   idxcb_start_message2 = callback_index++;
-  return PBB_OKAY;
+  return RFC5444_OKAY;
 }
 
-static enum pbb_result
-cb_end_message2(struct pbb_reader_tlvblock_consumer *consumer __attribute__ ((unused)),
-    struct pbb_reader_tlvblock_context *c __attribute__ ((unused)),
+static enum rfc5444_result
+cb_end_message2(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__ ((unused)),
+    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused)),
     bool dropped __attribute__ ((unused))) {
 #ifdef PRINT_CB
   printf("%s: message 2 end: %d\n", __func__, callback_index);
 #endif
   idxcb_end_message2 = callback_index++;
-  return PBB_OKAY;
+  return RFC5444_OKAY;
 }
 
 
@@ -359,17 +359,17 @@ static void clear_elements(void) {
     idxcb_blocktlv_message[order-1] = -1;
     idxcb_end_message[order-1] = -1;
 
-    result_start_packet[order-1] = PBB_OKAY;
-    result_end_packet[order-1] = PBB_OKAY;
-    result_blockcb_packet[order-1] = PBB_OKAY;
-    result_tlv_packet[order-1][0] = PBB_OKAY;
-    result_tlv_packet[order-1][1] = PBB_OKAY;
+    result_start_packet[order-1] = RFC5444_OKAY;
+    result_end_packet[order-1] = RFC5444_OKAY;
+    result_blockcb_packet[order-1] = RFC5444_OKAY;
+    result_tlv_packet[order-1][0] = RFC5444_OKAY;
+    result_tlv_packet[order-1][1] = RFC5444_OKAY;
 
-    result_start_message[order-1] = PBB_OKAY;
-    result_end_message[order-1] = PBB_OKAY;
-    result_blockcb_message[order-1] = PBB_OKAY;
-    result_tlv_message[order-1][0] = PBB_OKAY;
-    result_tlv_message[order-1][1] = PBB_OKAY;
+    result_start_message[order-1] = RFC5444_OKAY;
+    result_end_message[order-1] = RFC5444_OKAY;
+    result_blockcb_message[order-1] = RFC5444_OKAY;
+    result_tlv_message[order-1][0] = RFC5444_OKAY;
+    result_tlv_message[order-1][1] = RFC5444_OKAY;
 
     gottlv_blocktlv_packet[order-1][0] = false;
     gottlv_blocktlv_packet[order-1][1] = false;
@@ -383,11 +383,11 @@ static void clear_elements(void) {
       idxcb_blocktlv_address[order-1][addr-1] = -1;
       idxcb_end_address[order-1][addr-1] = -1;
 
-      result_start_address[order-1][addr-1] = PBB_OKAY;
-      result_end_address[order-1][addr-1] = PBB_OKAY;
-      result_blockcb_address[order-1][addr-1] = PBB_OKAY;
-      result_tlv_address[order-1][addr-1][0] = PBB_OKAY;
-      result_tlv_address[order-1][addr-1][1] = PBB_OKAY;
+      result_start_address[order-1][addr-1] = RFC5444_OKAY;
+      result_end_address[order-1][addr-1] = RFC5444_OKAY;
+      result_blockcb_address[order-1][addr-1] = RFC5444_OKAY;
+      result_tlv_address[order-1][addr-1][0] = RFC5444_OKAY;
+      result_tlv_address[order-1][addr-1][1] = RFC5444_OKAY;
 
       gottlv_blocktlv_address[order-1][addr-1][0] = false;
       gottlv_blocktlv_address[order-1][addr-1][1] = false;
@@ -400,7 +400,7 @@ static void clear_elements(void) {
 }
 
 static void run(void) {
-  pbb_reader_handle_packet(&context, testpacket, sizeof(testpacket));
+  rfc5444_reader_handle_packet(&context, testpacket, sizeof(testpacket));
 }
 
 #define CHECK_CB_T(counter, index, text) { CHECK_TRUE(counter == index, text": %d != %d", counter, index); counter++; }
@@ -491,7 +491,7 @@ static void test_blockcb_pkt_result_droppacket(void) {
   int idx = 0;
   START_TEST();
 
-  result_blockcb_packet[0] = PBB_DROP_PACKET;
+  result_blockcb_packet[0] = RFC5444_DROP_PACKET;
   run();
 
   /* packet (order 1) received, everything else not */
@@ -574,7 +574,7 @@ static void test_start_pkt_result_droppacket(void) {
   int idx = 0;
   START_TEST();
 
-  result_start_packet[0] = PBB_DROP_PACKET;
+  result_start_packet[0] = RFC5444_DROP_PACKET;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -655,7 +655,7 @@ static void test_start_pkt_result_droppacket(void) {
 static void test_end_pkt_result_droppacket(void) {
   int idx = 0;
 
-  result_end_packet[0] = PBB_DROP_PACKET;
+  result_end_packet[0] = RFC5444_DROP_PACKET;
   START_TEST();
   run();
 
@@ -738,7 +738,7 @@ static void test_blockcb_msg_result_dropmsg(void) {
   int idx = 0;
   START_TEST();
 
-  result_blockcb_message[0] = PBB_DROP_MESSAGE;
+  result_blockcb_message[0] = RFC5444_DROP_MESSAGE;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -820,7 +820,7 @@ static void test_start_msg_result_dropmsg(void) {
   int idx = 0;
   START_TEST();
 
-  result_start_message[0] = PBB_DROP_MESSAGE;
+  result_start_message[0] = RFC5444_DROP_MESSAGE;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -902,7 +902,7 @@ static void test_end_msg_result_dropmsg(void) {
   int idx = 0;
   START_TEST();
 
-  result_end_message[0] = PBB_DROP_MESSAGE;
+  result_end_message[0] = RFC5444_DROP_MESSAGE;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -984,7 +984,7 @@ static void test_blockcb_msg_result_droppkt(void) {
   int idx = 0;
   START_TEST();
 
-  result_blockcb_message[0] = PBB_DROP_PACKET;
+  result_blockcb_message[0] = RFC5444_DROP_PACKET;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1066,7 +1066,7 @@ static void test_start_msg_result_droppkt(void) {
   int idx = 0;
   START_TEST();
 
-  result_start_message[0] = PBB_DROP_PACKET;
+  result_start_message[0] = RFC5444_DROP_PACKET;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1148,7 +1148,7 @@ static void test_end_msg_result_droppkt(void) {
   int idx = 0;
   START_TEST();
 
-  result_end_message[0] = PBB_DROP_PACKET;
+  result_end_message[0] = RFC5444_DROP_PACKET;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1230,7 +1230,7 @@ static void test_blockcb_addr1_result_dropaddr(void) {
   int idx = 0;
   START_TEST();
 
-  result_blockcb_address[0][0] = PBB_DROP_ADDRESS;
+  result_blockcb_address[0][0] = RFC5444_DROP_ADDRESS;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1312,7 +1312,7 @@ static void test_start_addr1_result_dropaddr(void) {
   int idx = 0;
   START_TEST();
 
-  result_start_address[0][0] = PBB_DROP_ADDRESS;
+  result_start_address[0][0] = RFC5444_DROP_ADDRESS;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1394,7 +1394,7 @@ static void test_end_addr1_result_dropaddr(void) {
   int idx = 0;
   START_TEST();
 
-  result_end_address[0][0] = PBB_DROP_ADDRESS;
+  result_end_address[0][0] = RFC5444_DROP_ADDRESS;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1476,7 +1476,7 @@ static void test_blockcb_addr1_result_dropmsg(void) {
   int idx = 0;
   START_TEST();
 
-  result_blockcb_address[0][0] = PBB_DROP_MESSAGE;
+  result_blockcb_address[0][0] = RFC5444_DROP_MESSAGE;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1558,7 +1558,7 @@ static void test_start_addr1_result_dropmsg(void) {
   int idx = 0;
   START_TEST();
 
-  result_start_address[0][0] = PBB_DROP_MESSAGE;
+  result_start_address[0][0] = RFC5444_DROP_MESSAGE;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1640,7 +1640,7 @@ static void test_end_addr1_result_dropmsg(void) {
   int idx = 0;
   START_TEST();
 
-  result_end_address[0][0] = PBB_DROP_MESSAGE;
+  result_end_address[0][0] = RFC5444_DROP_MESSAGE;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1722,7 +1722,7 @@ static void test_blockcb_addr1_result_droppkt(void) {
   int idx = 0;
   START_TEST();
 
-  result_blockcb_address[0][0] = PBB_DROP_PACKET;
+  result_blockcb_address[0][0] = RFC5444_DROP_PACKET;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1804,7 +1804,7 @@ static void test_start_addr1_result_droppkt(void) {
   int idx = 0;
   START_TEST();
 
-  result_start_address[0][0] = PBB_DROP_PACKET;
+  result_start_address[0][0] = RFC5444_DROP_PACKET;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1886,7 +1886,7 @@ static void test_end_addr1_result_droppkt(void) {
   int idx = 0;
   START_TEST();
 
-  result_end_address[0][0] = PBB_DROP_PACKET;
+  result_end_address[0][0] = RFC5444_DROP_PACKET;
   run();
 
   CHECK_CB_T (idx, idxcb_start_packet    [0],       "start packet       (order 1)");
@@ -1968,7 +1968,7 @@ static void test_blockcb_pkt_result_droptlv1(void) {
   int idx = 0;
   START_TEST();
 
-  result_blockcb_packet[0] = PBB_DROP_TLV;
+  result_blockcb_packet[0] = RFC5444_DROP_TLV;
   droptlv_blocktlv_packet[0][0] = true;
 
   run();
@@ -2053,7 +2053,7 @@ static void test_blockcb_msg_result_droptlv1(void) {
 
   START_TEST();
 
-  result_blockcb_message[0] = PBB_DROP_TLV;
+  result_blockcb_message[0] = RFC5444_DROP_TLV;
   droptlv_blocktlv_message[0][0] = true;
 
   run();
@@ -2137,7 +2137,7 @@ static void test_blockcb_addr1_result_droptlv1(void) {
   int idx = 0;
   START_TEST();
 
-  result_blockcb_address[0][0] = PBB_DROP_TLV;
+  result_blockcb_address[0][0] = RFC5444_DROP_TLV;
   droptlv_blocktlv_address[0][0][0] = true;
 
   run();
@@ -2221,7 +2221,7 @@ static void test_tlvcb_pkt_result_droptlv1(void) {
   int idx = 0;
   START_TEST();
 
-  result_tlv_packet[0][0] = PBB_DROP_TLV;
+  result_tlv_packet[0][0] = RFC5444_DROP_TLV;
 
   run();
 
@@ -2305,7 +2305,7 @@ static void test_tlvcb_msg_result_droptlv1(void) {
 
   START_TEST();
 
-  result_tlv_message[0][0] = PBB_DROP_TLV;
+  result_tlv_message[0][0] = RFC5444_DROP_TLV;
 
   run();
 
@@ -2388,7 +2388,7 @@ static void test_tlvcb_addr1_result_droptlv1(void) {
   int idx = 0;
   START_TEST();
 
-  result_tlv_address[0][0][0] = PBB_DROP_TLV;
+  result_tlv_address[0][0][0] = RFC5444_DROP_TLV;
 
   run();
 
@@ -2475,29 +2475,29 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
 #if DISALLOW_CONSUMER_CONTEXT_DROP == 0
   int order;
 
-  pbb_reader_init(&context);
+  rfc5444_reader_init(&context);
 
   for (order = 1; order <= 2; order++) {
-    pbb_reader_add_packet_consumer(&context, &packet_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries), order);
+    rfc5444_reader_add_packet_consumer(&context, &packet_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries), order);
     packet_consumer[order-1].start_callback = cb_start_packet;
     packet_consumer[order-1].tlv_callback = cb_tlv_packet;
     packet_consumer[order-1].end_callback = cb_end_packet;
     packet_consumer[order-1].block_callback = cb_blocktlv_packet;
 
-    pbb_reader_add_message_consumer(&context, &msg1_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries), 1, order);
+    rfc5444_reader_add_message_consumer(&context, &msg1_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries), 1, order);
     msg1_consumer[order-1].start_callback = cb_start_message;
     msg1_consumer[order-1].tlv_callback = cb_tlv_message;
     msg1_consumer[order-1].end_callback = cb_end_message;
     msg1_consumer[order-1].block_callback = cb_blocktlv_message;
 
-    pbb_reader_add_address_consumer(&context, &msg1_addr_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries), 1, order);
+    rfc5444_reader_add_address_consumer(&context, &msg1_addr_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries), 1, order);
     msg1_addr_consumer[order-1].start_callback = cb_start_addr;
     msg1_addr_consumer[order-1].tlv_callback = cb_tlv_address;
     msg1_addr_consumer[order-1].end_callback = cb_end_addr;
     msg1_addr_consumer[order-1].block_callback = cb_blocktlv_address;
   }
 
-  pbb_reader_add_message_consumer(&context, &msg2_consumer, consumer_entries, ARRAYSIZE(consumer_entries), 2, 3);
+  rfc5444_reader_add_message_consumer(&context, &msg2_consumer, consumer_entries, ARRAYSIZE(consumer_entries), 2, 3);
   msg2_consumer.start_callback = cb_start_message2;
   msg2_consumer.end_callback = cb_end_message2;
   msg2_consumer.block_callback = cb_blocktlv_message2;
@@ -2537,7 +2537,7 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
 
   FINISH_TESTING();
 
-  pbb_reader_cleanup(&context);
+  rfc5444_reader_cleanup(&context);
   return total_fail;
 #else
   return 0;

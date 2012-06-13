@@ -1,5 +1,5 @@
 /*
- * PacketBB handler library (see RFC 5444)
+ * RFC 5444 handler library
  * Copyright (c) 2010 Henning Rogge <hrogge@googlemail.com>
  * All rights reserved.
  *
@@ -42,45 +42,45 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "packetbb/pbb_context.h"
-#include "packetbb/pbb_writer.h"
+#include "rfc5444/rfc5444_context.h"
+#include "rfc5444/rfc5444_writer.h"
 #include "../cunit.h"
 
 #define MSG_TYPE 1
 
-static void write_packet(struct pbb_writer *,
-    struct pbb_writer_interface *, void *, size_t);
-static void addAddresses(struct pbb_writer *wr,
-    struct pbb_writer_content_provider *provider);
+static void write_packet(struct rfc5444_writer *,
+    struct rfc5444_writer_interface *, void *, size_t);
+static void addAddresses(struct rfc5444_writer *wr,
+    struct rfc5444_writer_content_provider *provider);
 
 static uint8_t msg_buffer[128];
 static uint8_t msg_addrtlvs[1000];
 
-static struct pbb_writer writer = {
+static struct rfc5444_writer writer = {
   .msg_buffer = msg_buffer,
   .msg_size = sizeof(msg_buffer),
   .addrtlv_buffer = msg_addrtlvs,
   .addrtlv_size = sizeof(msg_addrtlvs),
 };
 
-static struct pbb_writer_content_provider cpr = {
+static struct rfc5444_writer_content_provider cpr = {
   .msg_type = MSG_TYPE,
   .addAddresses = addAddresses,
 };
 
-static struct pbb_writer_addrtlv_block addrtlvs[] = {
+static struct rfc5444_writer_addrtlv_block addrtlvs[] = {
   { .type = 3 },
 };
 
 static uint8_t packet_buffer_if1[128];
-static struct pbb_writer_interface small_if = {
+static struct rfc5444_writer_interface small_if = {
   .packet_buffer = packet_buffer_if1,
   .packet_size = sizeof(packet_buffer_if1),
   .sendPacket = write_packet,
 };
 
 static uint8_t packet_buffer_if2[256];
-static struct pbb_writer_interface large_if = {
+static struct rfc5444_writer_interface large_if = {
   .packet_buffer = packet_buffer_if2,
   .packet_size = sizeof(packet_buffer_if2),
   .sendPacket = write_packet,
@@ -92,22 +92,22 @@ static uint8_t tlv_value_buffer[256];
 static uint8_t *tlv_value;
 static size_t tlv_value_size;
 
-static void addMessageHeader(struct pbb_writer *wr, struct pbb_writer_message *msg) {
-  pbb_writer_set_msg_header(wr, msg, false, false, false, false);
+static void addMessageHeader(struct rfc5444_writer *wr, struct rfc5444_writer_message *msg) {
+  rfc5444_writer_set_msg_header(wr, msg, false, false, false, false);
 }
 
-static void finishMessageHeader(struct pbb_writer *wr  __attribute__ ((unused)),
-    struct pbb_writer_message *msg __attribute__ ((unused)),
-    struct pbb_writer_address *first_addr __attribute__ ((unused)),
-    struct pbb_writer_address *last_addr __attribute__ ((unused)),
+static void finishMessageHeader(struct rfc5444_writer *wr  __attribute__ ((unused)),
+    struct rfc5444_writer_message *msg __attribute__ ((unused)),
+    struct rfc5444_writer_address *first_addr __attribute__ ((unused)),
+    struct rfc5444_writer_address *last_addr __attribute__ ((unused)),
     bool not_fragmented __attribute__ ((unused))) {
   fragments++;
 }
 
-static void addAddresses(struct pbb_writer *wr,
-    struct pbb_writer_content_provider *provider) {
+static void addAddresses(struct rfc5444_writer *wr,
+    struct rfc5444_writer_content_provider *provider) {
   uint8_t ip[4] = { 10, 0, 0, 0 };
-  struct pbb_writer_address *addr;
+  struct rfc5444_writer_address *addr;
   int i;
 
   for (i=0; i<tlvcount; i++) {
@@ -117,8 +117,8 @@ static void addAddresses(struct pbb_writer *wr,
       tlv_value[tlv_value_size-1] = (uint8_t)(i & 255);
     }
 
-    addr = pbb_writer_add_address(wr, provider->_creator, ip, 32);
-    pbb_writer_add_addrtlv(wr, addr, addrtlvs[0]._tlvtype, tlv_value, tlv_value_size, false);
+    addr = rfc5444_writer_add_address(wr, provider->_creator, ip, 32);
+    rfc5444_writer_add_addrtlv(wr, addr, addrtlvs[0]._tlvtype, tlv_value, tlv_value_size, false);
 
     if (tlv_value) {
       tlv_value[tlv_value_size-1] = (tlv_value_size-1) & 255;
@@ -126,8 +126,8 @@ static void addAddresses(struct pbb_writer *wr,
   }
 }
 
-static void write_packet(struct pbb_writer *w __attribute__ ((unused)),
-    struct pbb_writer_interface *iface,
+static void write_packet(struct rfc5444_writer *w __attribute__ ((unused)),
+    struct rfc5444_writer_interface *iface,
     void *buffer, size_t length) {
   size_t i, j;
   uint8_t *buf = buffer;
@@ -166,9 +166,9 @@ static void test_frag_80_1(void) {
   tlv_value = tlv_value_buffer;
   tlv_value_size = 80;
 
-  CHECK_TRUE(0 == pbb_writer_create_message_allif(&writer, 1), "Parser should return 0");
-  pbb_writer_flush(&writer, &small_if, false);
-  pbb_writer_flush(&writer, &large_if, false);
+  CHECK_TRUE(0 == rfc5444_writer_create_message_allif(&writer, 1), "Parser should return 0");
+  rfc5444_writer_flush(&writer, &small_if, false);
+  rfc5444_writer_flush(&writer, &large_if, false);
 
   CHECK_TRUE(fragments == 1, "bad number of fragments: %d\n", fragments);
   CHECK_TRUE(packets[0] == 1, "bad number of packets on if 1: %d\n", packets[0]);
@@ -184,9 +184,9 @@ static void test_frag_80_2(void) {
   tlv_value = tlv_value_buffer;
   tlv_value_size = 80;
 
-  CHECK_TRUE(0 == pbb_writer_create_message_allif(&writer, 1), "Parser should return 0");
-  pbb_writer_flush(&writer, &small_if, false);
-  pbb_writer_flush(&writer, &large_if, false);
+  CHECK_TRUE(0 == rfc5444_writer_create_message_allif(&writer, 1), "Parser should return 0");
+  rfc5444_writer_flush(&writer, &small_if, false);
+  rfc5444_writer_flush(&writer, &large_if, false);
 
   CHECK_TRUE(fragments == 2, "bad number of fragments: %d\n", fragments);
   CHECK_TRUE(packets[0] == 2, "bad number of packets on if 1: %d\n", packets[0]);
@@ -202,9 +202,9 @@ static void test_frag_80_3(void) {
   tlv_value = tlv_value_buffer;
   tlv_value_size = 80;
 
-  CHECK_TRUE(0 == pbb_writer_create_message_allif(&writer, 1), "Parser should return 0");
-  pbb_writer_flush(&writer, &small_if, false);
-  pbb_writer_flush(&writer, &large_if, false);
+  CHECK_TRUE(0 == rfc5444_writer_create_message_allif(&writer, 1), "Parser should return 0");
+  rfc5444_writer_flush(&writer, &small_if, false);
+  rfc5444_writer_flush(&writer, &large_if, false);
 
   CHECK_TRUE(fragments == 3, "bad number of fragments: %d\n", fragments);
   CHECK_TRUE(packets[0] == 3, "bad number of packets on if 1: %d\n", packets[0]);
@@ -220,9 +220,9 @@ static void test_frag_50_3(void) {
   tlv_value = tlv_value_buffer;
   tlv_value_size = 50;
 
-  CHECK_TRUE(0 == pbb_writer_create_message_allif(&writer, 1), "Parser should return 0");
-  pbb_writer_flush(&writer, &small_if, false);
-  pbb_writer_flush(&writer, &large_if, false);
+  CHECK_TRUE(0 == rfc5444_writer_create_message_allif(&writer, 1), "Parser should return 0");
+  rfc5444_writer_flush(&writer, &small_if, false);
+  rfc5444_writer_flush(&writer, &large_if, false);
 
   CHECK_TRUE(fragments == 2, "bad number of fragments: %d\n", fragments);
   CHECK_TRUE(packets[0] == 2, "bad number of packets on if 1: %d\n", packets[0]);
@@ -238,7 +238,7 @@ static void test_frag_150_3(void) {
   tlv_value = tlv_value_buffer;
   tlv_value_size = 150;
 
-  CHECK_TRUE(0 != pbb_writer_create_message_allif(&writer, 1), "Parser should return -1");
+  CHECK_TRUE(0 != rfc5444_writer_create_message_allif(&writer, 1), "Parser should return -1");
 
   CHECK_TRUE(fragments == 0, "bad number of fragments: %d\n", fragments);
   CHECK_TRUE(packets[0] == 0, "bad number of packets on if 1: %d\n", packets[0]);
@@ -248,23 +248,23 @@ static void test_frag_150_3(void) {
 }
 
 int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
-  struct pbb_writer_message *msg;
+  struct rfc5444_writer_message *msg;
   size_t i;
 
   for (i=0; i<sizeof(tlv_value_buffer); i++) {
     tlv_value_buffer[i] = i;
   }
 
-  pbb_writer_init(&writer);
+  rfc5444_writer_init(&writer);
 
-  pbb_writer_register_interface(&writer, &small_if);
-  pbb_writer_register_interface(&writer, &large_if);
+  rfc5444_writer_register_interface(&writer, &small_if);
+  rfc5444_writer_register_interface(&writer, &large_if);
 
-  msg = pbb_writer_register_message(&writer, MSG_TYPE, false, 4);
+  msg = rfc5444_writer_register_message(&writer, MSG_TYPE, false, 4);
   msg->addMessageHeader = addMessageHeader;
   msg->finishMessageHeader = finishMessageHeader;
 
-  pbb_writer_register_msgcontentprovider(&writer, &cpr, addrtlvs, ARRAYSIZE(addrtlvs));
+  rfc5444_writer_register_msgcontentprovider(&writer, &cpr, addrtlvs, ARRAYSIZE(addrtlvs));
 
   BEGIN_TESTING();
 
@@ -276,6 +276,6 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
 
   FINISH_TESTING();
 
-  pbb_writer_cleanup(&writer);
+  rfc5444_writer_cleanup(&writer);
   return total_fail;
 }

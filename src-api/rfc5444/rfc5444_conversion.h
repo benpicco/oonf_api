@@ -38,27 +38,27 @@
  * the copyright holders.
  *
  */
-#ifndef PBB_CONVERSION_H_
-#define PBB_CONVERSION_H_
+#ifndef RFC5444_CONVERSION_H_
+#define RFC5444_CONVERSION_H_
 
 #include "common/common_types.h"
 
 /* timetlv_max = 15 * 2^28 * 1000 / 1024 = 15000 << 18 = 3 932 160 000 ms */
-#define PBB_TIMETLV_MAX 0xea600000
+#define RFC5444_TIMETLV_MAX 0xea600000
 
 /* timetlv_min = 1000/1024 ms */
-#define PBB_TIMETLV_MIN 0x00000001
+#define RFC5444_TIMETLV_MIN 0x00000001
 
 /* metric_max = 1<<24 - 256 */
-#define PBB_METRIC_MAX 0xffff00
+#define RFC5444_METRIC_MAX 0xffff00
 
 /* metric_min = 1 */
-#define PBB_METRIC_MIN 0x000001
+#define RFC5444_METRIC_MIN 0x000001
 
-EXPORT uint8_t pbb_timetlv_encode(uint64_t);
-EXPORT uint64_t pbb_timetlv_decode(uint8_t);
+EXPORT uint8_t rfc5444_timetlv_encode(uint64_t);
+EXPORT uint64_t rfc5444_timetlv_decode(uint8_t);
 
-EXPORT uint16_t pbb_metric_encode(uint32_t);
-EXPORT uint32_t pbb_metric_decode(uint16_t);
+EXPORT uint16_t rfc5444_metric_encode(uint32_t);
+EXPORT uint32_t rfc5444_metric_decode(uint16_t);
 
-#endif /* PBB_CONVERSION_H_ */
+#endif /* RFC5444_CONVERSION_H_ */

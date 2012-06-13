@@ -39,29 +39,29 @@
  *
  */
 
-#ifndef PBB_PARSER_H_
-#define PBB_PARSER_H_
+#ifndef RFC5444_PARSER_H_
+#define RFC5444_PARSER_H_
 
 #include "common/avl.h"
 #include "common/common_types.h"
-#include "packetbb/pbb_context.h"
+#include "rfc5444/rfc5444_context.h"
 
 /* Bitarray with 256 elements for skipping addresses/tlvs */
-struct pbb_reader_bitarray256 {
+struct rfc5444_reader_bitarray256 {
   uint32_t a[256/32];
 };
 
-/* type of context for a pbb_reader_tlvblock_context */
-enum pbb_reader_tlvblock_context_type {
-  PBB_CONTEXT_PACKET,
-  PBB_CONTEXT_MESSAGE,
-  PBB_CONTEXT_ADDRESS
+/* type of context for a rfc5444_reader_tlvblock_context */
+enum rfc5444_reader_tlvblock_context_type {
+  RFC5444_CONTEXT_PACKET,
+  RFC5444_CONTEXT_MESSAGE,
+  RFC5444_CONTEXT_ADDRESS
 };
 
 /**
  * This struct temporary holds the content of a decoded TLV.
  */
-struct pbb_reader_tlvblock_entry {
+struct rfc5444_reader_tlvblock_entry {
   /* single linked list of entries */
   struct avl_node node;
 
@@ -99,13 +99,13 @@ struct pbb_reader_tlvblock_entry {
   bool int_multivalue_tlv;
 
   /* internal bitarray to mark tlvs that shall be skipped by the next handler */
-  struct pbb_reader_bitarray256 int_drop_tlv;
+  struct rfc5444_reader_bitarray256 int_drop_tlv;
 };
 
 /* common context for packet, message and address TLV block */
-struct pbb_reader_tlvblock_context {
+struct rfc5444_reader_tlvblock_context {
   /* applicable for all TLV blocks */
-  enum pbb_reader_tlvblock_context_type type;
+  enum rfc5444_reader_tlvblock_context_type type;
 
   /* packet context */
   uint8_t pkt_version;
@@ -129,7 +129,7 @@ struct pbb_reader_tlvblock_context {
   uint8_t hoplimit;
 
   bool has_origaddr;
-  uint8_t orig_addr[PBB_MAX_ADDRLEN];
+  uint8_t orig_addr[RFC5444_MAX_ADDRLEN];
 
   uint16_t seqno;
   bool has_seqno;
@@ -143,7 +143,7 @@ struct pbb_reader_tlvblock_context {
 };
 
 /* internal representation of a parsed address block */
-struct pbb_reader_addrblock_entry {
+struct rfc5444_reader_addrblock_entry {
   /* single linked list of address blocks */
   struct list_entity list_node;
 
@@ -166,19 +166,19 @@ struct pbb_reader_addrblock_entry {
   uint8_t *mid_src;
 
   /* storage for head/tail of address */
-  uint8_t addr[PBB_MAX_ADDRLEN];
+  uint8_t addr[RFC5444_MAX_ADDRLEN];
 
   /* storage for fixed prefix length */
   uint8_t prefixlen;
 
   /* bitarray to mark addresses that shall be skipped by the next handler */
-  struct pbb_reader_bitarray256 dropAddr;
+  struct rfc5444_reader_bitarray256 dropAddr;
 };
 
 /**
  * representation of a consumer for a tlv block and context
  */
-struct pbb_reader_tlvblock_consumer_entry {
+struct rfc5444_reader_tlvblock_consumer_entry {
   /* sorted list of consumer entries */
   struct list_entity _node;
 
@@ -219,14 +219,14 @@ struct pbb_reader_tlvblock_consumer_entry {
    * corresponding callback. Do not copy the pointer into a global
    * variable
    */
-  struct pbb_reader_tlvblock_entry *tlv;
+  struct rfc5444_reader_tlvblock_entry *tlv;
 
-  /* set by the consumer callback together with a PBB_DROP_TLV to drop this TLV */
+  /* set by the consumer callback together with a RFC5444_DROP_TLV to drop this TLV */
   bool drop;
 };
 
 /* representation of a tlv block consumer */
-struct pbb_reader_tlvblock_consumer {
+struct rfc5444_reader_tlvblock_consumer {
   /* sorted tree of consumers for a packet, message or address tlv block */
   struct avl_node node;
 
@@ -249,30 +249,30 @@ struct pbb_reader_tlvblock_consumer {
   struct list_entity _consumer_list;
 
   /* consumer for TLVblock context start and end*/
-  enum pbb_result (*start_callback)(struct pbb_reader_tlvblock_consumer *,
-      struct pbb_reader_tlvblock_context *context);
-  enum pbb_result (*end_callback)(struct pbb_reader_tlvblock_consumer *,
-      struct pbb_reader_tlvblock_context *context, bool dropped);
+  enum rfc5444_result (*start_callback)(struct rfc5444_reader_tlvblock_consumer *,
+      struct rfc5444_reader_tlvblock_context *context);
+  enum rfc5444_result (*end_callback)(struct rfc5444_reader_tlvblock_consumer *,
+      struct rfc5444_reader_tlvblock_context *context, bool dropped);
 
   /* consumer for single TLV */
-  enum pbb_result (*tlv_callback)(struct pbb_reader_tlvblock_consumer *,
-      struct pbb_reader_tlvblock_entry *,
-      struct pbb_reader_tlvblock_context *context);
+  enum rfc5444_result (*tlv_callback)(struct rfc5444_reader_tlvblock_consumer *,
+      struct rfc5444_reader_tlvblock_entry *,
+      struct rfc5444_reader_tlvblock_context *context);
 
   /* consumer for tlv block and context */
-  enum pbb_result (*block_callback)(
-      struct pbb_reader_tlvblock_consumer *,
-      struct pbb_reader_tlvblock_context *context);
-  enum pbb_result (*block_callback_failed_constraints)(
-      struct pbb_reader_tlvblock_consumer *,
-      struct pbb_reader_tlvblock_context *context);
+  enum rfc5444_result (*block_callback)(
+      struct rfc5444_reader_tlvblock_consumer *,
+      struct rfc5444_reader_tlvblock_context *context);
+  enum rfc5444_result (*block_callback_failed_constraints)(
+      struct rfc5444_reader_tlvblock_consumer *,
+      struct rfc5444_reader_tlvblock_context *context);
 
   /* private data pointer for API user */
   void *private;
 };
 
-/* representation of the internal state of a packetbb parser */
-struct pbb_reader {
+/* representation of the internal state of a rfc5444 parser */
+struct rfc5444_reader {
   /* sorted tree of packet consumers */
   struct avl_tree packet_consumer;
 
@@ -280,60 +280,60 @@ struct pbb_reader {
   struct avl_tree message_consumer;
 
   /* callback for message forwarding */
-  void (*forward_message)(struct pbb_reader_tlvblock_context *context, uint8_t *buffer, size_t length, void *);
+  void (*forward_message)(struct rfc5444_reader_tlvblock_context *context, uint8_t *buffer, size_t length, void *);
   void *forward_message_data;
 
   /* callbacks for memory management */
-  struct pbb_reader_tlvblock_entry* (*malloc_tlvblock_entry)(void);
-  struct pbb_reader_addrblock_entry* (*malloc_addrblock_entry)(void);
+  struct rfc5444_reader_tlvblock_entry* (*malloc_tlvblock_entry)(void);
+  struct rfc5444_reader_addrblock_entry* (*malloc_addrblock_entry)(void);
 
   void (*free_tlvblock_entry)(void *);
   void (*free_addrblock_entry)(void *);
 };
 
-EXPORT void pbb_reader_init(struct pbb_reader *);
-EXPORT void pbb_reader_cleanup(struct pbb_reader *);
-EXPORT void pbb_reader_add_packet_consumer(struct pbb_reader *parser,
-    struct pbb_reader_tlvblock_consumer *consumer,
-    struct pbb_reader_tlvblock_consumer_entry *entries, size_t entrycount,
+EXPORT void rfc5444_reader_init(struct rfc5444_reader *);
+EXPORT void rfc5444_reader_cleanup(struct rfc5444_reader *);
+EXPORT void rfc5444_reader_add_packet_consumer(struct rfc5444_reader *parser,
+    struct rfc5444_reader_tlvblock_consumer *consumer,
+    struct rfc5444_reader_tlvblock_consumer_entry *entries, size_t entrycount,
     int order);
-EXPORT void pbb_reader_add_message_consumer(struct pbb_reader *,
-    struct pbb_reader_tlvblock_consumer *,
-    struct pbb_reader_tlvblock_consumer_entry *,
+EXPORT void rfc5444_reader_add_message_consumer(struct rfc5444_reader *,
+    struct rfc5444_reader_tlvblock_consumer *,
+    struct rfc5444_reader_tlvblock_consumer_entry *,
     size_t entrycount, uint8_t msg_id, int order);
-EXPORT void pbb_reader_add_defaultmsg_consumer(struct pbb_reader *parser,
-    struct pbb_reader_tlvblock_consumer *,
-    struct pbb_reader_tlvblock_consumer_entry *entries,
+EXPORT void rfc5444_reader_add_defaultmsg_consumer(struct rfc5444_reader *parser,
+    struct rfc5444_reader_tlvblock_consumer *,
+    struct rfc5444_reader_tlvblock_consumer_entry *entries,
     size_t entrycount, int order);
-EXPORT void pbb_reader_add_address_consumer(struct pbb_reader *,
-    struct pbb_reader_tlvblock_consumer *,
-    struct pbb_reader_tlvblock_consumer_entry *,
+EXPORT void rfc5444_reader_add_address_consumer(struct rfc5444_reader *,
+    struct rfc5444_reader_tlvblock_consumer *,
+    struct rfc5444_reader_tlvblock_consumer_entry *,
     size_t entrycount, uint8_t msg_id, int order);
-EXPORT void pbb_reader_add_defaultaddress_consumer(struct pbb_reader *parser,
-    struct pbb_reader_tlvblock_consumer *,
-    struct pbb_reader_tlvblock_consumer_entry *entries,
+EXPORT void rfc5444_reader_add_defaultaddress_consumer(struct rfc5444_reader *parser,
+    struct rfc5444_reader_tlvblock_consumer *,
+    struct rfc5444_reader_tlvblock_consumer_entry *entries,
     size_t entrycount, int order);
 
-EXPORT void pbb_reader_remove_packet_consumer(
-    struct pbb_reader *, struct pbb_reader_tlvblock_consumer *);
-EXPORT void pbb_reader_remove_message_consumer(
-    struct pbb_reader *, struct pbb_reader_tlvblock_consumer *);
+EXPORT void rfc5444_reader_remove_packet_consumer(
+    struct rfc5444_reader *, struct rfc5444_reader_tlvblock_consumer *);
+EXPORT void rfc5444_reader_remove_message_consumer(
+    struct rfc5444_reader *, struct rfc5444_reader_tlvblock_consumer *);
 
 /**
  * Inline function to remove an address consumer. Both message and
  * address consumers are internally mapped to the same data structure,
- * so you can just use the pbb_reader_remove_message_consumer()
+ * so you can just use the rfc5444_reader_remove_message_consumer()
  * function.
  *
  * @param reader pointer to reader context
  * @param consumer pointer to tlvblock consumer object
  */
-static INLINE void pbb_reader_remove_address_consumer(
-    struct pbb_reader *reader, struct pbb_reader_tlvblock_consumer *consumer) {
-  pbb_reader_remove_message_consumer(reader, consumer);
+static INLINE void rfc5444_reader_remove_address_consumer(
+    struct rfc5444_reader *reader, struct rfc5444_reader_tlvblock_consumer *consumer) {
+  rfc5444_reader_remove_message_consumer(reader, consumer);
 }
 
-EXPORT int pbb_reader_handle_packet(
-    struct pbb_reader *parser, uint8_t *buffer, size_t length);
+EXPORT int rfc5444_reader_handle_packet(
+    struct rfc5444_reader *parser, uint8_t *buffer, size_t length);
 
-#endif /* PBB_PARSER_H_ */
+#endif /* RFC5444_PARSER_H_ */

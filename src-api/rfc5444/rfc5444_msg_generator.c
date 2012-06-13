@@ -43,30 +43,30 @@
 #include <string.h>
 
 #include "common/common_types.h"
-#include "packetbb/pbb_writer.h"
-#include "packetbb/pbb_api_config.h"
+#include "rfc5444/rfc5444_writer.h"
+#include "rfc5444/rfc5444_api_config.h"
 
 /* data necessary for automatic address compression */
-struct _pbb_internal_addr_compress_session {
-  struct pbb_writer_address *ptr;
+struct _rfc5444_internal_addr_compress_session {
+  struct rfc5444_writer_address *ptr;
   int total;
   int current;
   bool multiplen;
 };
 
-static void _calculate_tlv_flags(struct pbb_writer_address *addr, bool first);
-static void _close_addrblock(struct _pbb_internal_addr_compress_session *acs,
-    struct pbb_writer_message *msg, struct pbb_writer_address *last_addr, int);
-static void _finalize_message_fragment(struct pbb_writer *writer,
-    struct pbb_writer_message *msg, struct pbb_writer_address *first,
-    struct pbb_writer_address *last, bool not_fragmented,
-    pbb_writer_ifselector useIf, void *param);
-static int _compress_address(struct _pbb_internal_addr_compress_session *acs,
-    struct pbb_writer_message *msg, struct pbb_writer_address *addr,
+static void _calculate_tlv_flags(struct rfc5444_writer_address *addr, bool first);
+static void _close_addrblock(struct _rfc5444_internal_addr_compress_session *acs,
+    struct rfc5444_writer_message *msg, struct rfc5444_writer_address *last_addr, int);
+static void _finalize_message_fragment(struct rfc5444_writer *writer,
+    struct rfc5444_writer_message *msg, struct rfc5444_writer_address *first,
+    struct rfc5444_writer_address *last, bool not_fragmented,
+    rfc5444_writer_ifselector useIf, void *param);
+static int _compress_address(struct _rfc5444_internal_addr_compress_session *acs,
+    struct rfc5444_writer_message *msg, struct rfc5444_writer_address *addr,
     int same_prefixlen, bool first);
-static void _write_addresses(struct pbb_writer *writer, struct pbb_writer_message *msg,
-    struct pbb_writer_address *first_addr, struct pbb_writer_address *last_addr);
-static void _write_msgheader(struct pbb_writer *writer, struct pbb_writer_message *msg);
+static void _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *msg,
+    struct rfc5444_writer_address *first_addr, struct rfc5444_writer_address *last_addr);
+static void _write_msgheader(struct rfc5444_writer *writer, struct rfc5444_writer_message *msg);
 
 /**
  * Create a message with a defined type
@@ -76,39 +76,39 @@ static void _write_msgheader(struct pbb_writer *writer, struct pbb_writer_messag
  * @param msgid type of message
  * @param useIf pointer to interface selector
  * @param param last parameter of interface selector
- * @return PBB_OKAY if message was created and added to packet buffer,
- *   PBB_... otherwise
+ * @return RFC5444_OKAY if message was created and added to packet buffer,
+ *   RFC5444_... otherwise
  */
-enum pbb_result
-pbb_writer_create_message(struct pbb_writer *writer, uint8_t msgid,
-    pbb_writer_ifselector useIf, void *param) {
-  struct pbb_writer_message *msg;
-  struct pbb_writer_content_provider *prv;
+enum rfc5444_result
+rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
+    rfc5444_writer_ifselector useIf, void *param) {
+  struct rfc5444_writer_message *msg;
+  struct rfc5444_writer_content_provider *prv;
   struct list_entity *ptr1;
-  struct pbb_writer_address *addr = NULL, *temp_addr = NULL, *first_addr = NULL;
-  struct pbb_writer_tlvtype *tlvtype;
-  struct pbb_writer_interface *interface;
+  struct rfc5444_writer_address *addr = NULL, *temp_addr = NULL, *first_addr = NULL;
+  struct rfc5444_writer_tlvtype *tlvtype;
+  struct rfc5444_writer_interface *interface;
 
-  struct _pbb_internal_addr_compress_session acs[PBB_MAX_ADDRLEN];
+  struct _rfc5444_internal_addr_compress_session acs[RFC5444_MAX_ADDRLEN];
   int best_size, best_head, same_prefixlen = 0;
   int i, idx;
   bool first;
   bool not_fragmented;
   size_t max_msg_size;
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_NONE);
+  assert(writer->_state == RFC5444_WRITER_NONE);
 #endif
 
   /* do nothing if no interface is defined */
   if (list_is_empty(&writer->_interfaces)) {
-    return PBB_OKAY;
+    return RFC5444_OKAY;
   }
 
   /* find message create instance for the requested message */
   msg = avl_find_element(&writer->_msgcreators, &msgid, msg, _msgcreator_node);
   if (msg == NULL) {
     /* error, no msgcreator found */
-    return PBB_NO_MSGCREATOR;
+    return RFC5444_NO_MSGCREATOR;
   }
 
   /*
@@ -119,13 +119,13 @@ pbb_writer_create_message(struct pbb_writer *writer, uint8_t msgid,
     /* not interface specific */
     msg->specific_if = NULL;
   }
-  else if (useIf == pbb_writer_singleif_selector) {
+  else if (useIf == rfc5444_writer_singleif_selector) {
     /* interface specific, but single_if selector is used */
     msg->specific_if = param;
   }
   else {
     /* interface specific, but generic selector is used */
-    enum pbb_result result;
+    enum rfc5444_result result;
 
     list_for_each_element(&writer->_interfaces, interface, _if_node) {
       /* check if we should send over this interface */
@@ -134,12 +134,12 @@ pbb_writer_create_message(struct pbb_writer *writer, uint8_t msgid,
       }
 
       /* create an unique message by recursive call */
-      result = pbb_writer_create_message(writer, msgid, pbb_writer_singleif_selector, interface);
-      if (result != PBB_OKAY) {
+      result = rfc5444_writer_create_message(writer, msgid, rfc5444_writer_singleif_selector, interface);
+      if (result != RFC5444_OKAY) {
         return result;
       }
     }
-    return PBB_OKAY;
+    return RFC5444_OKAY;
   }
 
   /*
@@ -157,7 +157,7 @@ pbb_writer_create_message(struct pbb_writer *writer, uint8_t msgid,
 
     /* start packet if necessary */
     if (interface->_is_flushed) {
-      _pbb_writer_begin_packet(writer, interface);
+      _rfc5444_writer_begin_packet(writer, interface);
     }
 
     interface_msg_mtu = interface->packet_size
@@ -168,19 +168,19 @@ pbb_writer_create_message(struct pbb_writer *writer, uint8_t msgid,
   }
 
   /* initialize message tlvdata */
-  _pbb_tlv_writer_init(&writer->_msg, max_msg_size, writer->msg_size);
+  _rfc5444_tlv_writer_init(&writer->_msg, max_msg_size, writer->msg_size);
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_ADD_HEADER;
+  writer->_state = RFC5444_WRITER_ADD_HEADER;
 #endif
   /* let the message creator write the message header */
-  pbb_writer_set_msg_header(writer, msg, false, false, false, false);
+  rfc5444_writer_set_msg_header(writer, msg, false, false, false, false);
   if (msg->addMessageHeader) {
     msg->addMessageHeader(writer, msg);
   }
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_ADD_MSGTLV;
+  writer->_state = RFC5444_WRITER_ADD_MSGTLV;
 #endif
 
   /* call content providers for message TLVs */
@@ -191,7 +191,7 @@ pbb_writer_create_message(struct pbb_writer *writer, uint8_t msgid,
   }
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_ADD_ADDRESSES;
+  writer->_state = RFC5444_WRITER_ADD_ADDRESSES;
 #endif
   /* call content providers for addresses */
   avl_for_each_element(&msg->_provider_tree, prv, _provider_node) {
@@ -205,10 +205,10 @@ pbb_writer_create_message(struct pbb_writer *writer, uint8_t msgid,
   if (list_is_empty(&msg->_addr_head)) {
     _finalize_message_fragment(writer, msg, NULL, NULL, true, useIf, param);
 #if WRITER_STATE_MACHINE == true
-    writer->_state = PBB_WRITER_NONE;
+    writer->_state = RFC5444_WRITER_NONE;
 #endif
-    _pbb_writer_free_addresses(writer, msg);
-    return PBB_OKAY;
+    _rfc5444_writer_free_addresses(writer, msg);
+    return RFC5444_OKAY;
   }
   /* start address compression */
   first = true;
@@ -218,7 +218,7 @@ pbb_writer_create_message(struct pbb_writer *writer, uint8_t msgid,
   idx = 0;
   ptr1 = msg->_addr_head.next;
   while(ptr1 != &msg->_addr_head) {
-    addr = container_of(ptr1, struct pbb_writer_address, _addr_node);
+    addr = container_of(ptr1, struct rfc5444_writer_address, _addr_node);
     if (first) {
       /* clear tlvtype information for adress compression */
       list_for_each_element(&msg->_tlvtype_head, tlvtype, _tlvtype_node) {
@@ -264,9 +264,9 @@ pbb_writer_create_message(struct pbb_writer *writer, uint8_t msgid,
       if (first_addr == addr) {
         /* even a single address does not fit into the block */
 #if WRITER_STATE_MACHINE == true
-        writer->_state = PBB_WRITER_NONE;
+        writer->_state = RFC5444_WRITER_NONE;
 #endif
-        _pbb_writer_free_addresses(writer, msg);
+        _rfc5444_writer_free_addresses(writer, msg);
         return -1;
       }
       not_fragmented = false;
@@ -314,12 +314,12 @@ pbb_writer_create_message(struct pbb_writer *writer, uint8_t msgid,
   _finalize_message_fragment(writer, msg, first_addr, addr, not_fragmented, useIf, param);
 
   /* free storage of addresses and address-tlvs */
-  _pbb_writer_free_addresses(writer, msg);
+  _rfc5444_writer_free_addresses(writer, msg);
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_NONE;
+  writer->_state = RFC5444_WRITER_NONE;
 #endif
-  return PBB_OKAY;
+  return RFC5444_OKAY;
 }
 
 /**
@@ -330,8 +330,8 @@ pbb_writer_create_message(struct pbb_writer *writer, uint8_t msgid,
  * @return true if param equals interf, false otherwise
  */
 bool
-pbb_writer_singleif_selector(struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_interface *interf, void *param) {
+rfc5444_writer_singleif_selector(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_interface *interf, void *param) {
   return interf == param;
 }
 
@@ -342,14 +342,14 @@ pbb_writer_singleif_selector(struct pbb_writer *writer __attribute__ ((unused)),
  * @param param
  * @return always true
  */
-bool pbb_writer_allif_selector(struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_interface *interf __attribute__ ((unused)),
+bool rfc5444_writer_allif_selector(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_interface *interf __attribute__ ((unused)),
     void *param __attribute__ ((unused))) {
   return true;
 }
 
 /**
- * Write a binary packetbb message into the writers buffer to
+ * Write a binary rfc5444 message into the writers buffer to
  * forward it. This function handles the modification of hopcount
  * and hoplimit field. The original message will not be modified.
  * This function must NOT be called from the pbb writer callbacks.
@@ -363,21 +363,21 @@ bool pbb_writer_allif_selector(struct pbb_writer *writer __attribute__ ((unused)
  * @param useIf function pointer to decide which interface is used
  *   for forwarding the message
  * @param param custom attribute of interface selector
- * @return PBB_OKAY if the message was put into the writer buffer,
- *   PBB_... if an error happened
+ * @return RFC5444_OKAY if the message was put into the writer buffer,
+ *   RFC5444_... if an error happened
  */
-enum pbb_result
-pbb_writer_forward_msg(struct pbb_writer *writer, uint8_t *msg, size_t len,
-    pbb_writer_ifselector useIf, void *param) {
+enum rfc5444_result
+rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t len,
+    rfc5444_writer_ifselector useIf, void *param) {
   int cnt, hopcount = -1, hoplimit = -1;
   uint16_t size;
   uint8_t flags, addr_len;
   uint8_t *ptr;
-  struct pbb_writer_interface *interf;
+  struct rfc5444_writer_interface *interf;
   size_t max_msg_size;
 
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_NONE);
+  assert(writer->_state == RFC5444_WRITER_NONE);
 #endif
 
   /* check if message is small enough to be forwarded */
@@ -398,35 +398,35 @@ pbb_writer_forward_msg(struct pbb_writer *writer, uint8_t *msg, size_t len,
 
   if (len > max_msg_size) {
     /* message too long, too much data in it */
-    return PBB_FW_MESSAGE_TOO_LONG;
+    return RFC5444_FW_MESSAGE_TOO_LONG;
   }
 
   flags = msg[1];
-  addr_len = flags & PBB_MSG_FLAG_ADDRLENMASK;
+  addr_len = flags & RFC5444_MSG_FLAG_ADDRLENMASK;
 
   cnt = 2;
-  if ((flags & PBB_MSG_FLAG_ORIGINATOR) != 0) {
+  if ((flags & RFC5444_MSG_FLAG_ORIGINATOR) != 0) {
     cnt += addr_len;
   }
-  if ((flags & PBB_MSG_FLAG_HOPLIMIT) != 0) {
+  if ((flags & RFC5444_MSG_FLAG_HOPLIMIT) != 0) {
     hoplimit = cnt++;
   }
-  if ((flags & PBB_MSG_FLAG_HOPCOUNT) != 0) {
+  if ((flags & RFC5444_MSG_FLAG_HOPCOUNT) != 0) {
     hopcount = cnt++;
   }
-  if ((flags & PBB_MSG_FLAG_SEQNO) != 0) {
+  if ((flags & RFC5444_MSG_FLAG_SEQNO) != 0) {
     cnt += 2;
   }
 
   size = (msg[cnt] << 8) + msg[cnt+1];
   if (size != len) {
     /* bad message size */
-    return PBB_FW_BAD_SIZE;
+    return RFC5444_FW_BAD_SIZE;
   }
 
   if (hoplimit != -1 && msg[hoplimit] <= 1) {
     /* do not forward a message with hopcount 1 or 0 */
-    return PBB_OKAY;
+    return RFC5444_OKAY;
   }
 
   list_for_each_element(&writer->_interfaces, interf, _if_node) {
@@ -439,10 +439,10 @@ pbb_writer_forward_msg(struct pbb_writer *writer, uint8_t *msg, size_t len,
     if (interf->_pkt.header + interf->_pkt.added + interf->_pkt.set + interf->_bin_msgs_size + len
         > interf->_pkt.max) {
       /* flush the old packet */
-      pbb_writer_flush(writer, interf, false);
+      rfc5444_writer_flush(writer, interf, false);
 
       /* begin a new one */
-      _pbb_writer_begin_packet(writer,interf);
+      _rfc5444_writer_begin_packet(writer,interf);
     }
 
     ptr = &interf->_pkt.buffer[interf->_pkt.header + interf->_pkt.added
@@ -459,7 +459,7 @@ pbb_writer_forward_msg(struct pbb_writer *writer, uint8_t *msg, size_t len,
       ptr[hopcount]++;
     }
   }
-  return PBB_OKAY;
+  return RFC5444_OKAY;
 }
 
 /**
@@ -471,15 +471,15 @@ pbb_writer_forward_msg(struct pbb_writer *writer, uint8_t *msg, size_t len,
  * @param exttype tlv extended type, 0 if no extended type
  * @param value pointer to tlv value, NULL if no value
  * @param length number of bytes in tlv value, 0 if no value
- * @return PBB_OKAY if tlv has been added to packet, PBB_... otherwise
+ * @return RFC5444_OKAY if tlv has been added to packet, RFC5444_... otherwise
  */
-enum pbb_result
-pbb_writer_add_messagetlv(struct pbb_writer *writer,
+enum rfc5444_result
+rfc5444_writer_add_messagetlv(struct rfc5444_writer *writer,
     uint8_t type, uint8_t exttype, const void *value, size_t length) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_MSGTLV);
+  assert(writer->_state == RFC5444_WRITER_ADD_MSGTLV);
 #endif
-  return _pbb_tlv_writer_add(&writer->_msg, type, exttype, value, length);
+  return _rfc5444_tlv_writer_add(&writer->_msg, type, exttype, value, length);
 }
 
 /**
@@ -489,15 +489,15 @@ pbb_writer_add_messagetlv(struct pbb_writer *writer,
  * @param writer pointer to writer context
  * @param has_exttype true if tlv has an extended type
  * @param length number of bytes in tlv value, 0 if no value
- * @return PBB_OKAY if memory for tlv has been allocated, PBB_... otherwise
+ * @return RFC5444_OKAY if memory for tlv has been allocated, RFC5444_... otherwise
  */
-enum pbb_result
-pbb_writer_allocate_messagetlv(struct pbb_writer *writer,
+enum rfc5444_result
+rfc5444_writer_allocate_messagetlv(struct rfc5444_writer *writer,
     bool has_exttype, size_t length) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_MSGTLV);
+  assert(writer->_state == RFC5444_WRITER_ADD_MSGTLV);
 #endif
-  return _pbb_tlv_writer_allocate(&writer->_msg, has_exttype, length);
+  return _rfc5444_tlv_writer_allocate(&writer->_msg, has_exttype, length);
 }
 
 /**
@@ -509,15 +509,15 @@ pbb_writer_allocate_messagetlv(struct pbb_writer *writer,
  * @param exttype tlv extended type, 0 if no extended type
  * @param value pointer to tlv value, NULL if no value
  * @param length number of bytes in tlv value, 0 if no value
- * @return PBB_OKAY if tlv has been set to packet, PBB_... otherwise
+ * @return RFC5444_OKAY if tlv has been set to packet, RFC5444_... otherwise
  */
-enum pbb_result
-pbb_writer_set_messagetlv(struct pbb_writer *writer,
+enum rfc5444_result
+rfc5444_writer_set_messagetlv(struct rfc5444_writer *writer,
     uint8_t type, uint8_t exttype, const void *value, size_t length) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_FINISH_MSGTLV);
+  assert(writer->_state == RFC5444_WRITER_FINISH_MSGTLV);
 #endif
-  return _pbb_tlv_writer_set(&writer->_msg, type, exttype, value, length);
+  return _rfc5444_tlv_writer_set(&writer->_msg, type, exttype, value, length);
 }
 
 /**
@@ -528,13 +528,13 @@ pbb_writer_set_messagetlv(struct pbb_writer *writer,
  * @param addrlen address length, must be less or equal than 16
  */
 void
-pbb_writer_set_msg_addrlen(struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_message *msg, uint8_t addrlen) {
+rfc5444_writer_set_msg_addrlen(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_message *msg, uint8_t addrlen) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_HEADER);
+  assert(writer->_state == RFC5444_WRITER_ADD_HEADER);
 #endif
 
-  assert(addrlen <= PBB_MAX_ADDRLEN);
+  assert(addrlen <= RFC5444_MAX_ADDRLEN);
   assert(addrlen >= 1);
 
   if (msg->has_origaddr && msg->addr_len != addrlen) {
@@ -559,11 +559,11 @@ pbb_writer_set_msg_addrlen(struct pbb_writer *writer __attribute__ ((unused)),
  * @param has_seqno true if header contains a sequence number
  */
 void
-pbb_writer_set_msg_header(struct pbb_writer *writer, struct pbb_writer_message *msg,
+rfc5444_writer_set_msg_header(struct rfc5444_writer *writer, struct rfc5444_writer_message *msg,
     bool has_originator, bool has_hopcount, bool has_hoplimit, bool has_seqno) {
 
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_HEADER);
+  assert(writer->_state == RFC5444_WRITER_ADD_HEADER);
 #endif
 
   msg->has_origaddr = has_originator;
@@ -598,10 +598,10 @@ pbb_writer_set_msg_header(struct pbb_writer *writer, struct pbb_writer_message *
  * @param originator pointer to originator address buffer
  */
 void
-pbb_writer_set_msg_originator(struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_message *msg, const void *originator) {
+rfc5444_writer_set_msg_originator(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_message *msg, const void *originator) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_HEADER || writer->_state == PBB_WRITER_FINISH_HEADER);
+  assert(writer->_state == RFC5444_WRITER_ADD_HEADER || writer->_state == RFC5444_WRITER_FINISH_HEADER);
 #endif
 
   memcpy(&msg->orig_addr[0], originator, msg->addr_len);
@@ -617,10 +617,10 @@ pbb_writer_set_msg_originator(struct pbb_writer *writer __attribute__ ((unused))
  * @param hopcount
  */
 void
-pbb_writer_set_msg_hopcount(struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_message *msg, uint8_t hopcount) {
+rfc5444_writer_set_msg_hopcount(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_message *msg, uint8_t hopcount) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_HEADER || writer->_state == PBB_WRITER_FINISH_HEADER);
+  assert(writer->_state == RFC5444_WRITER_ADD_HEADER || writer->_state == RFC5444_WRITER_FINISH_HEADER);
 #endif
   msg->hopcount = hopcount;
 }
@@ -635,10 +635,10 @@ pbb_writer_set_msg_hopcount(struct pbb_writer *writer __attribute__ ((unused)),
  * @param hoplimit
  */
 void
-pbb_writer_set_msg_hoplimit(struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_message *msg, uint8_t hoplimit) {
+rfc5444_writer_set_msg_hoplimit(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_message *msg, uint8_t hoplimit) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_HEADER || writer->_state == PBB_WRITER_FINISH_HEADER);
+  assert(writer->_state == RFC5444_WRITER_ADD_HEADER || writer->_state == RFC5444_WRITER_FINISH_HEADER);
 #endif
   msg->hoplimit = hoplimit;
 }
@@ -653,10 +653,10 @@ pbb_writer_set_msg_hoplimit(struct pbb_writer *writer __attribute__ ((unused)),
  * @param seqno sequence number of message header
  */
 void
-pbb_writer_set_msg_seqno(struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_message *msg, uint16_t seqno) {
+rfc5444_writer_set_msg_seqno(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_message *msg, uint16_t seqno) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_HEADER || writer->_state == PBB_WRITER_FINISH_HEADER);
+  assert(writer->_state == RFC5444_WRITER_ADD_HEADER || writer->_state == RFC5444_WRITER_FINISH_HEADER);
 #endif
   msg->seqno = seqno;
 }
@@ -672,9 +672,9 @@ pbb_writer_set_msg_seqno(struct pbb_writer *writer __attribute__ ((unused)),
  * @return common_head (might be modified common_head was 1)
  */
 static void
-_close_addrblock(struct _pbb_internal_addr_compress_session *acs,
-    struct pbb_writer_message *msg __attribute__ ((unused)),
-    struct pbb_writer_address *last_addr, int common_head) {
+_close_addrblock(struct _rfc5444_internal_addr_compress_session *acs,
+    struct rfc5444_writer_message *msg __attribute__ ((unused)),
+    struct rfc5444_writer_address *last_addr, int common_head) {
   int best;
 #if DO_ADDR_COMPRESSION == true
   int i, size;
@@ -716,8 +716,8 @@ _close_addrblock(struct _pbb_internal_addr_compress_session *acs,
  * @param first true if this is the first address of this message
  */
 static void
-_calculate_tlv_flags(struct pbb_writer_address *addr, bool first) {
-  struct pbb_writer_addrtlv *tlv;
+_calculate_tlv_flags(struct rfc5444_writer_address *addr, bool first) {
+  struct rfc5444_writer_addrtlv *tlv;
 
   if (first) {
     avl_for_each_element(&addr->_addrtlv_tree, tlv, addrtlv_node) {
@@ -728,7 +728,7 @@ _calculate_tlv_flags(struct pbb_writer_address *addr, bool first) {
   }
 
   avl_for_each_element(&addr->_addrtlv_tree, tlv, addrtlv_node) {
-    struct pbb_writer_addrtlv *prev = NULL;
+    struct rfc5444_writer_addrtlv *prev = NULL;
 
     /* check if this is the first tlv of this type */
     if (avl_is_first(&tlv->tlvtype->_tlv_tree, &tlv->tlv_node)) {
@@ -765,11 +765,11 @@ _calculate_tlv_flags(struct pbb_writer_address *addr, bool first) {
  * @return new number of messages with same prefix length
  */
 static int
-_compress_address(struct _pbb_internal_addr_compress_session *acs,
-    struct pbb_writer_message *msg, struct pbb_writer_address *addr,
+_compress_address(struct _rfc5444_internal_addr_compress_session *acs,
+    struct rfc5444_writer_message *msg, struct rfc5444_writer_address *addr,
     int same_prefixlen, bool first) {
-  struct pbb_writer_address *last_addr = NULL;
-  struct pbb_writer_addrtlv *tlv;
+  struct rfc5444_writer_address *last_addr = NULL;
+  struct rfc5444_writer_addrtlv *tlv;
   int i, common_head;
   uint8_t addrlen;
   bool special_prefixlen;
@@ -837,7 +837,7 @@ _compress_address(struct _pbb_internal_addr_compress_session *acs,
 
     /* calculate costs for breaking/continuing tlv sequences */
     avl_for_each_element(&addr->_addrtlv_tree, tlv, addrtlv_node) {
-      struct pbb_writer_tlvtype *tlvtype = tlv->tlvtype;
+      struct rfc5444_writer_tlvtype *tlvtype = tlv->tlvtype;
       int cost;
 
       cost = 2 + (tlv->tlvtype->exttype ? 1 : 0) + 2 + tlv->length;
@@ -880,7 +880,7 @@ _compress_address(struct _pbb_internal_addr_compress_session *acs,
 
     /* update internal tlv calculation */
     avl_for_each_element(&addr->_addrtlv_tree, tlv, addrtlv_node) {
-      struct pbb_writer_tlvtype *tlvtype = tlv->tlvtype;
+      struct rfc5444_writer_tlvtype *tlvtype = tlv->tlvtype;
       if (closed) {
         tlvtype->_tlvblock_count[i] = 1;
         tlvtype->_tlvblock_multi[i] = false;
@@ -902,11 +902,11 @@ _compress_address(struct _pbb_internal_addr_compress_session *acs,
  * @param last_addr pointer to last address to be written
  */
 static void
-_write_addresses(struct pbb_writer *writer, struct pbb_writer_message *msg,
-    struct pbb_writer_address *first_addr, struct pbb_writer_address *last_addr) {
-  struct pbb_writer_address *addr_start, *addr_end, *addr;
-  struct pbb_writer_tlvtype *tlvtype;
-  struct pbb_writer_addrtlv *tlv_start, *tlv_end, *tlv;
+_write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *msg,
+    struct rfc5444_writer_address *first_addr, struct rfc5444_writer_address *last_addr) {
+  struct rfc5444_writer_address *addr_start, *addr_end, *addr;
+  struct rfc5444_writer_tlvtype *tlvtype;
+  struct rfc5444_writer_addrtlv *tlv_start, *tlv_end, *tlv;
 
   uint8_t *start, *ptr, *flag, *tlvblock_length;
   uint16_t total_len;
@@ -969,7 +969,7 @@ _write_addresses(struct pbb_writer *writer, struct pbb_writer_message *msg,
 #if DO_ADDR_COMPRESSION == true
     /* write head */
     if (head_len) {
-      *flag |= PBB_ADDR_FLAG_HEAD;
+      *flag |= RFC5444_ADDR_FLAG_HEAD;
       *ptr++ = head_len;
       memcpy(ptr, &addr_start->addr[0], head_len);
       ptr += head_len;
@@ -979,9 +979,9 @@ _write_addresses(struct pbb_writer *writer, struct pbb_writer_message *msg,
     if (tail_len > 0) {
       *ptr++ = tail_len;
       if (zero_tail) {
-        *flag |= PBB_ADDR_FLAG_ZEROTAIL;
+        *flag |= RFC5444_ADDR_FLAG_ZEROTAIL;
       } else {
-        *flag |= PBB_ADDR_FLAG_FULLTAIL;
+        *flag |= RFC5444_ADDR_FLAG_FULLTAIL;
         memcpy(ptr, &addr_start->addr[msg->addr_len - tail_len], tail_len);
         ptr += tail_len;
       }
@@ -996,13 +996,13 @@ _write_addresses(struct pbb_writer *writer, struct pbb_writer_message *msg,
     /* loop through addresses in block for prefixlen part */
     if (addr_start->_block_multiple_prefixlen) {
       /* multiple prefixlen */
-      *flag |= PBB_ADDR_FLAG_MULTIPLEN;
+      *flag |= RFC5444_ADDR_FLAG_MULTIPLEN;
       list_for_element_range(addr_start, addr_end, addr, _addr_node) {
         *ptr++ = addr->prefixlen;
       }
     } else if (addr_start->prefixlen != msg->addr_len * 8) {
       /* single prefixlen */
-      *flag |= PBB_ADDR_FLAG_SINGLEPLEN;
+      *flag |= RFC5444_ADDR_FLAG_SINGLEPLEN;
       *ptr++ = addr_start->prefixlen;
     }
 
@@ -1037,7 +1037,7 @@ _write_addresses(struct pbb_writer *writer, struct pbb_writer_message *msg,
         flag = ptr;
         *ptr++ = 0;
         if (tlvtype->exttype) {
-          *flag |= PBB_TLV_FLAG_TYPEEXT;
+          *flag |= RFC5444_TLV_FLAG_TYPEEXT;
           *ptr++ = tlvtype->exttype;
         }
 
@@ -1047,10 +1047,10 @@ _write_addresses(struct pbb_writer *writer, struct pbb_writer_message *msg,
         if (tlv_start->address == addr_start && tlv_end->address == addr_end) {
           /* no index necessary */
         } else if (tlv_start == tlv_end) {
-          *flag |= PBB_TLV_FLAG_SINGLE_IDX;
+          *flag |= RFC5444_TLV_FLAG_SINGLE_IDX;
           *ptr++ = tlv_start->address->index - addr_start->index;
         } else {
-          *flag |= PBB_TLV_FLAG_MULTI_IDX;
+          *flag |= RFC5444_TLV_FLAG_MULTI_IDX;
           *ptr++ = tlv_start->address->index - addr_start->index;
           *ptr++ = tlv_end->address->index - addr_start->index;
         }
@@ -1058,17 +1058,17 @@ _write_addresses(struct pbb_writer *writer, struct pbb_writer_message *msg,
         /* length field is single_length*num for multivalue tlvs */
         if (!same_value) {
           total_len = total_len * ((tlv_end->address->index - tlv_start->address->index) + 1);
-          *flag |= PBB_TLV_FLAG_MULTIVALUE;
+          *flag |= RFC5444_TLV_FLAG_MULTIVALUE;
         }
 
 
         /* write length field and corresponding flags */
         if (total_len > 255) {
-          *flag |= PBB_TLV_FLAG_EXTVALUE;
+          *flag |= RFC5444_TLV_FLAG_EXTVALUE;
           *ptr++ = total_len >> 8;
         }
         if (total_len > 0) {
-          *flag |= PBB_TLV_FLAG_VALUE;
+          *flag |= RFC5444_TLV_FLAG_VALUE;
           *ptr++ = total_len & 255;
         }
 
@@ -1108,7 +1108,7 @@ _write_addresses(struct pbb_writer *writer, struct pbb_writer_message *msg,
  * @param _msg pointer to message object
  */
 static void
-_write_msgheader(struct pbb_writer *writer, struct pbb_writer_message *msg) {
+_write_msgheader(struct rfc5444_writer *writer, struct rfc5444_writer_message *msg) {
   uint8_t *ptr, *flags;
   uint16_t total_size;
   ptr = writer->_msg.buffer;
@@ -1126,20 +1126,20 @@ _write_msgheader(struct pbb_writer *writer, struct pbb_writer_message *msg) {
   *ptr++ = total_size & 255;
 
   if (msg->has_origaddr) {
-    *flags |= PBB_MSG_FLAG_ORIGINATOR;
+    *flags |= RFC5444_MSG_FLAG_ORIGINATOR;
     memcpy(ptr, msg->orig_addr, msg->addr_len);
     ptr += msg->addr_len;
   }
   if (msg->has_hoplimit) {
-    *flags |= PBB_MSG_FLAG_HOPLIMIT;
+    *flags |= RFC5444_MSG_FLAG_HOPLIMIT;
     *ptr++ = msg->hoplimit;
   }
   if (msg->has_hopcount) {
-    *flags |= PBB_MSG_FLAG_HOPCOUNT;
+    *flags |= RFC5444_MSG_FLAG_HOPCOUNT;
     *ptr++ = msg->hopcount;
   }
   if (msg->has_seqno) {
-    *flags |= PBB_MSG_FLAG_SEQNO;
+    *flags |= RFC5444_MSG_FLAG_SEQNO;
     *ptr++ = msg->seqno >> 8;
     *ptr++ = msg->seqno & 255;
   }
@@ -1161,11 +1161,11 @@ _write_msgheader(struct pbb_writer *writer, struct pbb_writer_message *msg) {
  * @param useIf pointer to callback for selecting outgoing _interfaces
  */
 static void
-_finalize_message_fragment(struct pbb_writer *writer, struct pbb_writer_message *msg,
-    struct pbb_writer_address *first, struct pbb_writer_address *last, bool not_fragmented,
-    pbb_writer_ifselector useIf, void *param) {
-  struct pbb_writer_content_provider *prv;
-  struct pbb_writer_interface *interface;
+_finalize_message_fragment(struct rfc5444_writer *writer, struct rfc5444_writer_message *msg,
+    struct rfc5444_writer_address *first, struct rfc5444_writer_address *last, bool not_fragmented,
+    rfc5444_writer_ifselector useIf, void *param) {
+  struct rfc5444_writer_content_provider *prv;
+  struct rfc5444_writer_interface *interface;
   uint8_t *ptr;
   size_t len;
 
@@ -1173,7 +1173,7 @@ _finalize_message_fragment(struct pbb_writer *writer, struct pbb_writer_message 
   writer->_msg.set = 0;
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_FINISH_MSGTLV;
+  writer->_state = RFC5444_WRITER_FINISH_MSGTLV;
 #endif
 
   /* inform message providers */
@@ -1188,7 +1188,7 @@ _finalize_message_fragment(struct pbb_writer *writer, struct pbb_writer_message 
   }
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_FINISH_HEADER;
+  writer->_state = RFC5444_WRITER_FINISH_HEADER;
 #endif
 
   /* inform message creator */
@@ -1200,7 +1200,7 @@ _finalize_message_fragment(struct pbb_writer *writer, struct pbb_writer_message 
   _write_msgheader(writer, msg);
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_NONE;
+  writer->_state = RFC5444_WRITER_NONE;
 #endif
 
   /* precalculate number of fixed bytes of message header */
@@ -1218,10 +1218,10 @@ _finalize_message_fragment(struct pbb_writer *writer, struct pbb_writer_message 
         > interface->_pkt.max) {
 
       /* flush the old packet */
-      pbb_writer_flush(writer, interface, false);
+      rfc5444_writer_flush(writer, interface, false);
 
       /* begin a new one */
-      _pbb_writer_begin_packet(writer, interface);
+      _rfc5444_writer_begin_packet(writer, interface);
     }
 
 

@@ -38,33 +38,29 @@
  * the copyright holders.
  *
  */
-#ifndef PRINT_PACKETBB_H_
-#define PRINT_PACKETBB_H_
+
+#ifndef RFC5444_TLV_WRITER_H_
+#define RFC5444_TLV_WRITER_H_
 
 #include "common/common_types.h"
-#include "common/autobuf.h"
-#include "packetbb/pbb_reader.h"
 
-struct pbb_print_session {
-  struct autobuf *output;
-
-  void (*print_packet)(struct pbb_print_session *);
-
-  struct pbb_reader_tlvblock_consumer _pkt;
-  struct pbb_reader_tlvblock_consumer _msg;
-  struct pbb_reader_tlvblock_consumer _addr;
-
-  struct pbb_reader *_reader;
+struct rfc5444_tlv_writer_data {
+  uint8_t *buffer;
+  size_t header;
+  size_t added;
+  size_t allocated;
+  size_t set;
+  size_t max;
 };
 
-EXPORT void pbb_print_add(
-    struct pbb_print_session *, struct pbb_reader *reader);
-EXPORT void pbb_print_remove(
-    struct pbb_print_session *session);
+/* internal functions that are not exported to the user */
+void _rfc5444_tlv_writer_init(struct rfc5444_tlv_writer_data *data, size_t max, size_t mtu);
 
-EXPORT enum pbb_result pbb_print_direct(
-    struct autobuf *out, void *buffer, size_t length);
-EXPORT void pbb_print_hexdump(
-    struct autobuf *out, const char *prefix, void *buffer, size_t length);
+enum rfc5444_result _rfc5444_tlv_writer_add(struct rfc5444_tlv_writer_data *data,
+    uint8_t type, uint8_t exttype, const void *value, size_t length);
+enum rfc5444_result _rfc5444_tlv_writer_allocate(struct rfc5444_tlv_writer_data *data,
+    bool has_exttype, size_t length);
+enum rfc5444_result _rfc5444_tlv_writer_set(struct rfc5444_tlv_writer_data *data,
+    uint8_t type, uint8_t exttype, const void *value, size_t length);
 
-#endif /* PRINT_PACKETBB_H_ */
+#endif /* RFC5444_TLV_WRITER_H_ */

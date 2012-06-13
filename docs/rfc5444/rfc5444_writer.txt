@@ -1,20 +1,19 @@
-PacketBB (RFC 5444) handler library
+RFC 5444 handler library
 Copyright (c) 2010 Henning Rogge <hrogge@googlemail.com>
 
-The pbb library is a combined parser and generator for RFC 5444
-(Generalized Mobile Ad Hoc Network (MANET) Packet/Message Format),
-also known as "packetbb".
+The rfc 5444 library is a combined parser and generator for the
+'Generalized Mobile Ad Hoc Network (MANET) Packet/Message Format'.
 The library is split into a separate reader and writer part, both
 of them use a generic avl-tree and double-linked list implementation.
 
 The reader and writer allow multiple independent code blocks to read
-overlapping parts of a PacketBB data stream and assemble packets and
+overlapping parts of a RFC 5444 data stream and assemble packets and
 messages together. This allow API users to separate different sub-
 protocol in their codebase (e.g. NHDP and OLSRv2).
 
 
 =======================
-    PacketBB writer
+    RFC 5444 writer
 =======================
 
 1) general information
@@ -36,7 +35,7 @@ protocol in their codebase (e.g. NHDP and OLSRv2).
 1) general information
 **********************
 
-The packetbb writer can be used on two different levels of packetbb,
+The rfc5444 writer can be used on two different levels of rfc5444,
 packets and messages. Other than the reader, it has no third independant
 category for addresses in messages.
 
@@ -58,7 +57,7 @@ Packet content providers can add TLVs to the packet header.
 
 Message content providers can add TLVs to their message header, can add
 addresses to it and add TLVs to this addresses. Each TLV type that should
-be added to an address has to be registered with the packetbb writer
+be added to an address has to be registered with the rfc5444 writer
 in advance.
 
 
@@ -66,9 +65,9 @@ in advance.
 *********************
 
 Before using the writer you have to allocate a writer context by calling
-pbb_writer_init(). All functions of the writer need a pointer to this
+rfc5444_writer_init(). All functions of the writer need a pointer to this
 context as a parameter.
-If you don't need the writer anymore, call pbb_writer_cleanup() to
+If you don't need the writer anymore, call rfc5444_writer_cleanup() to
 free all allocated memory of the writer including the writer context
 itself.
 
@@ -76,14 +75,14 @@ After allocating the context you can register and unregister all
 necessary callbacks to the writer, as long as you do this outside
 of the writer callbacks itself!
 
-To start a message call the pbb_writer_create_message() function. The
+To start a message call the rfc5444_writer_create_message() function. The
 writer will begin to call all callbacks associated with the message
 type. The message will then be stored in the packet buffer. 
 
-The function pbb_writer_forward_msg() can be used to forward a
-received binary packetbb message by appending it to the current package.
+The function rfc5444_writer_forward_msg() can be used to forward a
+received binary rfc5444 message by appending it to the current package.
 
-pbb_writer_flush() will clear the current packet buffer and send the
+rfc5444_writer_flush() will clear the current packet buffer and send the
 packet. A parameter controls if this will generate an 'empty' packet
 if no messages are currently inside the packet buffer.
 
@@ -91,7 +90,7 @@ if no messages are currently inside the packet buffer.
 1.2) packet sending
 *******************
 
-The packetbb writer cannot know how your protocol sends the finished
+The rfc5444 writer cannot know how your protocol sends the finished
 packets. Because of this you have to set the sendPacket() callback
 in the writer context before generating messages and packet. The writer
 will call the callback once for each outgoing packet.
@@ -100,8 +99,8 @@ will call the callback once for each outgoing packet.
 1.3) interfaces
 ***************
 
-The packetbb writer has support for multiple outgoing interfaces.
-Each interface have to be created with the pbb_writer_register_interface()
+The rfc5444 writer has support for multiple outgoing interfaces.
+Each interface have to be created with the rfc5444_writer_register_interface()
 function. When creating or forwarding a message the caller has to
 support a callback to a function that decides, if a certain interface is
 used for this message. This way a message going out on multiple interfaces
@@ -139,7 +138,7 @@ All packet specific callbacks are interface specific.
 *******************
 
 There is no register/unregister function for a packet creator, there are
-just two callback pointers in the pbb_writer object.
+just two callback pointers in the rfc5444_writer object.
 
 The first callback addPacketHeader() allows the packet creator to define
 if the packet should contain the sequence number.
@@ -154,7 +153,7 @@ the new packet is send.
 2.2) packet content provider
 ****************************
 
-There can be multiple packet content providers registered to a packetbb
+There can be multiple packet content providers registered to a rfc5444
 writer. Each of them has a pair of callbacks to add TLVs to the message.
 
 The addPacketTLVs() callback allows a content provider to either add a
@@ -199,7 +198,7 @@ Message creation (fragment n) finishes
 3) messages
 ***********
 
-Each message type registered to the packetbb writer has a single
+Each message type registered to the rfc5444 writer has a single
 message creator and may have multiple content providers. Without a
 registered message creator even multiple content provider will be
 useless, because the writer will not create a message of this type.
@@ -210,7 +209,7 @@ Chapter 3.3 will explain the stategy of the writer fragmenting the
 message and how this will interact with the callbacks.
 
 Some messages are unique for each interface. If the if_specific
-parameter of pbb_writer_register_message() is true, the writer
+parameter of rfc5444_writer_register_message() is true, the writer
 will call the message creation process once for each interface
 instead of generating a common message for interfaces in one step.
 
@@ -247,7 +246,7 @@ later.
 
 The addAddresses() callback allows adding new addresses and TLVs for
 them to the message. Each tlvtype has to be registered with the
-packetbb writer. If multiple content providers add the same address,
+rfc5444 writer. If multiple content providers add the same address,
 their tlvs will be merged together.
 
 The finishMessageTLVs() callback can use the allocated memory from the
@@ -263,12 +262,12 @@ the finishMessageTLVs() callback in reverse order.
 3.3) message fragmentation
 **************************
 
-PacketBB message fragmentation is a problem for a generic writer with
+RFC 5444 message fragmentation is a problem for a generic writer with
 multiple input sources. Because it's impossible for any of the content
 providers to calculate the necessary borders to split a message, the
 writer has to assist them.
 
-The strategy of this packetbb writer is simple, but will hopefully
+The strategy of this rfc5444 writer is simple, but will hopefully
 be sufficient for most usecases.
 
 The writer will begin to allocate space for both the message header,

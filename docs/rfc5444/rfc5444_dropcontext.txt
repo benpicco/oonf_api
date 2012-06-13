@@ -1,14 +1,13 @@
-PacketBB (RFC 5444) handler library
+RFC 5444 handler library
 Copyright (c) 2010 Henning Rogge <hrogge@googlemail.com>
 
-The pbb library is a combined parser and generator for RFC 5444
-(Generalized Mobile Ad Hoc Network (MANET) Packet/Message Format),
-also known as "packetbb".
+The rfc 5444 library is a combined parser and generator for the
+'Generalized Mobile Ad Hoc Network (MANET) Packet/Message Format'.
 The library is split into a separate reader and writer part, both
 of them use a generic avl-tree and double-linked list implementation.
 
 The reader and writer allow multiple independent code blocks to read
-overlapping parts of a PacketBB data stream and assemble packets and
+overlapping parts of a RFC 5444 data stream and assemble packets and
 messages together. This allow API users to separate different sub-
 protocol in their codebase (e.g. NHDP and OLSRv2).
 
@@ -20,40 +19,40 @@ protocol in their codebase (e.g. NHDP and OLSRv2).
 Please read README.reader before you read this file.
 
 If compiled with DISALLOW_CONSUMER_CONTEXT_DROP = 0, the callbacks
-may return different values than PBB_OKAY to tell the parser to drop
-some packetbb data, which means that later callbacks will not
-see parts of the packetbb stream.
+may return different values than RFC5444_OKAY to tell the parser to drop
+some rfc5444 data, which means that later callbacks will not
+see parts of the rfc5444 stream.
 
 Possible return values are:
 
- * PBB_DROP_PACKET
- * PBB_DROP_MESSAGE
- * PBB_DROP_MSG_BUT_FORWARD
- * PBB_DROP_ADDRESS
- * PBB_DROP_TLV 
+ * RFC5444_DROP_PACKET
+ * RFC5444_DROP_MESSAGE
+ * RFC5444_DROP_MSG_BUT_FORWARD
+ * RFC5444_DROP_ADDRESS
+ * RFC5444_DROP_TLV 
 
-PBB_DROP_PACKET is supported by all callbacks and tell the parser
+RFC5444_DROP_PACKET is supported by all callbacks and tell the parser
 to drop the whole packet. No start_packet, TLV, address or message
 will be send to another callback after this.
 
-PBB_DROP_MESSAGE is supported by message and address callbacks and
-do the same as PBB_DROP_PACKET, but only for the current message.
+RFC5444_DROP_MESSAGE is supported by message and address callbacks and
+do the same as RFC5444_DROP_PACKET, but only for the current message.
 
-PBB_DROP_MSG_BUT_FORWARD is a variant of PBB_DROP_MESSAGE, that
+RFC5444_DROP_MSG_BUT_FORWARD is a variant of RFC5444_DROP_MESSAGE, that
 tells the parser to drop the message for other consumers, but still
 send it to the message forward callback.
 
-PBB_DROP_ADDRESS can only be used within an address callbacks and
+RFC5444_DROP_ADDRESS can only be used within an address callbacks and
 tells the parser to drop the current address.
 
-PBB_DROP_TLV can be used by all block_callbacks and tlv_callbacks
+RFC5444_DROP_TLV can be used by all block_callbacks and tlv_callbacks
 and tells the parser to drop the current TLV.
 
-PBB_DROP_TLV and block_callback together are a special case, because
+RFC5444_DROP_TLV and block_callback together are a special case, because
 the block_callback handle multiple TLVs at the same time. If the
 callback want to drop one or multiple TLVs, it sets the "drop" boolean
-variable in the pbb_tlvblock_consumer_entry array for all TLVs to be
-dropped and returns PBB_DROP_TLV. If no "drop" booleans are set,
+variable in the rfc5444_tlvblock_consumer_entry array for all TLVs to be
+dropped and returns RFC5444_DROP_TLV. If no "drop" booleans are set,
 the return code will be ignored.
 
 The parser guarantees that for each start_callback the corresponding

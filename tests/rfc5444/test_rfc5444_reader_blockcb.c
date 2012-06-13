@@ -1,8 +1,40 @@
 /*
- * test_reader_blockcb.c
+ * RFC 5444 handler library
+ * Copyright (c) 2010 Henning Rogge <hrogge@googlemail.com>
+ * All rights reserved.
  *
- *  Created on: 18.07.2010
- *      Author: henning
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org/git for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
  */
 
 #include <assert.h>
@@ -10,7 +42,7 @@
 #include <stdio.h>
 
 #include "common/common_types.h"
-#include "packetbb/pbb_reader.h"
+#include "rfc5444/rfc5444_reader.h"
 #include "../cunit.h"
 
 /*
@@ -18,12 +50,12 @@
  * TLV type 1 (mandatory)
  * TLV type 2 (copy data into variable value)
  */
-static struct pbb_reader_tlvblock_consumer_entry consumer_entries[] = {
+static struct rfc5444_reader_tlvblock_consumer_entry consumer_entries[] = {
   { .type = 1 },
   { .type = 2, .mandatory = true }
 };
 
-/* packetbb test messages */
+/* rfc5444 test messages */
 static uint8_t testpacket1[] = {
 /* packet with tlvblock, but without sequence number */
     0x04,
@@ -50,15 +82,15 @@ static uint8_t testpacket212[] = {
     0, 6, 2, 0, 1, 0, 2, 0
 };
 
-static struct pbb_reader reader;
-struct pbb_reader_tlvblock_consumer consumer;
+static struct rfc5444_reader reader;
+struct rfc5444_reader_tlvblock_consumer consumer;
 static bool got_tlv[2];
 static bool got_multiple_times[2];
 static bool got_failed_constraints;
 
-static enum pbb_result
-cb_blocktlv_packet(struct pbb_reader_tlvblock_consumer *cons __attribute__ ((unused)),
-      struct pbb_reader_tlvblock_context *cont __attribute__ ((unused)),
+static enum rfc5444_result
+cb_blocktlv_packet(struct rfc5444_reader_tlvblock_consumer *cons __attribute__ ((unused)),
+      struct rfc5444_reader_tlvblock_context *cont __attribute__ ((unused)),
       bool mandatory_missing) {
   got_tlv[0] = consumer_entries[0].tlv != NULL;
   got_multiple_times[0] = consumer_entries[0].duplicate_tlv;
@@ -67,18 +99,18 @@ cb_blocktlv_packet(struct pbb_reader_tlvblock_consumer *cons __attribute__ ((unu
   got_multiple_times[1] = consumer_entries[1].duplicate_tlv;
 
   got_failed_constraints = mandatory_missing;
-  return PBB_OKAY;
+  return RFC5444_OKAY;
 }
 
-static enum pbb_result
-cb_blocktlv_packet_okay(struct pbb_reader_tlvblock_consumer *cons,
-      struct pbb_reader_tlvblock_context *cont) {
+static enum rfc5444_result
+cb_blocktlv_packet_okay(struct rfc5444_reader_tlvblock_consumer *cons,
+      struct rfc5444_reader_tlvblock_context *cont) {
   return cb_blocktlv_packet(cons, cont, false);
 }
 
-static enum pbb_result
-cb_blocktlv_packet_failed(struct pbb_reader_tlvblock_consumer *cons,
-      struct pbb_reader_tlvblock_context *cont) {
+static enum rfc5444_result
+cb_blocktlv_packet_failed(struct rfc5444_reader_tlvblock_consumer *cons,
+      struct rfc5444_reader_tlvblock_context *cont) {
   return cb_blocktlv_packet(cons, cont, true);
 }
 
@@ -93,7 +125,7 @@ static void clear_elements(void) {
 static void test_packet1(void) {
   START_TEST();
 
-  pbb_reader_handle_packet(&reader, testpacket1, sizeof(testpacket1));
+  rfc5444_reader_handle_packet(&reader, testpacket1, sizeof(testpacket1));
 
   CHECK_TRUE(got_tlv[0], "TLV 1");
   CHECK_TRUE(!got_tlv[1], "TLV 2");
@@ -108,7 +140,7 @@ static void test_packet1(void) {
 static void test_packet12(void) {
   START_TEST();
 
-  pbb_reader_handle_packet(&reader, testpacket12, sizeof(testpacket12));
+  rfc5444_reader_handle_packet(&reader, testpacket12, sizeof(testpacket12));
 
   CHECK_TRUE(got_tlv[0], "TLV 1");
   CHECK_TRUE(got_tlv[1], "TLV 2");
@@ -123,7 +155,7 @@ static void test_packet12(void) {
 static void test_packet121(void) {
   START_TEST();
 
-  pbb_reader_handle_packet(&reader, testpacket121, sizeof(testpacket121));
+  rfc5444_reader_handle_packet(&reader, testpacket121, sizeof(testpacket121));
 
   CHECK_TRUE(got_tlv[0], "TLV 1");
   CHECK_TRUE(got_tlv[1], "TLV 2");
@@ -138,7 +170,7 @@ static void test_packet121(void) {
 static void test_packet212(void) {
   START_TEST();
 
-  pbb_reader_handle_packet(&reader, testpacket212, sizeof(testpacket212));
+  rfc5444_reader_handle_packet(&reader, testpacket212, sizeof(testpacket212));
 
   CHECK_TRUE(got_tlv[0], "TLV 1");
   CHECK_TRUE(got_tlv[1], "TLV 2");
@@ -151,8 +183,8 @@ static void test_packet212(void) {
 }
 
 int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
-  pbb_reader_init(&reader);
-  pbb_reader_add_packet_consumer(&reader, &consumer, consumer_entries, ARRAYSIZE(consumer_entries), 1);
+  rfc5444_reader_init(&reader);
+  rfc5444_reader_add_packet_consumer(&reader, &consumer, consumer_entries, ARRAYSIZE(consumer_entries), 1);
   consumer.block_callback = cb_blocktlv_packet_okay;
   consumer.block_callback_failed_constraints = cb_blocktlv_packet_failed;
 
@@ -165,6 +197,6 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
 
   FINISH_TESTING();
 
-  pbb_reader_cleanup(&reader);
+  rfc5444_reader_cleanup(&reader);
   return total_fail;
 }

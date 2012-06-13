@@ -43,10 +43,10 @@
 
 #include "common/common_types.h"
 #include "common/list.h"
-#include "packetbb/pbb_writer.h"
-#include "packetbb/pbb_api_config.h"
+#include "rfc5444/rfc5444_writer.h"
+#include "rfc5444/rfc5444_api_config.h"
 
-static void _write_pktheader(struct pbb_writer_interface *interf);
+static void _write_pktheader(struct rfc5444_writer_interface *interf);
 
 /**
  * Internal function to start generation of a packet
@@ -56,26 +56,26 @@ static void _write_pktheader(struct pbb_writer_interface *interf);
  * @param interf pointer to interface for packet
  */
 void
-_pbb_writer_begin_packet(struct pbb_writer *writer,
-    struct pbb_writer_interface *interf) {
-  struct pbb_writer_pkthandler *handler;
+_rfc5444_writer_begin_packet(struct rfc5444_writer *writer,
+    struct rfc5444_writer_interface *interf) {
+  struct rfc5444_writer_pkthandler *handler;
 
   /* cleanup packet buffer data */
-  _pbb_tlv_writer_init(&interf->_pkt, interf->packet_size, interf->packet_size);
+  _rfc5444_tlv_writer_init(&interf->_pkt, interf->packet_size, interf->packet_size);
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_ADD_PKTHEADER;
+  writer->_state = RFC5444_WRITER_ADD_PKTHEADER;
 #endif
   /* add packet header */
   if (interf->addPacketHeader) {
     interf->addPacketHeader(writer, interf);
   }
   else {
-    pbb_writer_set_pkt_header(writer, interf, false);
+    rfc5444_writer_set_pkt_header(writer, interf, false);
   }
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_ADD_PKTTLV;
+  writer->_state = RFC5444_WRITER_ADD_PKTTLV;
 #endif
   /* add packet tlvs */
   list_for_each_element(&writer->_pkthandlers, handler, _pkthandle_node) {
@@ -84,7 +84,7 @@ _pbb_writer_begin_packet(struct pbb_writer *writer,
 
   interf->_is_flushed = false;
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_NONE;
+  writer->_state = RFC5444_WRITER_NONE;
 #endif
 }
 
@@ -96,13 +96,13 @@ _pbb_writer_begin_packet(struct pbb_writer *writer,
  * @param force true if the writer should create an empty packet if necessary
  */
 void
-pbb_writer_flush(struct pbb_writer *writer,
-    struct pbb_writer_interface *interf, bool force) {
-  struct pbb_writer_pkthandler *handler;
+rfc5444_writer_flush(struct rfc5444_writer *writer,
+    struct rfc5444_writer_interface *interf, bool force) {
+  struct rfc5444_writer_pkthandler *handler;
   size_t len;
 
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_NONE);
+  assert(writer->_state == RFC5444_WRITER_NONE);
 #endif
 
   assert(interf->sendPacket);
@@ -113,11 +113,11 @@ pbb_writer_flush(struct pbb_writer *writer,
     }
 
     /* begin a new packet, buffer is flushed at the moment */
-    _pbb_writer_begin_packet(writer, interf);
+    _rfc5444_writer_begin_packet(writer, interf);
   }
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_FINISH_PKTTLV;
+  writer->_state = RFC5444_WRITER_FINISH_PKTTLV;
 #endif
 
   /* finalize packet tlvs */
@@ -126,7 +126,7 @@ pbb_writer_flush(struct pbb_writer *writer,
   }
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_FINISH_PKTHEADER;
+  writer->_state = RFC5444_WRITER_FINISH_PKTHEADER;
 #endif
   /* finalize packet header */
   if (interf->finishPacketHeader) {
@@ -164,7 +164,7 @@ pbb_writer_flush(struct pbb_writer *writer,
   interf->_is_flushed = true;
 
 #if WRITER_STATE_MACHINE == true
-  writer->_state = PBB_WRITER_NONE;
+  writer->_state = RFC5444_WRITER_NONE;
 #endif
 
 #if DEBUG_CLEANUP == true
@@ -183,16 +183,16 @@ pbb_writer_flush(struct pbb_writer *writer,
  * @param exttype tlv extended type, 0 if no extended type
  * @param value pointer to tlv value, NULL if no value
  * @param length number of bytes in tlv value, 0 if no value
- * @return PBB_OKAY if tlv has been added to packet, PBB_... otherwise
+ * @return RFC5444_OKAY if tlv has been added to packet, RFC5444_... otherwise
  */
-enum pbb_result
-pbb_writer_add_packettlv(struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_interface *interf,
+enum rfc5444_result
+rfc5444_writer_add_packettlv(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_interface *interf,
     uint8_t type, uint8_t exttype, void *value, size_t length) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_PKTTLV);
+  assert(writer->_state == RFC5444_WRITER_ADD_PKTTLV);
 #endif
-  return _pbb_tlv_writer_add(&interf->_pkt, type, exttype, value, length);
+  return _rfc5444_tlv_writer_add(&interf->_pkt, type, exttype, value, length);
 }
 
 /**
@@ -203,15 +203,15 @@ pbb_writer_add_packettlv(struct pbb_writer *writer __attribute__ ((unused)),
  * @param interf pointer to writer interface object
  * @param has_exttype true if tlv has an extended type
  * @param length number of bytes in tlv value, 0 if no value
- * @return PBB_OKAY if tlv has been added to packet, PBB_... otherwise
+ * @return RFC5444_OKAY if tlv has been added to packet, RFC5444_... otherwise
  */
-enum pbb_result
-pbb_writer_allocate_packettlv(struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_interface *interf, bool has_exttype, size_t length) {
+enum rfc5444_result
+rfc5444_writer_allocate_packettlv(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_interface *interf, bool has_exttype, size_t length) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_PKTTLV);
+  assert(writer->_state == RFC5444_WRITER_ADD_PKTTLV);
 #endif
-  return _pbb_tlv_writer_allocate(&interf->_pkt, has_exttype, length);
+  return _rfc5444_tlv_writer_allocate(&interf->_pkt, has_exttype, length);
 }
 
 /**
@@ -224,16 +224,16 @@ pbb_writer_allocate_packettlv(struct pbb_writer *writer __attribute__ ((unused))
  * @param exttype tlv extended type, 0 if no extended type
  * @param value pointer to tlv value, NULL if no value
  * @param length number of bytes in tlv value, 0 if no value
- * @return PBB_OKAY if tlv has been added to packet, PBB_... otherwise
+ * @return RFC5444_OKAY if tlv has been added to packet, RFC5444_... otherwise
  */
-enum pbb_result
-pbb_writer_set_packettlv(struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_interface *interf,
+enum rfc5444_result
+rfc5444_writer_set_packettlv(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_interface *interf,
     uint8_t type, uint8_t exttype, void *value, size_t length) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_FINISH_PKTTLV);
+  assert(writer->_state == RFC5444_WRITER_FINISH_PKTTLV);
 #endif
-  return _pbb_tlv_writer_set(&interf->_pkt, type, exttype, value, length);
+  return _rfc5444_tlv_writer_set(&interf->_pkt, type, exttype, value, length);
 }
 
 /**
@@ -244,11 +244,11 @@ pbb_writer_set_packettlv(struct pbb_writer *writer __attribute__ ((unused)),
  * @param interf pointer to interface to set packet header
  * @param has_seqno true if packet has a sequence number
  */
-void pbb_writer_set_pkt_header(
-    struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_interface *interf, bool has_seqno) {
+void rfc5444_writer_set_pkt_header(
+    struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_interface *interf, bool has_seqno) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_PKTHEADER);
+  assert(writer->_state == RFC5444_WRITER_ADD_PKTHEADER);
 #endif
 
   /* we assume that we have always an TLV block and subtract the 2 bytes later */
@@ -271,11 +271,11 @@ void pbb_writer_set_pkt_header(
  * @param seqno sequence number of packet
  */
 void
-pbb_writer_set_pkt_seqno(struct pbb_writer *writer __attribute__ ((unused)),
-    struct pbb_writer_interface *interf, uint16_t seqno) {
+rfc5444_writer_set_pkt_seqno(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_interface *interf, uint16_t seqno) {
 #if WRITER_STATE_MACHINE == true
-  assert(writer->_state == PBB_WRITER_ADD_PKTHEADER
-      || writer->_state == PBB_WRITER_FINISH_PKTHEADER);
+  assert(writer->_state == RFC5444_WRITER_ADD_PKTHEADER
+      || writer->_state == RFC5444_WRITER_FINISH_PKTHEADER);
 #endif
   interf->seqno = seqno;
 }
@@ -285,14 +285,14 @@ pbb_writer_set_pkt_seqno(struct pbb_writer *writer __attribute__ ((unused)),
  * @param writer pointer to writer interface object
  */
 static void
-_write_pktheader(struct pbb_writer_interface *interf) {
+_write_pktheader(struct rfc5444_writer_interface *interf) {
   uint8_t *ptr;
   size_t len;
 
   ptr = interf->_pkt.buffer;
   *ptr++ = 0;
   if (interf->has_seqno) {
-    interf->_pkt.buffer[0] |= PBB_PKT_FLAG_SEQNO;
+    interf->_pkt.buffer[0] |= RFC5444_PKT_FLAG_SEQNO;
     *ptr++ = (interf->seqno >> 8);
     *ptr++ = (interf->seqno & 255);
   }
@@ -300,7 +300,7 @@ _write_pktheader(struct pbb_writer_interface *interf) {
   /* tlv-block ? */
   len = interf->_pkt.added + interf->_pkt.set;
   if (len > 0) {
-    interf->_pkt.buffer[0] |= PBB_PKT_FLAG_TLV;
+    interf->_pkt.buffer[0] |= RFC5444_PKT_FLAG_TLV;
     *ptr++ = (len >> 8);
     *ptr++ = (len & 255);
   }

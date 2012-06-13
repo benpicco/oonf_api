@@ -38,29 +38,24 @@
  * the copyright holders.
  *
  */
-
-#ifndef PBB_TLV_WRITER_H_
-#define PBB_TLV_WRITER_H_
-
 #include "common/common_types.h"
+#include "common/netaddr.h"
 
-struct pbb_tlv_writer_data {
-  uint8_t *buffer;
-  size_t header;
-  size_t added;
-  size_t allocated;
-  size_t set;
-  size_t max;
+#include "rfc5444/rfc5444_iana.h"
+
+const struct netaddr RFC5444_MANET_MULTICAST_V4 = {
+  .addr = { 224,0,0,109, 0,0,0,0,0,0,0,0,0,0,0,0 },
+  .type = AF_INET,
+  .prefix_len = 0,
 };
 
-/* internal functions that are not exported to the user */
-void _pbb_tlv_writer_init(struct pbb_tlv_writer_data *data, size_t max, size_t mtu);
+const struct netaddr RFC5444_MANET_MULTICAST_V6 = {
+  .addr = { 0xff,0x02,0,0,0,0,0,0,0,0,0,0,0,0,0,0x6D },
+  .type = AF_INET6,
+  .prefix_len = 0,
+};
 
-enum pbb_result _pbb_tlv_writer_add(struct pbb_tlv_writer_data *data,
-    uint8_t type, uint8_t exttype, const void *value, size_t length);
-enum pbb_result _pbb_tlv_writer_allocate(struct pbb_tlv_writer_data *data,
-    bool has_exttype, size_t length);
-enum pbb_result _pbb_tlv_writer_set(struct pbb_tlv_writer_data *data,
-    uint8_t type, uint8_t exttype, const void *value, size_t length);
-
-#endif /* PBB_TLV_WRITER_H_ */
+const char RFC5444_MANET_IPPROTO_TXT[] = "138";
+const char RFC5444_MANET_UDP_PORT_TXT[] = "269";
+const char RFC5444_MANET_MULTICAST_V4_TXT[] = "224.0.0.109";
+const char RFC5444_MANET_MULTICAST_V6_TXT[] = "ff02::6d";

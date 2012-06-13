@@ -42,9 +42,9 @@
 #include <string.h>
 
 #include "common/common_types.h"
-#include "packetbb/pbb_tlv_writer.h"
-#include "packetbb/pbb_context.h"
-#include "packetbb/pbb_api_config.h"
+#include "rfc5444/rfc5444_tlv_writer.h"
+#include "rfc5444/rfc5444_context.h"
+#include "rfc5444/rfc5444_api_config.h"
 
 static size_t _calc_tlv_size(bool exttype, size_t length);
 static void _write_tlv(uint8_t *ptr, uint8_t type, uint8_t exttype,
@@ -60,7 +60,7 @@ static void _write_tlv(uint8_t *ptr, uint8_t type, uint8_t exttype,
  * @param mtu number of bytes of allocated buffer
  */
 void
-_pbb_tlv_writer_init(struct pbb_tlv_writer_data *data, size_t max,
+_rfc5444_tlv_writer_init(struct rfc5444_tlv_writer_data *data, size_t max,
     size_t mtu __attribute__ ((unused))) {
   data->header = 0;
   data->added = 0;
@@ -82,22 +82,22 @@ _pbb_tlv_writer_init(struct pbb_tlv_writer_data *data, size_t max,
  * @param exttype tlv extended type (0 for no extended type)
  * @param value pointer to tlv value, NULL if no value
  * @param length number of bytes of tlv value, 0 if no value
- * @return PBB_OKAY if tlv has been added to buffer, PBB_... otherwise
+ * @return RFC5444_OKAY if tlv has been added to buffer, RFC5444_... otherwise
  */
-enum pbb_result
-_pbb_tlv_writer_add(struct pbb_tlv_writer_data *data,
+enum rfc5444_result
+_rfc5444_tlv_writer_add(struct rfc5444_tlv_writer_data *data,
     uint8_t type, uint8_t exttype, const void *value, size_t length) {
   size_t s;
 
   s = _calc_tlv_size(exttype != 0, length);
   if (data->header + data->added + data->allocated + s > data->max) {
     /* not enough space, even in message of maximum length */
-    return PBB_MTU_TOO_SMALL;
+    return RFC5444_MTU_TOO_SMALL;
   }
 
   _write_tlv(&data->buffer[data->header + data->added], type, exttype, 0, 255, value, length);
   data->added += s;
-  return PBB_OKAY;
+  return RFC5444_OKAY;
 
 }
 
@@ -108,20 +108,20 @@ _pbb_tlv_writer_add(struct pbb_tlv_writer_data *data,
  * @param data pointer to tlvdata object
  * @param has_exttype true if tlv needs an extended tlv type
  * @param length number of bytes of tlv value, 0 if no value
- * @return PBB_OKAY if tlv has been added to buffer, PBB_... otherwise
+ * @return RFC5444_OKAY if tlv has been added to buffer, RFC5444_... otherwise
  */
-enum pbb_result
-_pbb_tlv_writer_allocate(struct pbb_tlv_writer_data *data,
+enum rfc5444_result
+_rfc5444_tlv_writer_allocate(struct rfc5444_tlv_writer_data *data,
     bool has_exttype, size_t length) {
   size_t s;
 
   s = _calc_tlv_size(has_exttype, length);
   if (data->header + data->added + data->allocated + s > data->max) {
     /* not enough space, even in message of maximum length */
-    return PBB_MTU_TOO_SMALL;
+    return RFC5444_MTU_TOO_SMALL;
   }
   data->allocated += s;
-  return PBB_OKAY;
+  return RFC5444_OKAY;
 }
 
 /**
@@ -134,22 +134,22 @@ _pbb_tlv_writer_allocate(struct pbb_tlv_writer_data *data,
  * @param exttype tlv extended type (0 for no extended type)
  * @param value pointer to tlv value, NULL if no value
  * @param length number of bytes of tlv value, 0 if no value
- * @return PBB_OKAY if tlv has been added to buffer, PBB_... otherwise
+ * @return RFC5444_OKAY if tlv has been added to buffer, RFC5444_... otherwise
  */
-enum pbb_result
-_pbb_tlv_writer_set(struct pbb_tlv_writer_data *data,
+enum rfc5444_result
+_rfc5444_tlv_writer_set(struct rfc5444_tlv_writer_data *data,
     uint8_t type, uint8_t exttype, const void *value, size_t length) {
   size_t s;
 
   s = _calc_tlv_size(exttype != 0, length);
   if (data->allocated - data->set < s) {
     /* not enough space reserved */
-    return PBB_MTU_TOO_SMALL;
+    return RFC5444_MTU_TOO_SMALL;
   }
 
   _write_tlv(&data->buffer[data->header + data->added + data->set], type, exttype, 0, 255, value, length);
   data->set += s;
-  return PBB_OKAY;
+  return RFC5444_OKAY;
 }
 
 /**
@@ -192,19 +192,19 @@ _write_tlv(uint8_t *ptr, uint8_t type, uint8_t exttype,
 
   /* calculate flags field */
   if (exttype > 0) {
-    flags |= PBB_TLV_FLAG_TYPEEXT;
+    flags |= RFC5444_TLV_FLAG_TYPEEXT;
   }
   if (idx1 == idx2) {
-    flags |= PBB_TLV_FLAG_SINGLE_IDX;
+    flags |= RFC5444_TLV_FLAG_SINGLE_IDX;
   }
   else if (idx1 > 0 || idx2 < 255) {
-    flags |= PBB_TLV_FLAG_MULTI_IDX;
+    flags |= RFC5444_TLV_FLAG_MULTI_IDX;
   }
   if (length > 255) {
-    flags |= PBB_TLV_FLAG_EXTVALUE;
+    flags |= RFC5444_TLV_FLAG_EXTVALUE;
   }
   if (length > 0) {
-    flags |= PBB_TLV_FLAG_VALUE;
+    flags |= RFC5444_TLV_FLAG_VALUE;
   }
 
 

@@ -39,8 +39,8 @@
  *
  */
 
-#ifndef PBB_IANA_H_
-#define PBB_IANA_H_
+#ifndef RFC5444_IANA_H_
+#define RFC5444_IANA_H_
 
 #include "common/common_types.h"
 #include "common/netaddr.h"
@@ -50,31 +50,31 @@
  * and multicast groups for MANET (RFC 5498)
  */
 
-enum pbb_iana {
-  PBB_MANET_IPPROTO  = 138,
-  PBB_MANET_UDP_PORT = 269,
+enum rfc5444_iana {
+  RFC5444_MANET_IPPROTO  = 138,
+  RFC5444_MANET_UDP_PORT = 269,
 };
 
-EXPORT extern const struct netaddr PBB_MANET_MULTICAST_V4;
-EXPORT extern const struct netaddr PBB_MANET_MULTICAST_V6;
+EXPORT extern const struct netaddr RFC5444_MANET_MULTICAST_V4;
+EXPORT extern const struct netaddr RFC5444_MANET_MULTICAST_V6;
 
 /*
  * text variants of the constants above for defaults in
  * configuration sections
  */
-EXPORT extern const char PBB_MANET_IPPROTO_TXT[];
-EXPORT extern const char PBB_MANET_UDP_PORT_TXT[];
-EXPORT extern const char PBB_MANET_MULTICAST_V4_TXT[];
-EXPORT extern const char PBB_MANET_MULTICAST_V6_TXT[];
+EXPORT extern const char RFC5444_MANET_IPPROTO_TXT[];
+EXPORT extern const char RFC5444_MANET_UDP_PORT_TXT[];
+EXPORT extern const char RFC5444_MANET_MULTICAST_V4_TXT[];
+EXPORT extern const char RFC5444_MANET_MULTICAST_V6_TXT[];
 
 /*
  * this is a list of all globally defined IANA
  * message types
  */
 
-enum pbb_msgtype_iana {
+enum rfc5444_msgtype_iana {
   /* RFC 6130 (NHDP) */
-  PBB_MSGTYPE_HELLO = 0,
+  RFC5444_MSGTYPE_HELLO = 0,
 };
 
 /*
@@ -82,10 +82,10 @@ enum pbb_msgtype_iana {
  * packet TLVs and their allocated values
  */
 
-enum pbb_pkttlvs_iana {
-  /* RFC 6622 (packetbb-sec) */
-  PBB_PKTTLV_ICV       = 5,
-  PBB_PKTTLV_TIMESTAMP = 6,
+enum rfc5444_pkttlvs_iana {
+  /* RFC 6622 (rfc5444-sec) */
+  RFC5444_PKTTLV_ICV       = 5,
+  RFC5444_PKTTLV_TIMESTAMP = 6,
 };
 
 /*
@@ -93,14 +93,14 @@ enum pbb_pkttlvs_iana {
  * message TLVs and their allocated values
  */
 
-enum pbb_msgtlvs_iana {
+enum rfc5444_msgtlvs_iana {
   /* RFC 5497 (timetlv) */
-  PBB_MSGTLV_VALIDITY_TIME = 0,
-  PBB_MSGTLV_INTERVAL_TIME = 1,
+  RFC5444_MSGTLV_VALIDITY_TIME = 0,
+  RFC5444_MSGTLV_INTERVAL_TIME = 1,
 
-  /* RFC 6622 (packetbb-sec) */
-  PBB_MSGTLV_ICV           = 5,
-  PBB_MSGTLV_TIMESTAMP     = 6,
+  /* RFC 6622 (rfc5444-sec) */
+  RFC5444_MSGTLV_ICV           = 5,
+  RFC5444_MSGTLV_TIMESTAMP     = 6,
 };
 
 /*
@@ -108,32 +108,32 @@ enum pbb_msgtlvs_iana {
  * address TLVs and their allocated values
  */
 
-enum pbb_addrtlv_iana {
+enum rfc5444_addrtlv_iana {
   /* RFC 5497 (timetlv) */
-  PBB_ADDRTLV_VALIDITY_TIME = 0,
-  PBB_ADDRTLV_INTERVAL_TIME = 1,
+  RFC5444_ADDRTLV_VALIDITY_TIME = 0,
+  RFC5444_ADDRTLV_INTERVAL_TIME = 1,
 
   /* RFC 6130 (NHDP) */
-  PBB_ADDRTLV_LOCAL_IF      = 2,
-  PBB_ADDRTLV_LINK_STATUS   = 3,
-  PBB_ADDRTLV_OTHER_NEIGHB  = 4,
+  RFC5444_ADDRTLV_LOCAL_IF      = 2,
+  RFC5444_ADDRTLV_LINK_STATUS   = 3,
+  RFC5444_ADDRTLV_OTHER_NEIGHB  = 4,
 
-  /* RFC 6622 (packetbb-sec) */
-  PBB_ADDRTLV_ICV           = 5,
-  PBB_ADDRTLV_TIMESTAMP     = 6,
+  /* RFC 6622 (rfc5444-sec) */
+  RFC5444_ADDRTLV_ICV           = 5,
+  RFC5444_ADDRTLV_TIMESTAMP     = 6,
 };
 
 /* values for LOCAL_IF address TLV */
-static const uint8_t PBB_LOCALIF_THIS_IF       = 0;
-static const uint8_t PBB_LOCALIF_OTHER_IF      = 1;
+static const uint8_t RFC5444_LOCALIF_THIS_IF       = 0;
+static const uint8_t RFC5444_LOCALIF_OTHER_IF      = 1;
 
 /* values for LINK_STATUS address TLV */
-static const uint8_t PBB_LINKSTATUS_LOST       = 0;
-static const uint8_t PBB_LINKSTATUS_SYMMETRIC  = 1;
-static const uint8_t PBB_LINKSTATUS_HEARD      = 2;
+static const uint8_t RFC5444_LINKSTATUS_LOST       = 0;
+static const uint8_t RFC5444_LINKSTATUS_SYMMETRIC  = 1;
+static const uint8_t RFC5444_LINKSTATUS_HEARD      = 2;
 
 /* values for OTHER_NEIGHB address TLV */
-static const uint8_t PBB_OTHERNEIGHB_LOST      = 0;
-static const uint8_t PBB_OTHERNEIGHB_SYMMETRIC = 1;
+static const uint8_t RFC5444_OTHERNEIGHB_LOST      = 0;
+static const uint8_t RFC5444_OTHERNEIGHB_SYMMETRIC = 1;
 
-#endif /* PBB_IANA_H_ */
+#endif /* RFC5444_IANA_H_ */

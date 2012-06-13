@@ -1,12 +1,43 @@
 /*
- * test_packetbb_conversion.c
+ * RFC 5444 handler library
+ * Copyright (c) 2010 Henning Rogge <hrogge@googlemail.com>
+ * All rights reserved.
  *
- *  Created on: Apr 23, 2012
- *      Author: rogge
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org/git for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
  */
-
 #include "common/common_types.h"
-#include "packetbb/pbb_conversion.h"
+#include "rfc5444/rfc5444_conversion.h"
 #include "../cunit.h"
 
 static const uint32_t _timetlv_table[256] = {
@@ -570,7 +601,7 @@ test_timetlv_decoding(void) {
   START_TEST();
 
   for (encoded = 1; encoded < 256; encoded++) {
-    decoded = pbb_timetlv_decode(encoded);
+    decoded = rfc5444_timetlv_decode(encoded);
     CHECK_TRUE(decoded == _timetlv_table[encoded], "decode(%u) != %u", encoded, decoded);
   }
 
@@ -589,7 +620,7 @@ test_timetlv_encoding_exact(void) {
     }
 
     decoded = _timetlv_table[i];
-    encoded = pbb_timetlv_encode(decoded);
+    encoded = rfc5444_timetlv_encode(decoded);
 
     CHECK_TRUE(encoded == i, "encode(%u) != %u", decoded, i);
   }
@@ -601,7 +632,7 @@ static void
 _do_timetlv_average_test(uint32_t decoded) {
   uint32_t encoded;
 
-  encoded = pbb_timetlv_encode(decoded);
+  encoded = rfc5444_timetlv_encode(decoded);
 
   CHECK_TRUE(_timetlv_table[encoded] > decoded, "encode(%u)=%u, decode(%u)=%u, %u <= %u",
       decoded, encoded,
@@ -656,7 +687,7 @@ test_metric_decoding(void) {
   START_TEST();
 
   for (encoded = 0; encoded < 4096; encoded++) {
-    decoded = pbb_metric_decode(encoded);
+    decoded = rfc5444_metric_decode(encoded);
     CHECK_TRUE(decoded == _metric_table[encoded], "decode(%u) != %u", encoded, decoded);
   }
 
@@ -671,7 +702,7 @@ test_metric_encoding_exact(void) {
 
   for (i=0; i<4096; i++) {
     decoded = _metric_table[i];
-    encoded = pbb_metric_encode(decoded);
+    encoded = rfc5444_metric_encode(decoded);
 
     CHECK_TRUE(encoded == i, "encode(%u) != %u", decoded, i);
   }
@@ -683,7 +714,7 @@ static void
 _do_metric_average_test(uint32_t decoded) {
   uint32_t encoded;
 
-  encoded = pbb_metric_encode(decoded);
+  encoded = rfc5444_metric_encode(decoded);
 
   CHECK_TRUE(_metric_table[encoded] > decoded, "encode(%u)=%u, decode(%u)=%u, %u <= %u",
       decoded, encoded,

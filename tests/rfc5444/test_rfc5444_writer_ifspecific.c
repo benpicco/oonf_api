@@ -1,5 +1,5 @@
 /*
- * PacketBB handler library (see RFC 5444)
+ * RFC 5444 handler library
  * Copyright (c) 2010 Henning Rogge <hrogge@googlemail.com>
  * All rights reserved.
  *
@@ -42,17 +42,17 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "packetbb/pbb_context.h"
-#include "packetbb/pbb_writer.h"
+#include "rfc5444/rfc5444_context.h"
+#include "rfc5444/rfc5444_writer.h"
 #include "../cunit.h"
 
-static void write_packet(struct pbb_writer *,
-    struct pbb_writer_interface *,void *, size_t);
+static void write_packet(struct rfc5444_writer *,
+    struct rfc5444_writer_interface *,void *, size_t);
 
 static uint8_t msg_buffer[128];
 static uint8_t msg_addrtlvs[1000];
 
-static struct pbb_writer writer = {
+static struct rfc5444_writer writer = {
   .msg_buffer = msg_buffer,
   .msg_size = sizeof(msg_buffer),
   .addrtlv_buffer = msg_addrtlvs,
@@ -60,14 +60,14 @@ static struct pbb_writer writer = {
 };
 
 static uint8_t packet_buffer_if1[128];
-static struct pbb_writer_interface small_if = {
+static struct rfc5444_writer_interface small_if = {
   .packet_buffer = packet_buffer_if1,
   .packet_size = sizeof(packet_buffer_if1),
   .sendPacket = write_packet,
 };
 
 static uint8_t packet_buffer_if2[256];
-static struct pbb_writer_interface large_if = {
+static struct rfc5444_writer_interface large_if = {
   .packet_buffer = packet_buffer_if2,
   .packet_size = sizeof(packet_buffer_if2),
   .sendPacket = write_packet,
@@ -75,23 +75,23 @@ static struct pbb_writer_interface large_if = {
 
 static int unique_messages;
 
-static void addMessageHeader(struct pbb_writer *wr, struct pbb_writer_message *msg) {
-  pbb_writer_set_msg_header(wr, msg, false, false, false, false);
+static void addMessageHeader(struct rfc5444_writer *wr, struct rfc5444_writer_message *msg) {
+  rfc5444_writer_set_msg_header(wr, msg, false, false, false, false);
   printf("Begin message\n");
   unique_messages++;
 }
 
-static void finishMessageHeader(struct pbb_writer *wr  __attribute__ ((unused)),
-    struct pbb_writer_message *msg __attribute__ ((unused)),
-    struct pbb_writer_address *first_addr __attribute__ ((unused)),
-    struct pbb_writer_address *last_addr __attribute__ ((unused)),
+static void finishMessageHeader(struct rfc5444_writer *wr  __attribute__ ((unused)),
+    struct rfc5444_writer_message *msg __attribute__ ((unused)),
+    struct rfc5444_writer_address *first_addr __attribute__ ((unused)),
+    struct rfc5444_writer_address *last_addr __attribute__ ((unused)),
     bool not_fragmented __attribute__ ((unused))) {
   printf("End message\n");
 }
 
 
-static void write_packet(struct pbb_writer *wr __attribute__ ((unused)),
-    struct pbb_writer_interface *iface,
+static void write_packet(struct rfc5444_writer *wr __attribute__ ((unused)),
+    struct rfc5444_writer_interface *iface,
     void *buffer, size_t length) {
   size_t i, j;
   uint8_t *buf = buffer;
@@ -121,9 +121,9 @@ static void clear_elements(void) {
 static void test_ip_specific(void) {
   START_TEST();
 
-  CHECK_TRUE(0 == pbb_writer_create_message_allif(&writer, 1), "Parser should return 0");
-  pbb_writer_flush(&writer, &small_if, false);
-  pbb_writer_flush(&writer, &large_if, false);
+  CHECK_TRUE(0 == rfc5444_writer_create_message_allif(&writer, 1), "Parser should return 0");
+  rfc5444_writer_flush(&writer, &small_if, false);
+  rfc5444_writer_flush(&writer, &large_if, false);
 
   CHECK_TRUE(unique_messages == 2, "bad number of messages: %d\n", unique_messages);
 
@@ -133,9 +133,9 @@ static void test_ip_specific(void) {
 static void test_not_ip_specific(void) {
   START_TEST();
 
-  CHECK_TRUE(0 == pbb_writer_create_message_allif(&writer, 2), "Parser should return 0");
-  pbb_writer_flush(&writer, &small_if, false);
-  pbb_writer_flush(&writer, &large_if, false);
+  CHECK_TRUE(0 == rfc5444_writer_create_message_allif(&writer, 2), "Parser should return 0");
+  rfc5444_writer_flush(&writer, &small_if, false);
+  rfc5444_writer_flush(&writer, &large_if, false);
 
   CHECK_TRUE(unique_messages == 1, "bad number of messages: %d\n", unique_messages);
 
@@ -144,18 +144,18 @@ static void test_not_ip_specific(void) {
 
 
 int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
-  struct pbb_writer_message *msg[2];
+  struct rfc5444_writer_message *msg[2];
 
-  pbb_writer_init(&writer);
+  rfc5444_writer_init(&writer);
 
-  pbb_writer_register_interface(&writer, &small_if);
-  pbb_writer_register_interface(&writer, &large_if);
+  rfc5444_writer_register_interface(&writer, &small_if);
+  rfc5444_writer_register_interface(&writer, &large_if);
 
-  msg[0] = pbb_writer_register_message(&writer, 1, true, 4);
+  msg[0] = rfc5444_writer_register_message(&writer, 1, true, 4);
   msg[0]->addMessageHeader = addMessageHeader;
   msg[0]->finishMessageHeader = finishMessageHeader;
 
-  msg[1] = pbb_writer_register_message(&writer, 2, false, 4);
+  msg[1] = rfc5444_writer_register_message(&writer, 2, false, 4);
   msg[1]->addMessageHeader = addMessageHeader;
   msg[1]->finishMessageHeader = finishMessageHeader;
 
@@ -166,7 +166,7 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
 
   FINISH_TESTING();
 
-  pbb_writer_cleanup(&writer);
+  rfc5444_writer_cleanup(&writer);
 
   return total_fail;
 }

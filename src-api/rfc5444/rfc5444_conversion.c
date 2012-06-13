@@ -41,7 +41,7 @@
 #include <assert.h>
 
 #include "common/common_types.h"
-#include "packetbb/pbb_conversion.h"
+#include "rfc5444/rfc5444_conversion.h"
 
 /**
  * Converts a relative time value into its RFC 5497 (timetlv)
@@ -54,7 +54,7 @@
  * @return RFC 5497 encoded time
  */
 uint8_t
-pbb_timetlv_encode(uint64_t decoded) {
+rfc5444_timetlv_encode(uint64_t decoded) {
   uint32_t a, b;
   /*
    * t = (1 + a/8) * 2^b * 1000 / 1024
@@ -62,10 +62,10 @@ pbb_timetlv_encode(uint64_t decoded) {
    *   = (1000 + 125 * a) * 2 ^ (b-10)
    */
 
-  if (decoded < PBB_TIMETLV_MIN) {
+  if (decoded < RFC5444_TIMETLV_MIN) {
     return 0;
   }
-  if (decoded > PBB_TIMETLV_MAX) {
+  if (decoded > RFC5444_TIMETLV_MAX) {
     return 255;
   }
 
@@ -100,7 +100,7 @@ pbb_timetlv_encode(uint64_t decoded) {
  * @return relative time in milliseconds
  */
 uint64_t
-pbb_timetlv_decode(uint8_t encoded) {
+rfc5444_timetlv_decode(uint8_t encoded) {
   /*
    * time-value := (1 + a/8) * 2^b * C
    * time-code := 8 * b + a
@@ -143,7 +143,7 @@ pbb_timetlv_decode(uint8_t encoded) {
  * @return encoded metric value.
  */
 uint16_t
-pbb_metric_encode(uint32_t decoded) {
+rfc5444_metric_encode(uint32_t decoded) {
   uint8_t a,b;
   /*
    * metric-value := (257+b)2^a - 256
@@ -175,7 +175,7 @@ pbb_metric_encode(uint32_t decoded) {
  * @return decoded metric value
  */
 uint32_t
-pbb_metric_decode(uint16_t encoded) {
+rfc5444_metric_decode(uint16_t encoded) {
   uint8_t a,b;
   /*
    * metric-value := (257+b)2^a - 256

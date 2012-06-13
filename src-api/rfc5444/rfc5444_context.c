@@ -38,33 +38,33 @@
  * the copyright holders.
  *
  */
-#include <packetbb/pbb_context.h>
+#include <rfc5444/rfc5444_context.h>
 
-static const char *_pbb_positive_result_texts[] = {
-  [PBB_OKAY]                 = "Okay",
-  [PBB_DROP_TLV]             = "Drop TLV",
-  [PBB_DROP_MSG_BUT_FORWARD] = "Drop message but forward it",
-  [PBB_DROP_MESSAGE]         = "Drop message",
-  [PBB_DROP_PACKET]          = "Drop packet",
+static const char *_rfc5444_positive_result_texts[] = {
+  [RFC5444_OKAY]                 = "Okay",
+  [RFC5444_DROP_TLV]             = "Drop TLV",
+  [RFC5444_DROP_MSG_BUT_FORWARD] = "Drop message but forward it",
+  [RFC5444_DROP_MESSAGE]         = "Drop message",
+  [RFC5444_DROP_PACKET]          = "Drop packet",
 };
 
-static const char *_pbb_negative_result_texts[] = {
-  [PBB_OKAY]                 = "Okay",
-  [-PBB_UNSUPPORTED_VERSION]  = "Version of packetbb not supported",
-  [-PBB_END_OF_BUFFER]        = "Early end of packet",
-  [-PBB_BAD_TLV_IDXFLAGS]     = "Bad combination of index flags",
-  [-PBB_BAD_TLV_VALUEFLAGS]   = "Bad combination of value flags",
-  [-PBB_BAD_TLV_LENGTH]       = "TLV length is no multiple of number of values",
-  [-PBB_OUT_OF_MEMORY]        = "Memory allocation failed",
-  [-PBB_EMPTY_ADDRBLOCK]      = "Address block with zero addresses",
-  [-PBB_BAD_MSG_TAILFLAGS]    = "Bad combination of address tail flags",
-  [-PBB_BAD_MSG_PREFIXFLAGS]  = "Bad combination of address prefix length flags",
-  [-PBB_DUPLICATE_TLV]        = "Duplicate address TLV",
-  [-PBB_OUT_OF_ADDRTLV_MEM]   = "Not enough memory for address-TLVs",
-  [-PBB_MTU_TOO_SMALL]        = "Configured MTU size too small",
-  [-PBB_NO_MSGCREATOR]        = "Cannot create message without message creator",
-  [-PBB_FW_MESSAGE_TOO_LONG]  = "Cannot forward message, content too long",
-  [-PBB_FW_BAD_SIZE]          = "Bad length field of message to be forwarded",
+static const char *_rfc5444_negative_result_texts[] = {
+  [RFC5444_OKAY]                 = "Okay",
+  [-RFC5444_UNSUPPORTED_VERSION]  = "Version of rfc5444 not supported",
+  [-RFC5444_END_OF_BUFFER]        = "Early end of packet",
+  [-RFC5444_BAD_TLV_IDXFLAGS]     = "Bad combination of index flags",
+  [-RFC5444_BAD_TLV_VALUEFLAGS]   = "Bad combination of value flags",
+  [-RFC5444_BAD_TLV_LENGTH]       = "TLV length is no multiple of number of values",
+  [-RFC5444_OUT_OF_MEMORY]        = "Memory allocation failed",
+  [-RFC5444_EMPTY_ADDRBLOCK]      = "Address block with zero addresses",
+  [-RFC5444_BAD_MSG_TAILFLAGS]    = "Bad combination of address tail flags",
+  [-RFC5444_BAD_MSG_PREFIXFLAGS]  = "Bad combination of address prefix length flags",
+  [-RFC5444_DUPLICATE_TLV]        = "Duplicate address TLV",
+  [-RFC5444_OUT_OF_ADDRTLV_MEM]   = "Not enough memory for address-TLVs",
+  [-RFC5444_MTU_TOO_SMALL]        = "Configured MTU size too small",
+  [-RFC5444_NO_MSGCREATOR]        = "Cannot create message without message creator",
+  [-RFC5444_FW_MESSAGE_TOO_LONG]  = "Cannot forward message, content too long",
+  [-RFC5444_FW_BAD_SIZE]          = "Bad length field of message to be forwarded",
 };
 
 /**
@@ -72,13 +72,13 @@ static const char *_pbb_negative_result_texts[] = {
  * @return text message for result code
  */
 const char *
-pbb_strerror(enum pbb_result result) {
+rfc5444_strerror(enum rfc5444_result result) {
   const char *UNKNOWN = "Unknown pbb result";
-  if (result >= PBB_OKAY && result <= PBB_RESULT_MAX) {
-    return _pbb_positive_result_texts[result];
+  if (result >= RFC5444_OKAY && result <= RFC5444_RESULT_MAX) {
+    return _rfc5444_positive_result_texts[result];
   }
-  if (result < PBB_OKAY && result >= PBB_RESULT_MIN) {
-    return _pbb_negative_result_texts[-result];
+  if (result < RFC5444_OKAY && result >= RFC5444_RESULT_MIN) {
+    return _rfc5444_negative_result_texts[-result];
   }
   return UNKNOWN;
 }

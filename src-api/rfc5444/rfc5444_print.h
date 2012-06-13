@@ -38,24 +38,33 @@
  * the copyright holders.
  *
  */
+#ifndef PRINT_RFC5444_H_
+#define PRINT_RFC5444_H_
+
 #include "common/common_types.h"
-#include "common/netaddr.h"
+#include "common/autobuf.h"
+#include "rfc5444/rfc5444_reader.h"
 
-#include "packetbb/pbb_iana.h"
+struct rfc5444_print_session {
+  struct autobuf *output;
 
-const struct netaddr PBB_MANET_MULTICAST_V4 = {
-  .addr = { 224,0,0,109, 0,0,0,0,0,0,0,0,0,0,0,0 },
-  .type = AF_INET,
-  .prefix_len = 0,
+  void (*print_packet)(struct rfc5444_print_session *);
+
+  struct rfc5444_reader_tlvblock_consumer _pkt;
+  struct rfc5444_reader_tlvblock_consumer _msg;
+  struct rfc5444_reader_tlvblock_consumer _addr;
+
+  struct rfc5444_reader *_reader;
 };
 
-const struct netaddr PBB_MANET_MULTICAST_V6 = {
-  .addr = { 0xff,0x02,0,0,0,0,0,0,0,0,0,0,0,0,0,0x6D },
-  .type = AF_INET6,
-  .prefix_len = 0,
-};
+EXPORT void rfc5444_print_add(
+    struct rfc5444_print_session *, struct rfc5444_reader *reader);
+EXPORT void rfc5444_print_remove(
+    struct rfc5444_print_session *session);
 
-const char PBB_MANET_IPPROTO_TXT[] = "138";
-const char PBB_MANET_UDP_PORT_TXT[] = "269";
-const char PBB_MANET_MULTICAST_V4_TXT[] = "224.0.0.109";
-const char PBB_MANET_MULTICAST_V6_TXT[] = "ff02::6d";
+EXPORT enum rfc5444_result rfc5444_print_direct(
+    struct autobuf *out, void *buffer, size_t length);
+EXPORT void rfc5444_print_hexdump(
+    struct autobuf *out, const char *prefix, void *buffer, size_t length);
+
+#endif /* PRINT_RFC5444_H_ */
