@@ -47,7 +47,7 @@
 #include "common/list.h"
 #include "common/avl.h"
 #include "common/avl_comp.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_callbacks.h"
 

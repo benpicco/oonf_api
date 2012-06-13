@@ -50,7 +50,7 @@
 #include "core/olsr_cfg.h"
 #include "core/olsr_interface.h"
 #include "core/olsr_logging.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 #include "core/os_net.h"
 
 static int _ioctl_v4, _ioctl_v6;

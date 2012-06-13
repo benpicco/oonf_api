@@ -45,7 +45,7 @@
 #include "common/list.h"
 #include "core/olsr_memcookie.h"
 #include "core/olsr_logging.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 
 struct list_entity olsr_cookies;
 

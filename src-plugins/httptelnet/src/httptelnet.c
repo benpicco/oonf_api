@@ -49,7 +49,7 @@
 #include "core/olsr_logging.h"
 #include "core/olsr_plugins.h"
 #include "core/olsr_telnet.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 
 /* constants */
 #define _CFG_SECTION "httptelnet"

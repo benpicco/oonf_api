@@ -45,7 +45,7 @@
 
 #include "config/cfg_schema.h"
 
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 #include "core/olsr_cfg.h"
 #include "core/olsr_libdata.h"
 #include "core/olsr_logging.h"

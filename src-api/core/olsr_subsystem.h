@@ -39,23 +39,55 @@
  *
  */
 
-#include "core/olsr.h"
+#ifndef OLSR_H_
+#define OLSR_H_
 
-static bool _running = true;
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "common/common_types.h"
+
+/* variable for subsystem state */
+#define OLSR_SUBSYSTEM_STATE(var_name) static bool var_name = false
 
 /**
- * Call this function to end OLSR because of an error
+ * Subsystem marker API for 'being initialized' state.
+ * Call this function at the beginning of the initialization.
+ * @param ptr pointer to initialized state variable of subsystem
+ * @return true if initialization should be skipped, false otherwise
  */
-void
-olsr_exit(void) {
-  _running = false;
+static INLINE bool
+olsr_subsystem_init(bool *ptr) {
+  if (*ptr)
+    return true;
+
+  *ptr = true;
+  return false;
 }
 
 /**
- * @return true if OLSR is still running, false if mainloop should
- *   end because of an error.
+ * Subsystem marker API for 'being initialized' state.
+ * Call this function at the beginning of the cleanup.
+ * @param ptr pointer to initialized state variable of subsystem
+ * @return true if cleanup should be skipped, false otherwise
  */
-bool
-olsr_is_running(void) {
-  return _running;
+static INLINE bool
+olsr_subsystem_cleanup(bool *ptr) {
+  if (*ptr) {
+    *ptr = false;
+    return false;
+  }
+  return true;
 }
+
+/**
+ * Subsystem marker API for 'being initialized' state.
+ * @param ptr pointer to initialized state variable of subsystem
+ * @return true if the subsystem is initialized
+ */
+static INLINE bool
+olsr_subsystem_is_initialized(bool *ptr) {
+  return *ptr;
+}
+#endif /* OLSR_H_ */

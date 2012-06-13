@@ -50,7 +50,7 @@
 #include "core/olsr_logging.h"
 #include "core/olsr_memcookie.h"
 #include "core/olsr_timer.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 
 /* Number of hierarchies of buckets */
 #define BUCKET_DEPTH          3

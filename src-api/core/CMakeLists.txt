@@ -37,7 +37,6 @@ SET(OONF_CORE_SRCS olsr_callbacks.c
                    olsr_stream_socket.c
                    olsr_telnet.c
                    olsr_timer.c
-                   olsr.c
                    ${GEN_DATA_C})
 
 SET(OONF_CORE_INCLUDES olsr_callbacks.h

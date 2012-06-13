@@ -52,7 +52,7 @@
 #include "core/olsr_plugins.h"
 #include "core/olsr_stream_socket.h"
 #include "core/olsr_timer.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 #include "core/olsr_telnet.h"
 
 /* static function prototypes */

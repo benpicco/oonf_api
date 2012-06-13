@@ -54,7 +54,7 @@
 #include "core/olsr_libdata.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_plugins.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 
 /* constants */
 enum {

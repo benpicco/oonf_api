@@ -42,7 +42,7 @@
 #include <time.h>
 
 #include "common/common_types.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 #include "core/os_clock.h"
 
 /* type of clock source to be used */

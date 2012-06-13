@@ -52,7 +52,7 @@
 
 #include "common/common_types.h"
 #include "core/olsr_timer.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 #include "core/os_routing.h"
 #include "core/os_system.h"
 

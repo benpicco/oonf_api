@@ -51,7 +51,7 @@
 #include "common/string.h"
 #include "core/olsr_libdata.h"
 #include "core/olsr_logging.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 #include "core/os_system.h"
 #include "core/os_syslog.h"
 

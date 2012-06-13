@@ -68,6 +68,8 @@ EXPORT void olsr_cfg_cleanup(void);
 EXPORT int olsr_cfg_loadplugins(void) __attribute__((warn_unused_result));
 EXPORT int olsr_cfg_apply(void) __attribute__((warn_unused_result));
 EXPORT int olsr_cfg_rollback(void);
+EXPORT void olsr_cfg_exit(void);
+EXPORT bool olsr_cfg_is_running(void);
 
 EXPORT void olsr_cfg_trigger_reload(void);
 EXPORT bool olsr_cfg_is_reload_set(void);

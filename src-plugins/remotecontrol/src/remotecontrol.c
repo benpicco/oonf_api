@@ -59,7 +59,7 @@
 #include "core/olsr_plugins.h"
 #include "core/olsr_telnet.h"
 #include "core/olsr_timer.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 #include "core/os_routing.h"
 
 /* variable definitions */

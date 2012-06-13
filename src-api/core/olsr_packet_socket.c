@@ -50,7 +50,7 @@
 #include "core/olsr_cfg.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_packet_socket.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 
 static struct list_entity packet_sockets = { NULL, NULL };
 static char input_buffer[65536];

@@ -53,7 +53,7 @@
 #include "core/os_net.h"
 #include "core/olsr_socket.h"
 #include "core/olsr_timer.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 
 /* List of all active sockets in scheduler */
 struct list_entity socket_head;
@@ -156,7 +156,7 @@ olsr_socket_handle(uint64_t stop_time)
       olsr_timer_walk();
     }
 
-    if (!olsr_is_running() || olsr_cfg_is_commit_set() || olsr_cfg_is_reload_set()) {
+    if (!olsr_cfg_is_running() || olsr_cfg_is_commit_set() || olsr_cfg_is_reload_set()) {
       return 0;
     }
 
@@ -205,7 +205,7 @@ olsr_socket_handle(uint64_t stop_time)
     }
 
     do {
-      if (!olsr_is_running() || olsr_cfg_is_commit_set() || olsr_cfg_is_reload_set()) {
+      if (!olsr_cfg_is_running() || olsr_cfg_is_commit_set() || olsr_cfg_is_reload_set()) {
         return 0;
       }
       n = os_select(hfd,

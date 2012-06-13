@@ -49,7 +49,7 @@
 #include "core/olsr_interface.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_timer.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 #include "core/os_net.h"
 #include "core/os_system.h"
 #include "core/os_routing.h"

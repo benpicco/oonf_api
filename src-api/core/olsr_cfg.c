@@ -50,7 +50,7 @@
 #include "core/olsr_plugins.h"
 #include "core/olsr_socket.h"
 #include "core/olsr_cfg.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 
 /* static prototypes */
 static int _cb_validate_global(struct cfg_schema_section *, const char *section_name,
@@ -65,8 +65,9 @@ static struct cfg_db *_olsr_work_db = NULL;
 static struct cfg_schema _olsr_schema;
 static bool _first_apply;
 
-/* remember to trigger reload/commit */
+/* remember to trigger reload/commit and the running state */
 static bool _trigger_reload, _trigger_commit;
+static bool _running = true;
 
 /* remember if initialized or not */
 OLSR_SUBSYSTEM_STATE(_cfg_state);
@@ -182,6 +183,23 @@ olsr_cfg_trigger_commit(void) {
 bool
 olsr_cfg_is_commit_set(void) {
   return _trigger_commit;
+}
+
+/**
+ * Call this function to end OLSR because of an error
+ */
+void
+olsr_cfg_exit(void) {
+  _running = false;
+}
+
+/**
+ * @return true if OLSR is still running, false if mainloop should
+ *   end because of an error.
+ */
+bool
+olsr_cfg_is_running(void) {
+  return _running;
 }
 
 /**

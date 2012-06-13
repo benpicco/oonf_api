@@ -56,7 +56,7 @@
 #include "core/olsr_socket.h"
 #include "core/olsr_timer.h"
 #include "core/os_net.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 #include "core/olsr_stream_socket.h"
 
 static int _apply_managed_socket(struct olsr_stream_managed *managed,

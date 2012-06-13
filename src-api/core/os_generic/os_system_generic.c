@@ -44,7 +44,7 @@
 #include "builddata/data.h"
 #include "core/olsr_logging.h"
 #include "core/os_system.h"
-#include "core/olsr.h"
+#include "core/olsr_subsystem.h"
 
 #if OS_SYSTEM_LOG == OS_GENERIC
 /* we only need this subsystem state here in the generic case */
