@@ -185,7 +185,9 @@ void
 olsr_callback_event(struct olsr_callback_provider *prv, void *obj,
     enum olsr_callback_event event) {
   struct olsr_callback_consumer *cons, *iterator;
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   struct olsr_callback_str buf;
+#endif
 
   if (prv->_in_use) {
     OLSR_WARN(LOG_CALLBACK, "Warning, recursive use of callback %s. Skipping.\n",

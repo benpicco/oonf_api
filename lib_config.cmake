@@ -7,7 +7,7 @@
 set (CMAKE_BUILD_TYPE Debug)
 
 # maximum logging level
-set(OONF_MAX_LOGGING_LEVEL debug CACHE STRING "Maximum logging level compiled into OONF API (none, warn, info, debug)")
+set(OONF_LOGGING_LEVEL debug CACHE STRING "Maximum logging level compiled into OONF API (none, warn, info, debug)")
 
 # name of the libnl library
 set (OONF_LIBNL nl CACHE STRING "Library used for netlink operations")

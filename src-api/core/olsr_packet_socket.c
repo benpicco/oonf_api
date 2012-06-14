@@ -175,7 +175,7 @@ int
 olsr_packet_send(struct olsr_packet_socket *pktsocket, union netaddr_socket *remote,
     const void *data, size_t length) {
   int result;
-#if !defined(REMOVE_LOG_WARN)
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
 #endif
 
@@ -280,7 +280,9 @@ olsr_packet_apply_managed(struct olsr_packet_managed *managed,
 int
 olsr_packet_send_managed(struct olsr_packet_managed *managed,
     union netaddr_socket *remote, const void *data, size_t length) {
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   struct netaddr_str buf;
+#endif
 
   if (netaddr_socket_get_addressfamily(remote) == AF_UNSPEC) {
     return 0;
@@ -396,7 +398,9 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
     bool mc_loopback, bool if_event) {
   int treestate = 0, result = 0;
   bool real_multicast;
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   struct netaddr_str buf1, buf2;
+#endif
 
   /* copy unicast port if necessary */
   if (mc_port == 0) {
@@ -476,7 +480,7 @@ _apply_managed_socket(struct olsr_packet_socket *packet,
     struct olsr_packet_config *config,
     bool if_event) {
   union netaddr_socket sock;
-#if !defined(REMOVE_LOG_WARN)
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
 #endif
   if (if_event) {
@@ -545,13 +549,14 @@ _cb_packet_event_multicast(int fd, void *data, bool event_read, bool event_write
  * @param event_write true if write-event is incoming
  */
 static void
-_cb_packet_event(int fd, void *data, bool event_read, bool event_write, bool multicast) {
+_cb_packet_event(int fd, void *data, bool event_read, bool event_write,
+    bool multicast __attribute__((unused))) {
   struct olsr_packet_socket *pktsocket = data;
   union netaddr_socket *skt, sock;
   uint16_t length;
   char *pkt;
   int result;
-#if !defined(REMOVE_LOG_WARN)
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str netbuf;
 #endif
 

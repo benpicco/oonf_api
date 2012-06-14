@@ -119,6 +119,19 @@ struct olsr_appdata {
   const char *sharedlibrary_postfix;
 };
 
+/*
+ * macros to check which logging levels are active
+ *
+ * #if OONF_LOGGING_LEVEL >= LOG_LOGGING_LEVEL_xxxx
+ *   // variable only necessary for logging level xxx and finer
+ *   struct netaddr_str buf;
+ * #endif
+ */
+
+#define OONF_LOGGING_LEVEL_WARN  1
+#define OONF_LOGGING_LEVEL_INFO  2
+#define OONF_LOGGING_LEVEL_DEBUG 3
+
 /**
  * these macros should be used to generate OLSR logging output
  * the OLSR_severity_NH() variants don't print the timestamp/file/line header,
@@ -137,28 +150,28 @@ struct olsr_appdata {
 
 #define _OLSR_LOG(severity, source, no_header, format, args...) do { if (olsr_log_mask_test(log_global_mask, source, severity)) olsr_log(severity, source, no_header, __FILE__, __LINE__, format, ##args); } while(0)
 
-#if MAX_LOGGING_LEVEL < 1
-#define OLSR_DEBUG(source, format, args...) do { } while(0)
-#define OLSR_DEBUG_NH(source, format, args...) do { } while(0)
-#else
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
 #define OLSR_DEBUG(source, format, args...) _OLSR_LOG(LOG_SEVERITY_DEBUG, source, false, format, ##args)
 #define OLSR_DEBUG_NH(source, format, args...) _OLSR_LOG(LOG_SEVERITY_DEBUG, source, true, format, ##args)
+#else
+#define OLSR_DEBUG(source, format, args...) do { } while(0)
+#define OLSR_DEBUG_NH(source, format, args...) do { } while(0)
 #endif
 
-#if MAX_LOGGING_LEVEL < 2
-#define OLSR_INFO(source, format, args...) do { } while(0)
-#define OLSR_INFO_NH(source, format, args...) do { } while(0)
-#else
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_INFO
 #define OLSR_INFO(source, format, args...) _OLSR_LOG(LOG_SEVERITY_INFO, source, false, format, ##args)
 #define OLSR_INFO_NH(source, format, args...) _OLSR_LOG(LOG_SEVERITY_INFO, source, true, format, ##args)
+#else
+#define OLSR_INFO(source, format, args...) do { } while(0)
+#define OLSR_INFO_NH(source, format, args...) do { } while(0)
 #endif
 
-#if MAX_LOGGING_LEVEL < 3
-#define OLSR_WARN(source, format, args...) do { } while(0)
-#define OLSR_WARN_NH(source, format, args...) do { } while(0)
-#else
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
 #define OLSR_WARN(source, format, args...) _OLSR_LOG(LOG_SEVERITY_WARN, source, false, format, ##args)
 #define OLSR_WARN_NH(source, format, args...) _OLSR_LOG(LOG_SEVERITY_WARN, source, true, format, ##args)
+#else
+#define OLSR_WARN(source, format, args...) do { } while(0)
+#define OLSR_WARN_NH(source, format, args...) do { } while(0)
 #endif
 
 typedef void log_handler_cb(struct log_handler_entry *, struct log_parameters *);

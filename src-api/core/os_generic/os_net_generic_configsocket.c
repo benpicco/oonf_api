@@ -67,7 +67,7 @@ os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
   socklen_t addrlen;
   union netaddr_socket bindto;
 
-#if !defined(REMOVE_LOG_WARN)
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
 #endif
 

@@ -208,7 +208,7 @@ olsr_timer_remove(struct olsr_timer_info *info) {
 void
 olsr_timer_start(struct olsr_timer_entry *timer, uint64_t rel_time)
 {
-#if !defined(REMOVE_LOG_DEBUG)
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   struct timeval_buf timebuf1;
 #endif
   int new_slot;

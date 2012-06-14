@@ -130,7 +130,7 @@ olsr_memcookie_malloc(struct olsr_memcookie_info *ci)
   struct list_entity *entity;
   void *ptr;
 
-#if !defined REMOVE_LOG_DEBUG
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   bool reuse = false;
 #endif
 
@@ -160,7 +160,7 @@ olsr_memcookie_malloc(struct olsr_memcookie_info *ci)
 
     ci->_free_list_size--;
     ci->_recycled++;
-#if !defined REMOVE_LOG_DEBUG
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
     reuse = true;
 #endif
   }
@@ -182,7 +182,7 @@ void
 olsr_memcookie_free(struct olsr_memcookie_info *ci, void *ptr)
 {
   struct list_entity *item;
-#if !defined REMOVE_LOG_DEBUG
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   bool reuse = false;
 #endif
 
@@ -198,7 +198,7 @@ olsr_memcookie_free(struct olsr_memcookie_info *ci, void *ptr)
     list_add_tail(&ci->_free_list, item);
 
     ci->_free_list_size++;
-#if !defined REMOVE_LOG_DEBUG
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
     reuse = true;
 #endif
   } else {
