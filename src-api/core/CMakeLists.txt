@@ -11,14 +11,14 @@ ADD_CUSTOM_COMMAND (
     COMMAND ${CMAKE_COMMAND}
         -DSRC=${CMAKE_CURRENT_SOURCE_DIR}/olsr_libdata.c.in
         -DDST=${GEN_DATA_C}
-        -DGIT=${OONF_SOURCE_DIRECTORY}/.git
+        -DGIT=${PROJECT_SOURCE_DIR}/.git
         -DOONF_LIB_VERSION=${OONF_LIB_VERSION}
         -DCMAKE_SYSTEM=${CMAKE_SYSTEM}
         -DCMAKE_SHARED_LIBRARY_PREFIX=${CMAKE_SHARED_LIBRARY_PREFIX}
         -DCMAKE_SHARED_LIBRARY_SUFFIX=${CMAKE_SHARED_LIBRARY_SUFFIX}
         -P ${CMAKE_SOURCE_DIR}/cmake/generate_builddata.cmake
     DEPENDS LibCleanData
-    WORKING_DIRECTORY ${OONF_SOURCE_DIRECTORY}
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     COMMENT "Create new library builddata"
 )
 
@@ -51,10 +51,10 @@ SET(OONF_CORE_INCLUDES olsr_callbacks.h
                        olsr_packet_socket.h
                        olsr_plugins.h
                        olsr_socket.h
+                       olsr_subsystem.h
                        olsr_stream_socket.h
                        olsr_telnet.h
                        olsr_timer.h
-                       olsr.h
                        olsr_libdata.h)
 
 # add os_specific source(include files

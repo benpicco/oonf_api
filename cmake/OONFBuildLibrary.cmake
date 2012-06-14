@@ -25,24 +25,24 @@ function (oonf_create_library libname source include linkto)
     
     IF (include)
         set_target_properties(oonf_${libname} PROPERTIES
-            PUBLIC_HEADER "${OONF_COMMON_INCLUDES}")
+            PUBLIC_HEADER "${include}")
   
-        set_target_properties(oonf_static_common PROPERTIES
-            PUBLIC_HEADER "${OONF_COMMON_INCLUDES}")
+        set_target_properties(oonf_static_${libname} PROPERTIES
+            PUBLIC_HEADER "${include}")
     ENDIF (include)
 
     install(TARGETS oonf_${libname}
         # IMPORTANT: Add the library to the "export-set"
         EXPORT OONFLibraryDepends
         LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT shlib
-        PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}/oonf/${libname}"
+        PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}/${libname}"
             COMPONENT dev)
 
     install(TARGETS oonf_static_${libname}
         # IMPORTANT: Add the static library to the "export-set"
         EXPORT OONFLibraryDepends
         ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT stlib
-        PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}/oonf/${libname}"
+        PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}/${libname}"
             COMPONENT dev)
 endfunction (oonf_create_library)
 

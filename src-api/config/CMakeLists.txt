@@ -13,4 +13,3 @@ SET(OONF_CONFIG_INCLUDES cfg_cmd.h
                           cfg.h)
 
 oonf_create_library("config" "${OONF_CONFIG_SRCS}" "${OONF_CONFIG_INCLUDES}" false)
-    
