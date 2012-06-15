@@ -12,31 +12,52 @@ include $(INCLUDE_DIR)/cmake.mk
 CMAKE_SOURCE_DIR=$(CURDIR)/../../
 CMAKE_OPTIONS=-DOONF_LOGGING_LEVEL:String=warn -DCMAKE_BUILD_TYPE:String=Release -DOONF_NO_TESTING:Bool=true -DINSTALL_LIB_DIR:Path=lib/oonf -DINSTALL_INCLUDE_DIR:Path=include/oonf -DINSTALL_CMAKE_DIR:Path=lib/CMake
 
-define Package/oonf-common-api
+define Package/oonf-api/template
 	SECTION:=net
 	CATEGORY:=Network
-	TITLE:=OLSR.org network framework (common API)
+	MAINTAINER:=Henning Rogge <hrogge@gmail.com>
+	SUBMENU:=OLSR.org network framework
+	URL:=http://www.olsr.org/
+endef
+
+define Package/oonf-common-api
+	$(call Package/oonf-api/template) 
+	TITLE:=Common-API (generic helpers functions) 
 endef
 
 define Package/oonf-config-api
-	SECTION:=net
-	CATEGORY:=Network
-	DEPENDS:=+oonf-common-api
-	TITLE:=OLSR.org network framework (config API)
+	$(call Package/oonf-api/template) 
+	TITLE:=Config-API (generic configuration library)
 endef
 
 define Package/oonf-rfc5444-api
-	SECTION:=net
-	CATEGORY:=Network
-	DEPENDS:=+oonf-common-api
-	TITLE:=OLSR.org network framework (rfc5444 API)
+	$(call Package/oonf-api/template) 
+	TITLE:=RFC5444-API (generic parser/generator for RFC5444)
 endef
 
 define Package/oonf-core-api
-	SECTION:=net
-	CATEGORY:=Network
-	DEPENDS:=+oonf-common-api +oonf-config-api +oonf-rfc5444-api
-	TITLE:=OLSR.org network framework (core API)
+	$(call Package/oonf-api/template) 
+	TITLE:=Core-API (basic infrastructure/scheduler code)
+endef
+
+define Package/oonf-plugin-cfgio-file
+	$(call Package/oonf-api/template) 
+	TITLE:=File input/output configuration plugin
+endef
+
+define Package/oonf-plugin-cfgparser-compact
+	$(call Package/oonf-api/template) 
+	TITLE:=Compact configurationf format plugin
+endef
+
+define Package/oonf-plugin-httptelnet
+	$(call Package/oonf-api/template) 
+	TITLE:=HTTP to Telnet bridge plugin
+endef
+
+define Package/oonf-plugin-remotecontrol
+	$(call Package/oonf-api/template) 
+	TITLE:=Remote debugging and configuration plugin
 endef
 
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
@@ -100,7 +121,39 @@ define Package/oonf-core-api/install
 		$(1)/usr/lib/oonf
 endef
 
+define Package/oonf-plugin-cfgio-file/install
+	$(INSTALL_DIR) $(1)/usr/lib/oonf
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/lib/oonf/liboonf_cfgio_file*.so* \
+		$(1)/usr/lib/oonf
+endef
+
+define Package/oonf-plugin-cfgparser-compact/install
+	$(INSTALL_DIR) $(1)/usr/lib/oonf
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/lib/oonf/liboonf_cfgparser_compact*.so* \
+		$(1)/usr/lib/oonf
+endef
+
+define Package/oonf-plugin-httptelnet/install
+	$(INSTALL_DIR) $(1)/usr/lib/oonf
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/lib/oonf/liboonf_httptelnet*.so* \
+		$(1)/usr/lib/oonf
+endef
+
+define Package/oonf-plugin-remotecontrol/install
+	$(INSTALL_DIR) $(1)/usr/lib/oonf
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/lib/oonf/liboonf_remotecontrol*.so* \
+		$(1)/usr/lib/oonf
+endef
+
 $(eval $(call BuildPackage,oonf-common-api))
 $(eval $(call BuildPackage,oonf-config-api))
 $(eval $(call BuildPackage,oonf-rfc5444-api))
 $(eval $(call BuildPackage,oonf-core-api))
+$(eval $(call BuildPackage,oonf-plugin-cfgio-file))
+$(eval $(call BuildPackage,oonf-plugin-cfgparser-compact))
+$(eval $(call BuildPackage,oonf-plugin-httptelnet))
+$(eval $(call BuildPackage,oonf-plugin-remotecontrol))
