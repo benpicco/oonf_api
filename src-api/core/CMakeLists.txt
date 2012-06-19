@@ -55,7 +55,13 @@ SET(OONF_CORE_INCLUDES olsr_callbacks.h
                        olsr_stream_socket.h
                        olsr_telnet.h
                        olsr_timer.h
-                       olsr_libdata.h)
+                       olsr_libdata.h
+                       os_clock.h
+                       os_net.h
+                       os_routing.h
+                       os_syslog.h
+                       os_system.h
+                       )
 
 # add os_specific source(include files
 # TODO: add BSD and WIN32

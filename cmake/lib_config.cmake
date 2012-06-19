@@ -2,7 +2,7 @@
 if (WIN32 AND NOT CYGWIN)
   set(DEF_INSTALL_CMAKE_DIR CMake)
 else ()
-  set(DEF_INSTALL_CMAKE_DIR lib/CMake)
+  set(DEF_INSTALL_CMAKE_DIR lib/oonf)
 endif ()
 
 # set to debug build if variable not set

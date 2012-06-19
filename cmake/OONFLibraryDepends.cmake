@@ -1,0 +1,5 @@
+# Our build-tree library dependencies (contains definitions for IMPORTED targets)
+file (GLOB deps "${OONF_CMAKE_DIR}/OONFLibraryDepends_*.cmake")
+foreach(dep ${deps})
+    include (${dep})
+endforeach(dep)

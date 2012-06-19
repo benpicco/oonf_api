@@ -24,13 +24,13 @@ include (./cmake/cc_flags.cmake)
 ######################################
 
 # Make relative paths absolute (needed later on)
-foreach(p LIB BIN INCLUDE CMAKE)
-    set(var INSTALL_${p}_DIR)
-
-    if(NOT IS_ABSOLUTE "${${var}}")
-        set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-    endif(NOT IS_ABSOLUTE "${${var}}")
-endforeach()
+#foreach(p LIB BIN INCLUDE CMAKE)
+#    set(var INSTALL_${p}_DIR)
+#
+#    if(NOT IS_ABSOLUTE "${${var}}")
+#        set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
+#    endif(NOT IS_ABSOLUTE "${${var}}")
+#endforeach()
 
 ########################
 #### Doxygen target ####
@@ -50,9 +50,6 @@ endif(DOXYGEN_FOUND)
 #########################
 #### Compile targets ####
 #########################
-
-# remove export set file
-file(REMOVE "${PROJECT_BINARY_DIR}/OONFLibraryDepends.cmake")
 
 # include build helper
 include (cmake/OONFBuildLibrary.cmake)
@@ -80,28 +77,40 @@ endif (NOT OONF_NO_TESTING)
 ###############################
 
 # get list of include directories
-get_property(INCLUDE_LIST DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+get_property (INCLUDE_LIST DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 
 # Export the package for use from the build-tree
 # (this registers the build-tree with a global CMake-registry)
-export(PACKAGE OONF)
+if (NOT OONF_DO_NOT_REGISTER_PACKAGE)
+    export(PACKAGE OONF)
+endif (NOT OONF_DO_NOT_REGISTER_PACKAGE)
 
 # Create a OONFBuildTreeSettings.cmake file for the use from the build tree
-configure_file(./cmake/files/OONFBuildTreeSettings.cmake.in
+configure_file (./cmake/files/OONFBuildTreeSettings.cmake.in
     "${PROJECT_BINARY_DIR}/OONFBuildTreeSettings.cmake" @ONLY)
 
 # Create the OONFConfig.cmake and OONFConfigVersion files
-file(RELATIVE_PATH CONF_REL_INCLUDE_DIR "${INSTALL_CMAKE_DIR}"
-   "${INSTALL_INCLUDE_DIR}")
-configure_file(./cmake/files/OONFConfig.cmake.in
+file (RELATIVE_PATH CONF_REL_INCLUDE_DIR "/${INSTALL_CMAKE_DIR}"
+   "/${INSTALL_INCLUDE_DIR}")
+file (RELATIVE_PATH CONF_REL_LIB_DIR "/${INSTALL_CMAKE_DIR}"
+   "/${INSTALL_LIB_DIR}")
+configure_file (./cmake/files/OONFConfig.cmake.in
     "${PROJECT_BINARY_DIR}/OONFConfig.cmake" @ONLY)
-configure_file(./cmake/files/OONFConfigVersion.cmake.in
+configure_file (./cmake/files/OONFConfigVersion.cmake.in
     "${PROJECT_BINARY_DIR}/OONFConfigVersion.cmake" @ONLY)
 
 # Copy OONFBuildLibrary to build directory
-file(COPY ./cmake/OONFBuildLibrary.cmake
+file (COPY ./cmake/OONFBuildLibrary.cmake
+     DESTINATION ${PROJECT_BINARY_DIR})
+file (COPY ./cmake/OONFLibraryDepends.cmake
      DESTINATION ${PROJECT_BINARY_DIR})
 
+# install cmake files
+install (FILES ${PROJECT_BINARY_DIR}/OONFBuildLibrary.cmake
+               ${PROJECT_BINARY_DIR}/OONFConfig.cmake
+               ${PROJECT_BINARY_DIR}/OONFConfigVersion.cmake
+         DESTINATION ${INSTALL_CMAKE_DIR} COMPONENT dev)
+
 # Install the export set for use with the install-tree
-install(EXPORT OONFLibraryDepends DESTINATION
+install (EXPORT OONFLibraryDepends DESTINATION
     "${INSTALL_CMAKE_DIR}" COMPONENT dev)

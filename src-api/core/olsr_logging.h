@@ -122,7 +122,7 @@ struct olsr_appdata {
 /*
  * macros to check which logging levels are active
  *
- * #if OONF_LOGGING_LEVEL >= LOG_LOGGING_LEVEL_xxxx
+ * #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_xxxx
  *   // variable only necessary for logging level xxx and finer
  *   struct netaddr_str buf;
  * #endif

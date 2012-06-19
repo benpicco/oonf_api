@@ -10,7 +10,7 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
 CMAKE_SOURCE_DIR=$(CURDIR)/../../
-CMAKE_OPTIONS=-DOONF_LOGGING_LEVEL:String=warn -DCMAKE_BUILD_TYPE:String=Release -DOONF_NO_TESTING:Bool=true -DINSTALL_LIB_DIR:Path=lib/oonf -DINSTALL_INCLUDE_DIR:Path=include/oonf -DINSTALL_CMAKE_DIR:Path=lib/CMake
+CMAKE_OPTIONS=-DOONF_DO_NOT_REGISTER_PACKAGE:Bool=true -DOONF_LOGGING_LEVEL:String=warn -DCMAKE_BUILD_TYPE:String=Release -DOONF_NO_TESTING:Bool=true -DINSTALL_LIB_DIR:Path=lib/oonf -DINSTALL_INCLUDE_DIR:Path=include/oonf -DINSTALL_CMAKE_DIR:Path=lib/oonf
 
 define Package/oonf-api/template
 	SECTION:=net
@@ -28,63 +28,76 @@ endef
 define Package/oonf-config-api
 	$(call Package/oonf-api/template) 
 	TITLE:=Config-API (generic configuration library)
+	DEPENDS:=+oonf-common-api
 endef
 
 define Package/oonf-rfc5444-api
 	$(call Package/oonf-api/template) 
 	TITLE:=RFC5444-API (generic parser/generator for RFC5444)
+	DEPENDS:=+oonf-common-api
 endef
 
 define Package/oonf-core-api
 	$(call Package/oonf-api/template) 
 	TITLE:=Core-API (basic infrastructure/scheduler code)
+	DEPENDS:=+oonf-common-api +oonf-config-api +oonf-rfc5444-api
 endef
 
 define Package/oonf-plugin-cfgio-file
 	$(call Package/oonf-api/template) 
 	TITLE:=File input/output configuration plugin
+	DEPENDS:=+oonf-core-api
 endef
 
 define Package/oonf-plugin-cfgparser-compact
 	$(call Package/oonf-api/template) 
 	TITLE:=Compact configurationf format plugin
+	DEPENDS:=+oonf-core-api
 endef
 
 define Package/oonf-plugin-httptelnet
 	$(call Package/oonf-api/template) 
 	TITLE:=HTTP to Telnet bridge plugin
+	DEPENDS:=+oonf-core-api
 endef
 
 define Package/oonf-plugin-remotecontrol
 	$(call Package/oonf-api/template) 
 	TITLE:=Remote debugging and configuration plugin
+	DEPENDS:=+oonf-core-api
 endef
 
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
 
-
 define Build/InstallDev
-	$(INSTALL_DIR) $(1)/usr/include/oonf/common
-	$(INSTALL_DIR) $(1)/usr/include/oonf/config
-	$(INSTALL_DIR) $(1)/usr/include/oonf/rfc5444
-	$(INSTALL_DIR) $(1)/usr/include/oonf/core
+	$(INSTALL_DIR) $(1)/usr/include/oonf/common \
+		       $(1)/usr/include/oonf/config \
+	               $(1)/usr/include/oonf/rfc5444 \
+	               $(1)/usr/include/oonf/core \
+	               $(1)/usr/include/oonf/core/os_linux \
         
 	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)/usr/include/oonf/common/* \
+		$(PKG_INSTALL_DIR)/usr/include/oonf/common/*.h \
 		$(1)/usr/include/oonf/common
 	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)/usr/include/oonf/config/* \
+		$(PKG_INSTALL_DIR)/usr/include/oonf/config/*.h \
 		$(1)/usr/include/oonf/config
 	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)/usr/include/oonf/rfc5444/* \
+		$(PKG_INSTALL_DIR)/usr/include/oonf/rfc5444/*.h \
 		$(1)/usr/include/oonf/rfc5444
 	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)/usr/include/oonf/core/* \
+		$(PKG_INSTALL_DIR)/usr/include/oonf/core/*.h \
 		$(1)/usr/include/oonf/core
+	$(INSTALL_DATA) \
+		$(PKG_INSTALL_DIR)/usr/include/oonf/core/os_linux/*.h \
+		$(1)/usr/include/oonf/core/os_linux
 
 	$(INSTALL_DIR) $(1)/usr/lib/oonf/
-	$(CP) \
+	$(INSTALL_BIN) \
 		$(PKG_INSTALL_DIR)/usr/lib/oonf/lib*.{so*,a} \
+		$(1)/usr/lib/oonf/
+	$(INSTALL_DATA) \
+		$(PKG_INSTALL_DIR)/usr/lib/oonf/OONF*.cmake                                                  \
 		$(1)/usr/lib/oonf/
 
 #        $(INSTALL_DIR) $(1)/usr/lib/pkgconfig

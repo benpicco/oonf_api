@@ -12,11 +12,12 @@ SET(OONF_RFC5444_SRCS rfc5444_context.c
                        rfc5444_print.c)
 
 SET(OONF_RFC5444_INCLUDES rfc5444_context.h
-                           rfc5444_reader.h
-                           rfc5444_tlv_writer.h
-                           rfc5444_writer.h
-                           rfc5444_conversion.h
-                           rfc5444_iana.h
-                           rfc5444_print.h)
+                          rfc5444_reader.h
+                          rfc5444_tlv_writer.h
+                          rfc5444_writer.h
+                          rfc5444_conversion.h
+                          rfc5444_iana.h
+                          rfc5444_print.h
+                          rfc5444_api_config.h)
 
 oonf_create_library("rfc5444" "${OONF_RFC5444_SRCS}" "${OONF_RFC5444_INCLUDES}" false)
