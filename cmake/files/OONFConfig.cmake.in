@@ -7,11 +7,9 @@
 get_filename_component(OONF_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
 if(EXISTS "${OONF_CMAKE_DIR}/CMakeCache.txt")
-   message ("        Run OONFConfig.cmake for build-tree")
    # We are in the build tree
    include("${OONF_CMAKE_DIR}/OONFBuildTreeSettings.cmake")
 else()
-   message ("        Run OONFConfig.cmake for install-tree")
    set(OONF_INCLUDE_DIRS "${OONF_CMAKE_DIR}/@CONF_REL_INCLUDE_DIR@")
    link_directories(${OONF_CMAKE_DIR}/@CONF_REL_LIB_DIR@)
 endif()

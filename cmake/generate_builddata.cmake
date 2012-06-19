@@ -3,8 +3,6 @@
 # look for git executable 
 find_program(found_git git)
 
-message ("GIT api: ${GIT}")
-
 SET(OONF_LIB_GIT "cannot read git repository")
 SET(OONF_LIB_CHANGE "")
 

@@ -19,19 +19,6 @@ include (./cmake/lib_config.cmake)
 # include compiler flags
 include (./cmake/cc_flags.cmake)
 
-######################################
-#### Install target configuration ####
-######################################
-
-# Make relative paths absolute (needed later on)
-#foreach(p LIB BIN INCLUDE CMAKE)
-#    set(var INSTALL_${p}_DIR)
-#
-#    if(NOT IS_ABSOLUTE "${${var}}")
-#        set(${var} "${CMAKE_INSTALL_PREFIX}/${${var}}")
-#    endif(NOT IS_ABSOLUTE "${${var}}")
-#endforeach()
-
 ########################
 #### Doxygen target ####
 ########################
