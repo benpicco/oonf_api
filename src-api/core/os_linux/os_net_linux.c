@@ -47,7 +47,6 @@
 
 #include "common/common_types.h"
 
-#include "core/olsr_cfg.h"
 #include "core/olsr_interface.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_subsystem.h"
@@ -73,17 +72,12 @@ os_net_init(void) {
     return -1;
   }
 
-  if (config_global.ipv6) {
-    _ioctl_v6 = socket(AF_INET6, SOCK_DGRAM, 0);
-    if (_ioctl_v6 == -1) {
-      OLSR_WARN(LOG_OS_NET, "Cannot open ipv6 ioctl socket: %s (%d)",
-          strerror(errno), errno);
-      close(_ioctl_v4);
-      return -1;
-    }
-  }
-  else {
-    _ioctl_v6 = -1;
+  _ioctl_v6 = socket(AF_INET6, SOCK_DGRAM, 0);
+  if (_ioctl_v6 == -1) {
+    OLSR_WARN(LOG_OS_NET, "Cannot open ipv6 ioctl socket: %s (%d)",
+        strerror(errno), errno);
+
+    /* do not stop here, system might just not support IPv6 */
   }
 
   olsr_subsystem_init(&_os_net_state);

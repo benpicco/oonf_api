@@ -50,7 +50,6 @@
 #include "common/autobuf.h"
 #include "common/avl.h"
 #include "common/list.h"
-#include "core/olsr_cfg.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_memcookie.h"
 #include "core/olsr_socket.h"
@@ -354,24 +353,14 @@ olsr_stream_apply_managed(struct olsr_stream_managed *managed,
     struct olsr_stream_managed_config *config) {
   olsr_acl_copy(&managed->acl, &config->acl);
 
-  if (config_global.ipv4) {
-    if (_apply_managed_socket(managed,
-        &managed->socket_v4, &config->bindto_v4, config->port)) {
-      return -1;
-    }
-  }
-  else {
-    olsr_stream_remove(&managed->socket_v4, true);
+  if (_apply_managed_socket(managed,
+      &managed->socket_v4, &config->bindto_v4, config->port)) {
+    return -1;
   }
 
-  if (config_global.ipv6) {
-    if (_apply_managed_socket(managed,
-        &managed->socket_v6, &config->bindto_v6, config->port)) {
-      return -1;
-    }
-  }
-  else {
-    olsr_stream_remove(&managed->socket_v6, true);
+  if (_apply_managed_socket(managed,
+      &managed->socket_v6, &config->bindto_v6, config->port)) {
+    return -1;
   }
   return 0;
 }

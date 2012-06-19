@@ -50,10 +50,11 @@
 #include "config/cfg.h"
 
 #include "core/olsr_logging.h"
-#include "core/olsr_logging_cfg.h"
-#include "core/olsr_cfg.h"
 #include "core/olsr_subsystem.h"
 #include "core/os_syslog.h"
+
+#include "tools/olsr_logging_cfg.h"
+#include "tools/olsr_cfg.h"
 
 #define LOG_SECTION     "log"
 #define LOG_LEVEL_ENTRY "level"

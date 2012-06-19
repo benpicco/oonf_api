@@ -23,11 +23,8 @@ ADD_CUSTOM_COMMAND (
 )
 
 SET(OONF_CORE_SRCS olsr_callbacks.c
-                   olsr_cfg.c
                    olsr_clock.c
-                   olsr_http.c
                    olsr_interface.c
-                   olsr_logging_cfg.c
                    olsr_logging.c
                    olsr_memcookie.c
                    olsr_netaddr_acl.c
@@ -35,16 +32,12 @@ SET(OONF_CORE_SRCS olsr_callbacks.c
                    olsr_plugins.c
                    olsr_socket.c
                    olsr_stream_socket.c
-                   olsr_telnet.c
                    olsr_timer.c
                    ${GEN_DATA_C})
 
 SET(OONF_CORE_INCLUDES olsr_callbacks.h
-                       olsr_cfg.h
                        olsr_clock.h
-                       olsr_http.h
                        olsr_interface.h
-                       olsr_logging_cfg.h
                        olsr_logging.h
                        olsr_memcookie.h
                        olsr_netaddr_acl.h
@@ -53,7 +46,6 @@ SET(OONF_CORE_INCLUDES olsr_callbacks.h
                        olsr_socket.h
                        olsr_subsystem.h
                        olsr_stream_socket.h
-                       olsr_telnet.h
                        olsr_timer.h
                        olsr_libdata.h
                        os_clock.h

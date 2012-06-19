@@ -53,8 +53,6 @@ struct olsr_config_global {
 
   bool fork;
   bool failfast;
-  bool ipv4;
-  bool ipv6;
 };
 
 /* section types for configuration */

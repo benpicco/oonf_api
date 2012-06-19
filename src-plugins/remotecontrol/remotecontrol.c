@@ -53,14 +53,15 @@
 #include "config/cfg_db.h"
 #include "config/cfg_schema.h"
 
-#include "core/olsr_cfg.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_memcookie.h"
 #include "core/olsr_plugins.h"
-#include "core/olsr_telnet.h"
 #include "core/olsr_timer.h"
 #include "core/olsr_subsystem.h"
 #include "core/os_routing.h"
+
+#include "tools/olsr_cfg.h"
+#include "tools/olsr_telnet.h"
 
 /* variable definitions */
 struct _remotecontrol_cfg {

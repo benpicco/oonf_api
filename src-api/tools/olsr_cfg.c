@@ -49,8 +49,9 @@
 #include "core/olsr_logging.h"
 #include "core/olsr_plugins.h"
 #include "core/olsr_socket.h"
-#include "core/olsr_cfg.h"
 #include "core/olsr_subsystem.h"
+
+#include "tools/olsr_cfg.h"
 
 /* static prototypes */
 static int _cb_validate_global(struct cfg_schema_section *, const char *section_name,
@@ -83,10 +84,6 @@ static struct cfg_schema_entry global_entries[] = {
       "Set to true to fork daemon into background."),
   CFG_MAP_BOOL(olsr_config_global, failfast, "failfast", "no",
       "Set to true to stop daemon statup if at least one plugin doesn't load."),
-  CFG_MAP_BOOL(olsr_config_global, ipv4, "ipv4", "yes",
-      "Set to true to enable ipv4 support in program."),
-  CFG_MAP_BOOL(olsr_config_global, ipv6, "ipv6", "yes",
-      "Set to true to enable ipv6 support in program."),
 
   CFG_MAP_STRINGLIST(olsr_config_global, plugin, CFG_GLOBAL_PLUGIN, "",
       "Set list of plugins to be loaded by daemon. Some might need configuration options."),
@@ -468,11 +465,6 @@ _cb_validate_global(struct cfg_schema_section *schema __attribute__((unused)),
   if (cfg_schema_tobin(&config,
         section, global_entries, ARRAYSIZE(global_entries))) {
     cfg_append_printable_line(log, "Could not generate binary template of global section");
-    return -1;
-  }
-
-  if (!config.ipv4 && !config.ipv6) {
-    cfg_append_printable_line(log, "You have to activate either ipv4 or ipv6 (or both)");
     return -1;
   }
 

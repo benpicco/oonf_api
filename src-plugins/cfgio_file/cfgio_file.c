@@ -50,10 +50,9 @@
 #include "config/cfg_io.h"
 #include "config/cfg_parser.h"
 #include "config/cfg.h"
-#include "core/olsr_cfg.h"
 #include "core/olsr_plugins.h"
 
-#include <stdio.h>
+#include "tools/olsr_cfg.h"
 
 static int _cb_plugin_load(void);
 static int _cb_plugin_unload(void);

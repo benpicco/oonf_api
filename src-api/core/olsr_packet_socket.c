@@ -47,7 +47,6 @@
 #include "common/autobuf.h"
 #include "common/netaddr.h"
 #include "core/os_net.h"
-#include "core/olsr_cfg.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_packet_socket.h"
 #include "core/olsr_subsystem.h"
@@ -288,11 +287,11 @@ olsr_packet_send_managed(struct olsr_packet_managed *managed,
     return 0;
   }
 
-  if (config_global.ipv4 && list_is_node_added(&managed->socket_v4.scheduler_entry.node)
+  if (list_is_node_added(&managed->socket_v4.scheduler_entry.node)
       && netaddr_socket_get_addressfamily(remote) == AF_INET) {
     return olsr_packet_send(&managed->socket_v4, remote, data, length);
   }
-  if (config_global.ipv6 && list_is_node_added(&managed->socket_v6.scheduler_entry.node)
+  if (list_is_node_added(&managed->socket_v6.scheduler_entry.node)
       && netaddr_socket_get_addressfamily(remote) == AF_INET6) {
     return olsr_packet_send(&managed->socket_v6, remote, data, length);
   }
@@ -346,30 +345,18 @@ _apply_managed(struct olsr_packet_managed *managed,
     data = &managed->_if_listener.interface->data;
   }
 
-  if (config_global.ipv4) {
-    if (_apply_managed_socketpair(managed, data,
-        &managed->socket_v4, &config->bindto_v4, config->port,
-        &managed->multicast_v4, &config->multicast_v4, config->multicast_port,
-        config->loop_multicast, if_event)) {
-      result = -1;
-    }
-  }
-  else {
-    olsr_packet_remove(&managed->socket_v4, true);
-    olsr_packet_remove(&managed->multicast_v4, true);
+  if (_apply_managed_socketpair(managed, data,
+      &managed->socket_v4, &config->bindto_v4, config->port,
+      &managed->multicast_v4, &config->multicast_v4, config->multicast_port,
+      config->loop_multicast, if_event)) {
+    result = -1;
   }
 
-  if (config_global.ipv6) {
-    if (_apply_managed_socketpair(managed, data,
-        &managed->socket_v6, &config->bindto_v6, config->port,
-        &managed->multicast_v6, &config->multicast_v6, config->multicast_port,
-        config->loop_multicast, if_event)) {
-      result = -1;
-    }
-  }
-  else {
-    olsr_packet_remove(&managed->socket_v6, true);
-    olsr_packet_remove(&managed->multicast_v6, true);
+  if (_apply_managed_socketpair(managed, data,
+      &managed->socket_v6, &config->bindto_v6, config->port,
+      &managed->multicast_v6, &config->multicast_v6, config->multicast_port,
+      config->loop_multicast, if_event)) {
+    result = -1;
   }
 
   return result;

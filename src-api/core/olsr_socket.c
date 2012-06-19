@@ -47,7 +47,6 @@
 
 #include "common/avl.h"
 #include "common/avl_comp.h"
-#include "core/olsr_cfg.h"
 #include "core/olsr_clock.h"
 #include "core/olsr_logging.h"
 #include "core/os_net.h"
@@ -57,6 +56,8 @@
 
 /* List of all active sockets in scheduler */
 struct list_entity socket_head;
+
+static bool _stop_scheduler;
 
 /* remember if initialized or not */
 OLSR_SUBSYSTEM_STATE(_socket_state);
@@ -70,6 +71,8 @@ olsr_socket_init(void) {
     return;
 
   list_init_head(&socket_head);
+
+  _stop_scheduler = false;
 }
 
 /**
@@ -120,6 +123,14 @@ olsr_socket_remove(struct olsr_socket_entry *entry)
 }
 
 /**
+ * Prevent the scheduler from waiting until timeout.
+ */
+void
+olsr_socket_stop_scheduler(void) {
+  _stop_scheduler = true;
+}
+
+/**
  * Handle all incoming socket events until a certain time
  * @param stop_time timestamp when the handler should stop,
  *   0 if it should keep running
@@ -156,7 +167,7 @@ olsr_socket_handle(uint64_t stop_time)
       olsr_timer_walk();
     }
 
-    if (!olsr_cfg_is_running() || olsr_cfg_is_commit_set() || olsr_cfg_is_reload_set()) {
+    if (_stop_scheduler) {
       return 0;
     }
 
@@ -205,7 +216,7 @@ olsr_socket_handle(uint64_t stop_time)
     }
 
     do {
-      if (!olsr_cfg_is_running() || olsr_cfg_is_commit_set() || olsr_cfg_is_reload_set()) {
+      if (_stop_scheduler) {
         return 0;
       }
       n = os_select(hfd,

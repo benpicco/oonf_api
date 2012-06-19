@@ -46,13 +46,14 @@
 #include "config/cfg_schema.h"
 
 #include "core/olsr_subsystem.h"
-#include "core/olsr_cfg.h"
 #include "core/olsr_libdata.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_netaddr_acl.h"
 #include "core/olsr_stream_socket.h"
 #include "core/os_system.h"
-#include "core/olsr_http.h"
+
+#include "tools/olsr_cfg.h"
+#include "tools/olsr_http.h"
 
 /* Http text constants */
 static const char HTTP_VERSION_1_0[] = "HTTP/1.0";

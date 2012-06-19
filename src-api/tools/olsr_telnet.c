@@ -45,7 +45,6 @@
 
 #include "config/cfg_schema.h"
 
-#include "core/olsr_cfg.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_memcookie.h"
 #include "core/olsr_netaddr_acl.h"
@@ -53,7 +52,9 @@
 #include "core/olsr_stream_socket.h"
 #include "core/olsr_timer.h"
 #include "core/olsr_subsystem.h"
-#include "core/olsr_telnet.h"
+
+#include "tools/olsr_cfg.h"
+#include "tools/olsr_telnet.h"
 
 /* static function prototypes */
 static void _call_stop_handler(struct olsr_telnet_data *data);
