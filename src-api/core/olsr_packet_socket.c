@@ -61,11 +61,11 @@ static int _apply_managed(struct olsr_packet_managed *managed,
     struct olsr_packet_managed_config *config, bool if_event);
 static int _apply_managed_socketpair(struct olsr_packet_managed *managed,
     struct olsr_interface_data *data,
-    struct olsr_packet_socket *sock, struct netaddr *bind_ip, uint16_t port,
-    struct olsr_packet_socket *mc_sock, struct netaddr *mc_ip, uint16_t mc_port,
+    struct olsr_packet_socket *sock, struct netaddr *bind_ip, int port,
+    struct olsr_packet_socket *mc_sock, struct netaddr *mc_ip, int mc_port,
     bool mc_loopback, bool if_event);
 static int _apply_managed_socket(struct olsr_packet_socket *stream,
-    struct netaddr *bindto, uint16_t port, struct olsr_interface_data *data,
+    struct netaddr *bindto, int port, struct olsr_interface_data *data,
     struct olsr_packet_config *config, bool if_event);
 static void _cb_packet_event_unicast(int fd, void *data, bool r, bool w);
 static void _cb_packet_event_multicast(int fd, void *data, bool r, bool w);
@@ -380,10 +380,10 @@ _apply_managed(struct olsr_packet_managed *managed,
 static int
 _apply_managed_socketpair(struct olsr_packet_managed *managed,
     struct olsr_interface_data *data,
-    struct olsr_packet_socket *sock, struct netaddr *bind_ip, uint16_t port,
-    struct olsr_packet_socket *mc_sock, struct netaddr *mc_ip, uint16_t mc_port,
+    struct olsr_packet_socket *sock, struct netaddr *bind_ip, int port,
+    struct olsr_packet_socket *mc_sock, struct netaddr *mc_ip, int mc_port,
     bool mc_loopback, bool if_event) {
-  int treestate = 0, result = 0;
+  int sockstate = 0, result = 0;
   bool real_multicast;
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   struct netaddr_str buf1, buf2;
@@ -408,23 +408,23 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
       mc_ip->type == AF_INET ? &NETADDR_IPV4_MULTICAST : &NETADDR_IPV6_MULTICAST,
       mc_ip);
 
-  treestate = _apply_managed_socket(sock, bind_ip, port, data,
+  sockstate = _apply_managed_socket(sock, bind_ip, port, data,
       &managed->config, if_event);
-  if (treestate == 0 && real_multicast && data != NULL && data->up) {
+  if (sockstate == 0 && real_multicast && data != NULL && data->up) {
     /* everything okay */
     os_net_join_mcast_send(sock->scheduler_entry.fd,
         bind_ip, data, mc_loopback, LOG_SOCKET_PACKET);
   }
-  else if (treestate < 0) {
+  else if (sockstate < 0) {
     /* error */
     result = -1;
   }
 
   if (real_multicast && mc_ip->type != AF_UNSPEC) {
     /* multicast */
-    treestate = _apply_managed_socket(mc_sock, mc_ip, mc_port, data,
+    sockstate = _apply_managed_socket(mc_sock, mc_ip, mc_port, data,
         &managed->config, if_event);
-    if (treestate == 0) {
+    if (sockstate == 0) {
       /* everything okay */
       mc_sock->scheduler_entry.process = _cb_packet_event_multicast;
 
@@ -432,7 +432,7 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
       os_net_join_mcast_recv(mc_sock->scheduler_entry.fd,
           mc_ip, data, LOG_SOCKET_PACKET);
     }
-    else if (treestate < 0) {
+    else if (sockstate < 0) {
       /* error */
       result = -1;
     }
@@ -462,7 +462,7 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
  */
 static int
 _apply_managed_socket(struct olsr_packet_socket *packet,
-    struct netaddr *bindto, uint16_t port,
+    struct netaddr *bindto, int port,
     struct olsr_interface_data *data,
     struct olsr_packet_config *config,
     bool if_event) {

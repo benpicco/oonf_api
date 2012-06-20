@@ -154,8 +154,8 @@ os_net_join_mcast_send(int sock,
 
     i = loop ? 1 : 0;
     if(setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&i, sizeof(i)) < 0) {
-      OLSR_WARN(log_src, "Cannot deactivate local loop of multicast interface: %s (%d)\n",
-          strerror(errno), errno);
+      OLSR_WARN(log_src, "Cannot %sactivate local loop of multicast interface: %s (%d)\n",
+          loop ? "" : "de", strerror(errno), errno);
       return -1;
     }
   }
