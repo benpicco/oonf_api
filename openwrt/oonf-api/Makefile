@@ -43,28 +43,34 @@ define Package/oonf-core-api
 	DEPENDS:=+oonf-common-api +oonf-config-api +oonf-rfc5444-api
 endef
 
+define Package/oonf-tools-api
+	$(call Package/oonf-api/template) 
+	TITLE:=Tools-API (high level infrastructure)
+	DEPENDS:=+oonf-common-api +oonf-config-api +oonf-rfc5444-api +oonf-core-api
+endef
+
 define Package/oonf-plugin-cfgio-file
 	$(call Package/oonf-api/template) 
 	TITLE:=File input/output configuration plugin
-	DEPENDS:=+oonf-core-api
+	DEPENDS:=+oonf-core-api +oonf-tools-api
 endef
 
 define Package/oonf-plugin-cfgparser-compact
 	$(call Package/oonf-api/template) 
 	TITLE:=Compact configurationf format plugin
-	DEPENDS:=+oonf-core-api
+	DEPENDS:=+oonf-core-api +oonf-tools-api
 endef
 
 define Package/oonf-plugin-httptelnet
 	$(call Package/oonf-api/template) 
 	TITLE:=HTTP to Telnet bridge plugin
-	DEPENDS:=+oonf-core-api
+	DEPENDS:=+oonf-core-api +oonf-tools-api
 endef
 
 define Package/oonf-plugin-remotecontrol
 	$(call Package/oonf-api/template) 
 	TITLE:=Remote debugging and configuration plugin
-	DEPENDS:=+oonf-core-api
+	DEPENDS:=+oonf-core-api +oonf-tools-api
 endef
 
 TARGET_CFLAGS += -I$(STAGING_DIR)/usr/include
@@ -75,6 +81,7 @@ define Build/InstallDev
 	               $(1)/usr/include/oonf/rfc5444 \
 	               $(1)/usr/include/oonf/core \
 	               $(1)/usr/include/oonf/core/os_linux \
+	               $(1)/usr/include/oonf/tools
         
 	$(INSTALL_DATA) \
 		$(PKG_INSTALL_DIR)/usr/include/oonf/common/*.h \
@@ -91,6 +98,9 @@ define Build/InstallDev
 	$(INSTALL_DATA) \
 		$(PKG_INSTALL_DIR)/usr/include/oonf/core/os_linux/*.h \
 		$(1)/usr/include/oonf/core/os_linux
+	$(INSTALL_DATA) \
+		$(PKG_INSTALL_DIR)/usr/include/oonf/tools/*.h \
+		$(1)/usr/include/oonf/tools
 
 	$(INSTALL_DIR) $(1)/usr/lib/oonf/
 	$(INSTALL_BIN) \
@@ -134,6 +144,13 @@ define Package/oonf-core-api/install
 		$(1)/usr/lib/oonf
 endef
 
+define Package/oonf-tools-api/install
+	$(INSTALL_DIR) $(1)/usr/lib/oonf
+	$(CP) \
+		$(PKG_INSTALL_DIR)/usr/lib/oonf/liboonf_tools*.so* \
+		$(1)/usr/lib/oonf
+endef
+
 define Package/oonf-plugin-cfgio-file/install
 	$(INSTALL_DIR) $(1)/usr/lib/oonf
 	$(CP) \
@@ -166,6 +183,7 @@ $(eval $(call BuildPackage,oonf-common-api))
 $(eval $(call BuildPackage,oonf-config-api))
 $(eval $(call BuildPackage,oonf-rfc5444-api))
 $(eval $(call BuildPackage,oonf-core-api))
+$(eval $(call BuildPackage,oonf-tools-api))
 $(eval $(call BuildPackage,oonf-plugin-cfgio-file))
 $(eval $(call BuildPackage,oonf-plugin-cfgparser-compact))
 $(eval $(call BuildPackage,oonf-plugin-httptelnet))
