@@ -10,7 +10,13 @@ include $(INCLUDE_DIR)/package.mk
 include $(INCLUDE_DIR)/cmake.mk
 
 CMAKE_SOURCE_DIR=$(CURDIR)/../../
-CMAKE_OPTIONS=-DOONF_DO_NOT_REGISTER_PACKAGE:Bool=true -DOONF_LOGGING_LEVEL:String=warn -DCMAKE_BUILD_TYPE:String=Release -DOONF_NO_TESTING:Bool=true -DINSTALL_LIB_DIR:Path=lib/oonf -DINSTALL_INCLUDE_DIR:Path=include/oonf -DINSTALL_CMAKE_DIR:Path=lib/oonf
+CMAKE_OPTIONS=-DOONF_DO_NOT_REGISTER_PACKAGE:Bool=true \
+              -DOONF_LOGGING_LEVEL:String=warn \
+              -DCMAKE_BUILD_TYPE:String=MinSizeRel \
+              -DOONF_NO_TESTING:Bool=true \
+              -DINSTALL_LIB_DIR:Path=lib/oonf \
+              -DINSTALL_INCLUDE_DIR:Path=include/oonf \
+              -DINSTALL_CMAKE_DIR:Path=lib/oonf
 
 define Package/oonf-api/template
 	SECTION:=net
