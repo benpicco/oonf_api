@@ -115,7 +115,7 @@ EXPORT int netaddr_to_autobuf(struct autobuf *, const struct netaddr *src);
 EXPORT int netaddr_create_host_bin(struct netaddr *host, const struct netaddr *netmask,
     const void *number, size_t num_length);
 EXPORT int netaddr_socket_init(union netaddr_socket *combined,
-    const struct netaddr *addr, uint16_t port);
+    const struct netaddr *addr, uint16_t port, unsigned if_index);
 EXPORT uint16_t netaddr_socket_get_port(const union netaddr_socket *sock);
 
 EXPORT const char *netaddr_to_prefixstring(

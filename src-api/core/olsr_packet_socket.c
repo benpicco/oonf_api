@@ -444,7 +444,8 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
      * initialize anyways because we use it for sending broadcasts with
      * olsr_packet_send_managed_multicast()
      */
-    netaddr_socket_init(&mc_sock->local_socket, mc_ip, mc_port);
+    netaddr_socket_init(&mc_sock->local_socket, mc_ip, mc_port,
+        data == NULL ? 0 : data->index);
   }
   return result;
 }
@@ -492,7 +493,8 @@ _apply_managed_socket(struct olsr_packet_socket *packet,
     }
 
     /* create binding socket */
-    if (netaddr_socket_init(&sock, bindto, port)) {
+    if (netaddr_socket_init(&sock, bindto, port,
+        data == NULL ? 0 : data->index)) {
       OLSR_WARN(LOG_SOCKET_PACKET, "Cannot create managed socket address: %s/%u",
           netaddr_to_string(&buf, bindto), port);
       return -1;

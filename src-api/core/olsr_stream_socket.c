@@ -400,7 +400,7 @@ _apply_managed_socket(struct olsr_stream_managed *managed,
     olsr_stream_remove(stream, true);
     return 0;
   }
-  if (netaddr_socket_init(&sock, bindto, port)) {
+  if (netaddr_socket_init(&sock, bindto, port, 0)) {
     OLSR_WARN(LOG_SOCKET_STREAM, "Cannot create managed socket address: %s/%u",
         netaddr_to_string(&buf, bindto), port);
     return -1;

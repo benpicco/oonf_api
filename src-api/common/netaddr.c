@@ -256,10 +256,12 @@ netaddr_create_host_bin(struct netaddr *host, const struct netaddr *netmask,
  * @param combined pointer to netaddr_socket to be initialized
  * @param addr pointer to netaddr source
  * @param port port number for socket
+ * @param if_index interface index for linklocal ipv6 sockets
  * @return 0 if successful read binary data, -1 otherwise
  */
 int
-netaddr_socket_init(union netaddr_socket *combined, const struct netaddr *addr, uint16_t port) {
+netaddr_socket_init(union netaddr_socket *combined, const struct netaddr *addr,
+    uint16_t port, unsigned if_index) {
   /* initialize memory block */
   memset(combined, 0, sizeof(*combined));
 
@@ -272,6 +274,7 @@ netaddr_socket_init(union netaddr_socket *combined, const struct netaddr *addr, 
     /* ipv6 */
     memcpy(&combined->v6.sin6_addr, addr->addr, 16);
     combined->v6.sin6_port = htons(port);
+    combined->v6.sin6_scope_id = if_index;
   }
   else {
     /* unknown address type */
