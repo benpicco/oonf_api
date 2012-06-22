@@ -280,8 +280,7 @@ struct rfc5444_reader {
   struct avl_tree message_consumer;
 
   /* callback for message forwarding */
-  void (*forward_message)(struct rfc5444_reader_tlvblock_context *context, uint8_t *buffer, size_t length, void *);
-  void *forward_message_data;
+  void (*forward_message)(struct rfc5444_reader_tlvblock_context *context, uint8_t *buffer, size_t length);
 
   /* callbacks for memory management */
   struct rfc5444_reader_tlvblock_entry* (*malloc_tlvblock_entry)(void);

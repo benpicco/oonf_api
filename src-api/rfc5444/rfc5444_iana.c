@@ -46,16 +46,11 @@
 const struct netaddr RFC5444_MANET_MULTICAST_V4 = {
   .addr = { 224,0,0,109, 0,0,0,0,0,0,0,0,0,0,0,0 },
   .type = AF_INET,
-  .prefix_len = 0,
+  .prefix_len = 32,
 };
 
 const struct netaddr RFC5444_MANET_MULTICAST_V6 = {
   .addr = { 0xff,0x02,0,0,0,0,0,0,0,0,0,0,0,0,0,0x6D },
   .type = AF_INET6,
-  .prefix_len = 0,
+  .prefix_len = 128,
 };
-
-const char RFC5444_MANET_IPPROTO_TXT[] = "138";
-const char RFC5444_MANET_UDP_PORT_TXT[] = "269";
-const char RFC5444_MANET_MULTICAST_V4_TXT[] = "224.0.0.109";
-const char RFC5444_MANET_MULTICAST_V6_TXT[] = "ff02::6d";

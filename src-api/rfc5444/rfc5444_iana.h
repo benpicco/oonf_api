@@ -62,10 +62,10 @@ EXPORT extern const struct netaddr RFC5444_MANET_MULTICAST_V6;
  * text variants of the constants above for defaults in
  * configuration sections
  */
-EXPORT extern const char RFC5444_MANET_IPPROTO_TXT[];
-EXPORT extern const char RFC5444_MANET_UDP_PORT_TXT[];
-EXPORT extern const char RFC5444_MANET_MULTICAST_V4_TXT[];
-EXPORT extern const char RFC5444_MANET_MULTICAST_V6_TXT[];
+#define RFC5444_MANET_IPPROTO_TXT      "138"
+#define RFC5444_MANET_UDP_PORT_TXT     "269"
+#define RFC5444_MANET_MULTICAST_V4_TXT "224.0.0.109"
+#define RFC5444_MANET_MULTICAST_V6_TXT "ff02::6d"
 
 /*
  * this is a list of all globally defined IANA

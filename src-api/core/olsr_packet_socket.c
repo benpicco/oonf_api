@@ -474,10 +474,29 @@ _apply_managed_socket(struct olsr_packet_socket *packet,
     /* we are just reinitializing the socket because of an interface event */
     memcpy(&sock, &packet->local_socket, sizeof(sock));
   }
-  else if (netaddr_socket_init(&sock, bindto, port)) {
-    OLSR_WARN(LOG_SOCKET_PACKET, "Cannot create managed socket address: %s/%u",
-        netaddr_to_string(&buf, bindto), port);
-    return -1;
+  else {
+    /* Handle prefix based address selection */
+    if (bindto->prefix_len != netaddr_get_maxprefix(bindto)) {
+      if (data == NULL) {
+        OLSR_WARN(LOG_SOCKET_PACKET, "Cannot use prefix %s to look for "
+            "an interface address without specified interface",
+            netaddr_to_string(&buf, bindto));
+        return -1;
+      }
+      if (olsr_interface_find_address(bindto, bindto, data->name)) {
+        OLSR_WARN(LOG_SOCKET_PACKET, "Could not find a fitting address for "
+            "prefix %s on interface %s",
+            netaddr_to_string(&buf, bindto), data->name);
+        return -1;
+      }
+    }
+
+    /* create binding socket */
+    if (netaddr_socket_init(&sock, bindto, port)) {
+      OLSR_WARN(LOG_SOCKET_PACKET, "Cannot create managed socket address: %s/%u",
+          netaddr_to_string(&buf, bindto), port);
+      return -1;
+    }
   }
 
   if (list_is_node_added(&packet->node)

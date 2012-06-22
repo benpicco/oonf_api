@@ -101,11 +101,11 @@ struct netaddr_str {
 
 EXPORT extern const struct netaddr NETADDR_IPV4_ANY;
 EXPORT extern const struct netaddr NETADDR_IPV6_ANY;
-
 EXPORT extern const struct netaddr NETADDR_IPV4_MULTICAST;
 EXPORT extern const struct netaddr NETADDR_IPV6_MULTICAST;
-EXPORT extern const struct netaddr NETADDR_IPV6_LL_MULTICAST;
-EXPORT extern const struct netaddr NETADDR_IPV6_LL_UNICAST;
+EXPORT extern const struct netaddr NETADDR_IPV4_LINKLOCAL;
+EXPORT extern const struct netaddr NETADDR_IPV6_LINKLOCAL;
+EXPORT extern const struct netaddr NETADDR_IPV6_ULA;
 
 EXPORT int netaddr_from_binary(struct netaddr *dst, const void *binary, size_t len, uint8_t addr_type);
 EXPORT int netaddr_to_binary(void *dst, const struct netaddr *src, size_t len);

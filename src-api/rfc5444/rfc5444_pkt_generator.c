@@ -138,7 +138,7 @@ rfc5444_writer_flush(struct rfc5444_writer *writer,
 
   /* calculate true length of header (optional tlv block !) */
   len = 1;
-  if (interf->has_seqno) {
+  if (interf->_has_seqno) {
     len += 2;
   }
   if (interf->_pkt.added + interf->_pkt.set > 0) {
@@ -255,7 +255,7 @@ void rfc5444_writer_set_pkt_header(
   interf->_pkt.header = 1+2;
 
   /* handle sequence number */
-  interf->has_seqno = has_seqno;
+  interf->_has_seqno = has_seqno;
   if (has_seqno) {
     interf->_pkt.header += 2;
   }
@@ -268,7 +268,7 @@ void rfc5444_writer_set_pkt_header(
  *
  * @param writer pointer to writer context
  * @param interf pointer to interface to set packet sequence number
- * @param seqno sequence number of packet
+ * @param _seqno sequence number of packet
  */
 void
 rfc5444_writer_set_pkt_seqno(struct rfc5444_writer *writer __attribute__ ((unused)),
@@ -277,7 +277,8 @@ rfc5444_writer_set_pkt_seqno(struct rfc5444_writer *writer __attribute__ ((unuse
   assert(writer->_state == RFC5444_WRITER_ADD_PKTHEADER
       || writer->_state == RFC5444_WRITER_FINISH_PKTHEADER);
 #endif
-  interf->seqno = seqno;
+  interf->_seqno = seqno;
+  interf->last_seqno = seqno;
 }
 
 /**
@@ -291,10 +292,10 @@ _write_pktheader(struct rfc5444_writer_interface *interf) {
 
   ptr = interf->_pkt.buffer;
   *ptr++ = 0;
-  if (interf->has_seqno) {
+  if (interf->_has_seqno) {
     interf->_pkt.buffer[0] |= RFC5444_PKT_FLAG_SEQNO;
-    *ptr++ = (interf->seqno >> 8);
-    *ptr++ = (interf->seqno & 255);
+    *ptr++ = (interf->_seqno >> 8);
+    *ptr++ = (interf->_seqno & 255);
   }
 
   /* tlv-block ? */

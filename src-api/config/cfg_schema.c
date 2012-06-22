@@ -59,15 +59,15 @@ static bool _validate_cfg_entry(
     struct cfg_db *db, struct cfg_section_type *section,
     struct cfg_named_section *named, struct cfg_entry *entry,
     const char *section_name, bool cleanup, struct autobuf *out);
-static bool
-_check_missing_entries(struct cfg_schema_section *schema_section,
+static bool _check_missing_entries(struct cfg_schema_section *schema_section,
     struct cfg_db *db, struct cfg_named_section *named,
     const char *section_name, struct autobuf *out);
 static void _handle_named_section_change(struct cfg_schema_section *s_section,
     struct cfg_db *pre_change, struct cfg_db *post_change,
     const char *name, bool startup);
-static int
-_handle_db_changes(struct cfg_db *pre_change, struct cfg_db *post_change, bool startup);
+static int _handle_db_changes(struct cfg_db *pre_change,
+    struct cfg_db *post_change, bool startup);
+static int _get_known_prefix(struct netaddr *dst, const char *name);
 
 const char *CFGLIST_BOOL_TRUE[] = { "true", "1", "on", "yes" };
 const char *CFGLIST_BOOL[] = { "true", "1", "on", "yes", "false", "0", "off", "no" };
@@ -76,6 +76,15 @@ const char *CFG_SCHEMA_SECTIONMODE[CFG_SSMODE_MAX] = {
     "unnamed, optional",
     "named",
     "named, mandatory"
+};
+
+const struct {
+  const char *name;
+  const struct netaddr *prefix;
+} _known_prefixes[] = {
+  { "linklocal4", &NETADDR_IPV4_LINKLOCAL },
+  { "linklocal6", &NETADDR_IPV6_LINKLOCAL },
+  { "ula", &NETADDR_IPV6_ULA },
 };
 
 /**
@@ -306,7 +315,8 @@ cfg_schema_validate(struct cfg_db *db,
  * using the mappings defined in a schema section. The function assumes
  * that the section was already validated.
  * @param target pointer to target binary buffer
- * @param named pointer to named section
+ * @param named pointer to named section, might be NULL to refer to
+ *   default settings
  * @param entries pointer to array of schema entries
  * @param count number of schema entries
  * @return 0 if conversion was successful, -(1+index) of the
@@ -538,11 +548,13 @@ cfg_schema_validate_netaddr(const struct cfg_schema_entry *entry,
   uint8_t max_prefix;
   int i;
 
-  if (netaddr_from_string(&addr, value)) {
-    cfg_append_printable_line(out, "Value '%s' for entry '%s'"
-        " in section %s is no valid network address",
-        value, entry->key.entry, section_name);
-    return -1;
+  if (_get_known_prefix(&addr, value)) {
+    if (netaddr_from_string(&addr, value)) {
+      cfg_append_printable_line(out, "Value '%s' for entry '%s'"
+          " in section %s is no valid network address",
+          value, entry->key.entry, section_name);
+      return -1;
+    }
   }
 
   max_prefix = netaddr_get_maxprefix(&addr);
@@ -807,6 +819,9 @@ cfg_schema_tobin_netaddr(const struct cfg_schema_entry *s_entry __attribute__((u
 
   ptr = (struct netaddr *)reference;
 
+  if (!_get_known_prefix(ptr, strarray_get_first_c(value))) {
+    return 0;
+  }
   return netaddr_from_string(ptr, strarray_get_first_c(value));
 }
 
@@ -1056,4 +1071,26 @@ _handle_named_section_change(struct cfg_schema_section *s_section,
   if (changed || startup) {
     s_section->cb_delta_handler();
   }
+}
+
+/**
+ * Lookup if the name is in the list of known prefixes and
+ * sets the address if the name is found.
+ * Netaddr target will not be touched if name is not in known
+ * prefix list.
+ * @param dst pointer to target netaddr
+ * @param name text name to look for
+ * @return 0 if name was found, -1 otherwise
+ */
+static int
+_get_known_prefix(struct netaddr *dst, const char *name) {
+  size_t i;
+
+  for (i=0; i<ARRAYSIZE(_known_prefixes); i++) {
+    if (strcasecmp(name, _known_prefixes[i].name) == 0) {
+      memcpy(dst, _known_prefixes[i].prefix, sizeof(*dst));
+      return 0;
+    }
+  }
+  return -1;
 }

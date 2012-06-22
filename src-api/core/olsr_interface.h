@@ -76,9 +76,6 @@ struct olsr_interface_data {
 };
 
 struct olsr_interface {
-  /* hook interfaces into tree */
-  struct avl_node node;
-
   /* data of interface */
   struct olsr_interface_data data;
 
@@ -101,8 +98,11 @@ struct olsr_interface {
    */
   uint32_t _original_state;
 
+  /* hook interfaces into tree */
+  struct avl_node _node;
+
   /* timer for lazy interface change handling */
-  struct olsr_timer_entry change_timer;
+  struct olsr_timer_entry _change_timer;
 };
 
 struct olsr_interface_listener {
@@ -122,14 +122,14 @@ struct olsr_interface_listener {
   /* callback for interface change */
   void (*process)(struct olsr_interface_listener *, struct olsr_interface_data *old);
 
-  /* will be set by the service before the process() function is called */
+  /* pointer to the interface this listener is registered to */
   struct olsr_interface *interface;
 };
 
 #define OLSR_FOR_ALL_INTERFACES(interf, ptr) avl_for_each_element_safe(&olsr_interface_tree, interf, node, ptr)
 EXPORT extern struct avl_tree olsr_interface_tree;
 
-EXPORT int olsr_interface_init(void) __attribute__((warn_unused_result));
+EXPORT void olsr_interface_init(void);
 EXPORT void olsr_interface_cleanup(void);
 
 EXPORT int olsr_interface_add_listener(struct olsr_interface_listener *);
@@ -137,5 +137,8 @@ EXPORT void olsr_interface_remove_listener(struct olsr_interface_listener *);
 
 EXPORT struct olsr_interface_data *olsr_interface_get_data(const char *name);
 EXPORT void olsr_interface_trigger_change(const char *name, bool down);
+
+EXPORT int olsr_interface_find_address(struct netaddr *dst,
+    struct netaddr *prefix, const char *if_name);
 
 #endif /* INTERFACE_H_ */

@@ -1253,7 +1253,7 @@ cleanup_parse_message:
     if (tlv_context->hopcount < limit -1) {
       /* forward message if callback is available */
       tlv_context->type = RFC5444_CONTEXT_MESSAGE;
-      parser->forward_message(tlv_context, start, end - start, parser->forward_message_data);
+      parser->forward_message(tlv_context, start, end - start);
     }
   }
 

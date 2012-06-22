@@ -39,6 +39,8 @@
  *
  */
 
+#include <ifaddrs.h>
+
 #include "common/common_types.h"
 #include "common/avl.h"
 #include "common/avl_comp.h"
@@ -74,14 +76,15 @@ static struct olsr_timer_info _change_timer_info = {
   .callback = _cb_change_handler,
 };
 
+static struct ifaddrs *_ifaddrs_buffer = NULL;
+
 /**
  * Initialize interface subsystem
- * @return -1 if an error happened, 0 otherwise
  */
-int
+void
 olsr_interface_init(void) {
   if (olsr_subsystem_is_initialized(&_interface_state))
-    return 0;
+    return;
 
   olsr_timer_add(&_change_timer_info);
 
@@ -89,7 +92,6 @@ olsr_interface_init(void) {
   list_init_head(&_interface_listener);
 
   olsr_subsystem_init(&_interface_state);
-  return 0;
 }
 
 /**
@@ -101,6 +103,10 @@ olsr_interface_cleanup(void) {
 
   if (olsr_subsystem_cleanup(&_interface_state))
     return;
+
+  if (_ifaddrs_buffer) {
+    freeifaddrs(_ifaddrs_buffer);
+  }
 
   list_for_each_element_safe(&_interface_listener, listener, node, l_it) {
     olsr_interface_remove_listener(listener);
@@ -160,7 +166,7 @@ void
 olsr_interface_trigger_change(const char *name, bool down) {
   struct olsr_interface *interf;
 
-  interf = avl_find_element(&olsr_interface_tree, name, interf, node);
+  interf = avl_find_element(&olsr_interface_tree, name, interf, _node);
   if (interf == NULL) {
     return;
   }
@@ -173,16 +179,62 @@ olsr_interface_trigger_change(const char *name, bool down) {
   _trigger_change_timer(interf);
 }
 
+/**
+ * @param name interface name
+ * @return pointer to olsr interface data, NULL if not found
+ */
 struct olsr_interface_data *
 olsr_interface_get_data(const char *name) {
   struct olsr_interface *interf;
 
-  interf = avl_find_element(&olsr_interface_tree, name, interf, node);
+  interf = avl_find_element(&olsr_interface_tree, name, interf, _node);
   if (interf == NULL) {
     return NULL;
   }
 
   return &interf->data;
+}
+
+/**
+ * Find an IP address of an interface fitting to a specified prefix.
+ * Destination will only be overwritten if address was found.
+ * @param dst pointer to target address buffer
+ * @param prefix specified prefix of address
+ * @param if_name name of interface
+ * @return 0 if an address was found, -1 otherwise
+ */
+int
+olsr_interface_find_address(struct netaddr *dst,
+    struct netaddr *prefix, const char *if_name) {
+  union netaddr_socket *sock;
+  struct netaddr addr;
+  struct ifaddrs *ifa;
+
+  if (_ifaddrs_buffer) {
+    freeifaddrs(_ifaddrs_buffer);
+  }
+  if (getifaddrs(&_ifaddrs_buffer) == -1) {
+    return -1;
+  }
+
+  for (ifa = _ifaddrs_buffer; ifa != NULL; ifa = ifa->ifa_next) {
+    if (strcmp(if_name, ifa->ifa_name) != 0) {
+      /* skip other interfaces */
+      continue;
+    }
+    sock = (union netaddr_socket *)ifa->ifa_addr;
+
+    if (netaddr_from_socket(&addr, sock)) {
+      /* unknown type of address */
+      continue;
+    }
+
+    if (netaddr_is_in_subnet(prefix, &addr)) {
+      memcpy(dst, &addr, sizeof(*dst));
+      return 0;
+    }
+  }
+  return -1;
 }
 
 /**
@@ -195,7 +247,7 @@ static struct olsr_interface *
 _interface_add(const char *name, bool mesh) {
   struct olsr_interface *interf;
 
-  interf = avl_find_element(&olsr_interface_tree, name, interf, node);
+  interf = avl_find_element(&olsr_interface_tree, name, interf, _node);
   if (!interf) {
     /* allocate new interface */
     interf = calloc(1, sizeof(*interf));
@@ -206,13 +258,13 @@ _interface_add(const char *name, bool mesh) {
 
     /* hookup */
     strscpy(interf->data.name, name, sizeof(interf->data.name));
-    interf->node.key = interf->data.name;
-    avl_insert(&olsr_interface_tree, &interf->node);
+    interf->_node.key = interf->data.name;
+    avl_insert(&olsr_interface_tree, &interf->_node);
 
     interf->data.index = if_nametoindex(name);
 
-    interf->change_timer.info = &_change_timer_info;
-    interf->change_timer.cb_context = interf;
+    interf->_change_timer.info = &_change_timer_info;
+    interf->_change_timer.cb_context = interf;
 
     /* initialize data of interface */
     os_net_update_interface(&interf->data, name);
@@ -228,7 +280,14 @@ _interface_add(const char *name, bool mesh) {
   }
 
   /* trigger update */
-  _trigger_change_timer(interf);
+  if (interf->usage_counter == 1) {
+    /* new interface */
+    _cb_change_handler(interf);
+  }
+  else {
+    /* existing one, delay update */
+    _trigger_change_timer(interf);
+  }
 
   return interf;
 }
@@ -253,13 +312,60 @@ _interface_remove(struct olsr_interface *interf, bool mesh) {
     return;
   }
 
-  avl_remove(&olsr_interface_tree, &interf->node);
+  avl_remove(&olsr_interface_tree, &interf->_node);
 
-  olsr_timer_stop(&interf->change_timer);
+  olsr_timer_stop(&interf->_change_timer);
   free(interf);
 }
 
+static int
+_update_ifaddrs(struct olsr_interface_data *data) {
+  union netaddr_socket *sock;
+  struct netaddr addr;
+  struct ifaddrs *ifa;
+  const void *ptr;
 
+  if (_ifaddrs_buffer) {
+    freeifaddrs(_ifaddrs_buffer);
+  }
+  if (getifaddrs(&_ifaddrs_buffer) == -1) {
+    return -1;
+  }
+
+  for (ifa = _ifaddrs_buffer; ifa != NULL; ifa = ifa->ifa_next) {
+    if (strcmp(data->name, ifa->ifa_name) != 0) {
+      /* skip other interfaces */
+      continue;
+    }
+    sock = (union netaddr_socket *)ifa->ifa_addr;
+
+    if (netaddr_from_socket(&addr, sock)) {
+      /* unknown type of address */
+      continue;
+    }
+
+    ptr = netaddr_get_binptr(&addr);
+
+    if (addr.type == AF_INET) {
+      memcpy(&data->if_v4, &addr, sizeof(data->if_v4));
+    }
+    else if (addr.type == AF_INET6) {
+      if (IN6_IS_ADDR_LINKLOCAL(ptr)) {
+        memcpy(&data->linklocal_v6, &addr,
+            sizeof(data->linklocal_v6));
+      }
+      else if (!(IN6_IS_ADDR_LOOPBACK(ptr)
+          || IN6_IS_ADDR_MULTICAST(ptr)
+          || IN6_IS_ADDR_UNSPECIFIED(ptr)
+          || IN6_IS_ADDR_V4COMPAT(ptr)
+          || IN6_IS_ADDR_V4MAPPED(ptr))) {
+        memcpy(&data->if_v6, &addr,
+            sizeof(data->if_v6));
+      }
+    }
+  }
+  return 0;
+}
 /**
  * Timer callback to handle potential change of data of an interface
  * @param ptr pointer to interface object
@@ -274,6 +380,12 @@ _cb_change_handler(void *ptr) {
 
   /* read interface data */
   if (os_net_update_interface(&new_data, interf->data.name)) {
+    /* an error happened, try again */
+    _trigger_change_timer(interf);
+    return;
+  }
+
+  if (_update_ifaddrs(&new_data)) {
     /* an error happened, try again */
     _trigger_change_timer(interf);
     return;
@@ -305,5 +417,5 @@ _cb_change_handler(void *ptr) {
  */
 static void
 _trigger_change_timer(struct olsr_interface *interf) {
-  olsr_timer_set(&interf->change_timer, OLSR_INTERFACE_CHANGE_INTERVAL);
+  olsr_timer_set(&interf->_change_timer, OLSR_INTERFACE_CHANGE_INTERVAL);
 }

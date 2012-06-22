@@ -64,6 +64,11 @@ const struct netaddr NETADDR_IPV6_ANY = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_
 const struct netaddr NETADDR_IPV4_MULTICAST = { { 224,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET, 4 };
 const struct netaddr NETADDR_IPV6_MULTICAST = { { 0xff,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET6, 8 };
 
+const struct netaddr NETADDR_IPV4_LINKLOCAL = { { 169,254,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET, 16 };
+const struct netaddr NETADDR_IPV6_LINKLOCAL = { { 0xfe,0x80,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET6, 10 };
+
+const struct netaddr NETADDR_IPV6_ULA = { { 0xfc,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET6, 7 };
+
 /**
  * Read the binary representation of an address into a netaddr object
  * @param dst pointer to netaddr object

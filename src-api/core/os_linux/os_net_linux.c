@@ -43,7 +43,6 @@
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <errno.h>
-#include <ifaddrs.h>
 
 #include "common/common_types.h"
 
@@ -117,16 +116,13 @@ os_recvfrom(int fd, void *buf, size_t length, union netaddr_socket *source,
 
 /**
  * Updates the data of an interface.
- * @param interf pointer to interface object.
+ * @param interf pointer to uninitialized interface object.
  * @param name name of interface
  * @return -1 if an error happened, 0 otherwise
  */
 int
 os_net_update_interface(struct olsr_interface_data *interf,
     const char *name) {
-  struct ifaddrs *ifaddr, *ifa;
-  union netaddr_socket *sock;
-  struct netaddr addr;
   struct ifreq ifr;
 
   memset(interf, 0, sizeof(*interf));
@@ -138,42 +134,6 @@ os_net_update_interface(struct olsr_interface_data *interf,
     /* interface is not there at the moment */
     return 0;
   }
-
-  if (getifaddrs(&ifaddr) == -1) {
-    OLSR_WARN(LOG_OS_NET, "Cannot get interface addresses: %s (%d)",
-        strerror(errno), errno);
-    return -1;
-  }
-
-  for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
-    if (strcmp(ifa->ifa_name, interf->name) != 0) {
-      continue;
-    }
-
-    sock = (union netaddr_socket *)ifa->ifa_addr;
-
-    if (netaddr_from_socket(&addr, sock)) {
-      /* just ignore other interfaces */
-      continue;
-    }
-
-    if (addr.type == AF_INET) {
-      memcpy(&interf->if_v4, &addr, sizeof(interf->if_v4));
-    }
-    else if (addr.type == AF_INET6) {
-      if (IN6_IS_ADDR_LINKLOCAL(addr.addr)) {
-        memcpy(&interf->linklocal_v6, &addr, sizeof(interf->linklocal_v6));
-      }
-      else if (!(IN6_IS_ADDR_LOOPBACK(addr.addr)
-          || IN6_IS_ADDR_MULTICAST(addr.addr)
-          || IN6_IS_ADDR_UNSPECIFIED(addr.addr)
-          || IN6_IS_ADDR_V4COMPAT(addr.addr)
-          || IN6_IS_ADDR_V4MAPPED(addr.addr))) {
-        memcpy(&interf->if_v6, &addr, sizeof(interf->if_v6));
-      }
-    }
-  }
-  freeifaddrs(ifaddr);
 
   memset(&ifr, 0, sizeof(ifr));
   strscpy(ifr.ifr_name, interf->name, IF_NAMESIZE);

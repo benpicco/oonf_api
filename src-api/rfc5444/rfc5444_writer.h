@@ -290,14 +290,17 @@ struct rfc5444_writer_interface {
   /* maximum number of bytes per packets allowed for interface */
   size_t packet_size;
 
-  /* packet seqno handling */
-  bool has_seqno;
-  uint16_t seqno;
+  /* stores the last sequence number going through this interface */
+  uint16_t last_seqno;
 
   /* callback for interface specific packet handling */
   void (*addPacketHeader)(struct rfc5444_writer *, struct rfc5444_writer_interface *);
   void (*finishPacketHeader)(struct rfc5444_writer *, struct rfc5444_writer_interface *);
   void (*sendPacket)(struct rfc5444_writer *, struct rfc5444_writer_interface *, void *, size_t);
+
+  /* internal handling for packet sequence numbers */
+  uint16_t _seqno;
+  bool _has_seqno;
 
   /* _if_node for list of all _interfaces */
   struct list_entity _if_node;
