@@ -29,7 +29,7 @@ struct olsr_rfc5444_target {
   struct olsr_timer_entry _aggregation_v4, _aggregation_v6;
 };
 
-EXPORT int olsr_rfc5444_init(void);
+EXPORT void olsr_rfc5444_init(void);
 EXPORT void olsr_rfc5444_cleanup(void);
 
 EXPORT struct olsr_rfc5444_target *olsr_rfc5444_get_mc_target(

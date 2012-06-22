@@ -155,6 +155,7 @@ void
 olsr_cfg_trigger_reload(void) {
   OLSR_DEBUG(LOG_CONFIG, "Config reload triggered");
   _trigger_reload = true;
+  olsr_socket_stop_scheduler();
 }
 
 /**
@@ -172,6 +173,7 @@ void
 olsr_cfg_trigger_commit(void) {
   OLSR_DEBUG(LOG_CONFIG, "Config commit triggered");
   _trigger_commit = true;
+  olsr_socket_stop_scheduler();
 }
 
 /**
@@ -187,7 +189,9 @@ olsr_cfg_is_commit_set(void) {
  */
 void
 olsr_cfg_exit(void) {
+  OLSR_DEBUG(LOG_CONFIG, "Trigger shutdown");
   _running = false;
+  olsr_socket_stop_scheduler();
 }
 
 /**

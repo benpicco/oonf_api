@@ -194,7 +194,7 @@ cfg_schema_validate(struct cfg_db *db,
 
   bool error = false;
   bool warning = false;
-  bool hasName = false, named_schema;
+  bool hasName = false;
 
   if (db->schema == NULL) {
     return -1;
@@ -230,15 +230,14 @@ cfg_schema_validate(struct cfg_db *db,
       CFG_FOR_ALL_SECTION_NAMES(section, named, named_it) {
         warning = false;
         hasName = cfg_db_is_named_section(named);
-        named_schema = schema_section->mode == CFG_SSMODE_NAMED
-            || schema_section->mode == CFG_SSMODE_NAMED_MANDATORY;
 
-        if (named_schema && !hasName) {
+        if (schema_section->mode == CFG_SSMODE_NAMED_MANDATORY && !hasName) {
           cfg_append_printable_line(out, "The section type '%s' demands a name", section->type);
 
           warning = true;
         }
-        else if (!named_schema && hasName) {
+        else if (!(schema_section->mode == CFG_SSMODE_NAMED
+            || schema_section->mode == CFG_SSMODE_NAMED_MANDATORY) && hasName) {
           cfg_append_printable_line(out, "The section type '%s'"
               " has to be used without a name"
               " ('%s' was given as a name)", section->type, named->name);

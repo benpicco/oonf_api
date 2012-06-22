@@ -136,7 +136,7 @@ static struct olsr_timer_info _aggregation_timer = {
 /* configuration settings for handler */
 static struct cfg_schema_section _interface_section = {
   .type = _CFG_SECTION,
-  .mode = CFG_SSMODE_NAMED_MANDATORY,
+  .mode = CFG_SSMODE_NAMED,
   .cb_delta_handler = _cb_config_changed,
 };
 
@@ -208,10 +208,10 @@ static enum log_source LOG_RFC5444;
  * Initialize RFC5444 handling system
  * @return -1 if an error happened, 0 otherwise
  */
-int
+void
 olsr_rfc5444_init(void) {
   if (olsr_subsystem_init(&_rfc5444_state))
-    return 0;
+    return;
 
   LOG_RFC5444 = olsr_log_register_source(_LOG_RFC5444_NAME);
 
@@ -232,7 +232,6 @@ olsr_rfc5444_init(void) {
       _interface_entries, ARRAYSIZE(_interface_entries));
 
   _current_source = NULL;
-  return 0;
 }
 
 /**
@@ -342,7 +341,10 @@ enum rfc5444_result olsr_rfc5444_send(
   _send_ipv6 = ipv6;
 
   if (ipv4 && !olsr_timer_is_active(&target->_aggregation_v4)) {
-
+    olsr_timer_start(&target->_aggregation_v4, _aggregation_interval);
+  }
+  if (ipv6 && !olsr_timer_is_active(&target->_aggregation_v6)) {
+    olsr_timer_start(&target->_aggregation_v6, _aggregation_interval);
   }
   return rfc5444_writer_create_message(&_writer, msgid, _cb_writer_ifselector, target);
 }
@@ -455,14 +457,8 @@ _cb_forward_message(
     uint8_t *buffer, size_t length) {
   enum rfc5444_result result;
 
-  if (!context->has_origaddr || !context->has_seqno
-      || !context->has_hopcount || !context->has_hoplimit) {
-    /* do not forward unless all optional message fields are present */
-    return;
-  }
-
-  if (context->hoplimit <= 1) {
-    /* do only forward hoplimit > 1 */
+  if (!context->has_origaddr || !context->has_seqno) {
+    /* do not forward messages that cannot run through the duplicate check */
     return;
   }
 
@@ -617,6 +613,11 @@ _cb_config_changed(void) {
   struct olsr_rfc5444_target *target;
   int result;
 
+  if ((_interface_section.post != NULL && cfg_db_is_named_section(_interface_section.post))
+      || (_interface_section.pre != NULL && cfg_db_is_named_section(_interface_section.pre))) {
+    /* ignore unnamed section, they are only for delivering defaults */
+    return;
+  }
   if (_interface_section.post == NULL) {
     /* this section has been removed */
     target = olsr_rfc5444_get_mc_target(

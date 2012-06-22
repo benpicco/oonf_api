@@ -71,8 +71,6 @@ olsr_socket_init(void) {
     return;
 
   list_init_head(&socket_head);
-
-  _stop_scheduler = false;
 }
 
 /**
@@ -149,6 +147,8 @@ olsr_socket_handle(uint64_t stop_time)
   if (stop_time == 0) {
     stop_time = ~0ull;
   }
+
+  _stop_scheduler = false;
 
   while (true) {
     fd_set ibits, obits;
