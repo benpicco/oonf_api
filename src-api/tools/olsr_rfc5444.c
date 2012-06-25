@@ -354,12 +354,17 @@ static struct olsr_rfc5444_target *
 _create_target(const char *name) {
   struct olsr_rfc5444_target *target;
 
+  assert (name);
+
   target = avl_find_element(&_targets_tree, name, target, _node);
   if (target == NULL) {
     target = olsr_memcookie_malloc(&_target_memcookie);
     if (target == NULL) {
       return NULL;
     }
+
+    /* copy interface name */
+    strscpy(target->name, name, sizeof(target->name));
 
     /* initialize rfc5444 interfaces */
     target->if_ipv4.packet_buffer =
@@ -613,11 +618,6 @@ _cb_config_changed(void) {
   struct olsr_rfc5444_target *target;
   int result;
 
-  if ((_interface_section.post != NULL && cfg_db_is_named_section(_interface_section.post))
-      || (_interface_section.pre != NULL && cfg_db_is_named_section(_interface_section.pre))) {
-    /* ignore unnamed section, they are only for delivering defaults */
-    return;
-  }
   if (_interface_section.post == NULL) {
     /* this section has been removed */
     target = olsr_rfc5444_get_mc_target(
@@ -646,11 +646,11 @@ _cb_config_changed(void) {
 
   if (_interface_section.pre == NULL) {
     /* section has been added */
-    target = _create_target(_interface_section.post->name);
+    target = _create_target(config.socket.interface);
   }
   else {
     /* section has been changed */
-    target = olsr_rfc5444_get_mc_target(_interface_section.post->name);
+    target = olsr_rfc5444_get_mc_target(config.socket.interface);
   }
 
   if (target == NULL) {

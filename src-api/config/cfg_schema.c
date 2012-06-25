@@ -231,12 +231,7 @@ cfg_schema_validate(struct cfg_db *db,
         warning = false;
         hasName = cfg_db_is_named_section(named);
 
-        if (schema_section->mode == CFG_SSMODE_NAMED_MANDATORY && !hasName) {
-          cfg_append_printable_line(out, "The section type '%s' demands a name", section->type);
-
-          warning = true;
-        }
-        else if (!(schema_section->mode == CFG_SSMODE_NAMED
+        if (!(schema_section->mode == CFG_SSMODE_NAMED
             || schema_section->mode == CFG_SSMODE_NAMED_MANDATORY) && hasName) {
           cfg_append_printable_line(out, "The section type '%s'"
               " has to be used without a name"
@@ -299,7 +294,13 @@ cfg_schema_validate(struct cfg_db *db,
     }
 
     section = cfg_db_find_sectiontype(db, schema_section->type);
-    warning = section == NULL || avl_is_empty(&section->names);
+    if (section == NULL || avl_is_empty(&section->names)) {
+      warning = true;
+    }
+    else {
+      named = avl_first_element(&section->names, named, node);
+      warning = cfg_db_is_named_section(named) || section->names.count > 1;
+    }
     if (warning) {
       cfg_append_printable_line(out, "Missing mandatory section of type '%s'",
           schema_section->type);
@@ -1048,6 +1049,16 @@ _handle_named_section_change(struct cfg_schema_section *s_section,
   struct cfg_schema_entry *entry;
   bool changed;
   size_t i;
+
+  if ((s_section->mode == CFG_SSMODE_NAMED
+       || s_section->mode == CFG_SSMODE_NAMED_MANDATORY)
+      && name == NULL) {
+    /*
+     * ignore unnamed data entry for named sections, they are only
+     * used for delivering defaults
+     */
+    return;
+  }
 
   s_section->pre = cfg_db_find_namedsection(pre_change, s_section->type, name);
   s_section->post = cfg_db_find_namedsection(post_change, s_section->type, name);

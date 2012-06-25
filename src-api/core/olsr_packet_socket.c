@@ -250,6 +250,7 @@ olsr_packet_apply_managed(struct olsr_packet_managed *managed,
     struct olsr_packet_managed_config *config) {
   olsr_acl_copy(&managed->acl, &config->acl);
 
+  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socket (if %s)", config->interface);
   if (strcmp(config->interface, managed->interface) != 0) {
     /* interface changed, remove old listener if necessary */
     olsr_interface_remove_listener(&managed->_if_listener);
@@ -400,7 +401,7 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
     return 0;
   }
 
-  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socketpair: %s/%s",
+  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socketpair: %s,%s",
       netaddr_to_string(&buf1, bind_ip), netaddr_to_string(&buf2, mc_ip));
 
   /* check if multicast IP is a real multicast (and not a broadcast) */
