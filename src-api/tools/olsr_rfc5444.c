@@ -55,33 +55,30 @@
 #include "tools/olsr_rfc5444.h"
 
 /* constants and definitions */
-#define MAX_PACKET_SIZE (1500-20-8)
-#define MAX_MESSAGE_SIZE (1280-40-8-3)
-#define ADDRTLV_BUFFER (8192)
-
 #define _LOG_RFC5444_NAME "rfc5444"
-#define _CFG_SECTION "interface"
 
-struct _interface_config {
+struct _rfc5444_config {
   struct olsr_packet_managed_config socket;
 
   uint64_t aggregation_interval;
 };
 
 /* prototypes */
-static struct olsr_rfc5444_target *_create_target(const char *name);
-static void _remove_target(struct olsr_rfc5444_target *target);
+
+static struct olsr_rfc5444_target *_create_target(
+    struct olsr_rfc5444_interface *, struct netaddr *dst, bool unicast);
+static void _destroy_target(struct olsr_rfc5444_target *);
 
 static void _cb_receive_data(struct olsr_packet_socket *,
       union netaddr_socket *from, size_t length);
-static void _cb_send_packet_v4(
+static void _cb_send_unicast_packet(
     struct rfc5444_writer *, struct rfc5444_writer_interface *, void *, size_t);
-static void _cb_send_packet_v6(
+static void _cb_send_multicast_packet(
     struct rfc5444_writer *, struct rfc5444_writer_interface *, void *, size_t);
 static void _cb_forward_message(struct rfc5444_reader_tlvblock_context *context,
     uint8_t *buffer, size_t length);
 
-static bool _cb_writer_ifselector(struct rfc5444_writer *, struct rfc5444_writer_interface *, void *);
+static bool _cb_single_ifselector(struct rfc5444_writer *, struct rfc5444_writer_interface *, void *);
 static bool _cb_forward_ifselector(struct rfc5444_writer *, struct rfc5444_writer_interface *, void *);
 
 static struct rfc5444_reader_addrblock_entry *_alloc_addrblock_entry(void);
@@ -95,12 +92,25 @@ static void _free_addrtlv_entry(void *);
 
 static void _cb_add_seqno(struct rfc5444_writer *, struct rfc5444_writer_interface *);
 static void _cb_aggregation_event (void *);
-static void _cb_config_changed(void);
+
+static void _cb_cfg_rfc5444_changed(void);
+static void _cb_cfg_interface_changed(void);
+static void _cb_interface_changed(struct olsr_packet_managed *managed);
 
 /* memory block for rfc5444 targets plus MTU sized packet buffer */
+static struct olsr_memcookie_info _protocol_memcookie = {
+  .name = "RFC5444 Protocol",
+  .size = sizeof(struct olsr_rfc5444_interface),
+};
+
+static struct olsr_memcookie_info _interface_memcookie = {
+  .name = "RFC5444 Target",
+  .size = sizeof(struct olsr_rfc5444_interface),
+};
+
 static struct olsr_memcookie_info _target_memcookie = {
   .name = "RFC5444 Target",
-  .size = sizeof(struct olsr_rfc5444_target) + 2*MAX_PACKET_SIZE,
+  .size = sizeof(struct olsr_rfc5444_target) + RFC5444_MAX_PACKET_SIZE,
 };
 
 static struct olsr_memcookie_info _tlvblock_memcookie = {
@@ -134,51 +144,56 @@ static struct olsr_timer_info _aggregation_timer = {
 };
 
 /* configuration settings for handler */
+static struct cfg_schema_section _rfc5444_section = {
+  .type = CFG_RFC5444_SECTION,
+  .mode = CFG_SSMODE_UNNAMED,
+  .cb_delta_handler = _cb_cfg_rfc5444_changed,
+};
+
+static struct cfg_schema_entry _rfc5444_entries[] = {
+  CFG_MAP_ACL_V46(_rfc5444_config, socket.acl, "acl", "default_accept",
+    "Access control list for RFC5444 interface"),
+  CFG_MAP_NETADDR_V4(_rfc5444_config, socket.bindto_v4, "bindto_v4", NETADDR_STR_ANY4,
+    "Bind RFC5444 ipv4 socket to this address", true, true),
+  CFG_MAP_NETADDR_V6(_rfc5444_config, socket.bindto_v6, "bindto_v6", NETADDR_STR_LINKLOCAL6,
+    "Bind RFC5444 ipv6 socket to this address", true, true),
+  CFG_MAP_INT_MINMAX(_rfc5444_config, socket.port, "port", RFC5444_MANET_UDP_PORT_TXT,
+    "UDP port for RFC5444 interface", 1, 65535),
+
+  CFG_MAP_CLOCK(_rfc5444_config, aggregation_interval, "agregation_interval", "0.100",
+    "Interval in seconds for message aggregation"),
+};
+
 static struct cfg_schema_section _interface_section = {
-  .type = _CFG_SECTION,
+  .type = CFG_INTERFACE_SECTION,
   .mode = CFG_SSMODE_NAMED,
-  .cb_delta_handler = _cb_config_changed,
+  .cb_delta_handler = _cb_cfg_interface_changed,
 };
 
 static struct cfg_schema_entry _interface_entries[] = {
-  CFG_MAP_ACL_V46(_interface_config, socket.acl, "acl", "default_accept",
+  CFG_MAP_ACL_V46(olsr_packet_managed_config, acl, "acl", "default_accept",
     "Access control list for RFC5444 interface"),
-  CFG_MAP_NETADDR_V4(_interface_config, socket.bindto_v4, "bindto_v4", "0.0.0.0",
+  CFG_MAP_NETADDR_V4(olsr_packet_managed_config, bindto_v4, "bindto_v4", "0.0.0.0",
     "Bind RFC5444 ipv4 socket to this address", true, true),
-  CFG_MAP_NETADDR_V6(_interface_config, socket.bindto_v6, "bindto_v6", "linklocal6",
+  CFG_MAP_NETADDR_V6(olsr_packet_managed_config, bindto_v6, "bindto_v6", "linklocal6",
     "Bind RFC5444 ipv6 socket to this address", true, true),
-  CFG_MAP_NETADDR_V4(_interface_config, socket.multicast_v4, "multicast_v4", RFC5444_MANET_MULTICAST_V4_TXT,
+  CFG_MAP_NETADDR_V4(olsr_packet_managed_config, multicast_v4, "multicast_v4", RFC5444_MANET_MULTICAST_V4_TXT,
     "ipv4 multicast address of this socket", false, true),
-  CFG_MAP_NETADDR_V6(_interface_config, socket.multicast_v6, "multicast_v6", RFC5444_MANET_MULTICAST_V6_TXT,
+  CFG_MAP_NETADDR_V6(olsr_packet_managed_config, multicast_v6, "multicast_v6", RFC5444_MANET_MULTICAST_V6_TXT,
     "ipv6 multicast address of this socket", false, true),
-  CFG_MAP_INT_MINMAX(_interface_config, socket.port, "port", RFC5444_MANET_UDP_PORT_TXT,
-    "Multicast Network port for dlep interface", 1, 65535),
-
-  CFG_MAP_CLOCK(_interface_config, aggregation_interval, "agregation_interval", "0.100",
-    "Interval in seconds for message aggregation"),
 };
 
 static uint64_t _aggregation_interval;
 
-/* tree of active rfc5444 targets */
-static struct avl_tree _targets_tree;
-
 /* rfc5444 handling */
-uint8_t _msg_buffer[MAX_MESSAGE_SIZE];
-uint8_t _addrtlv_buffer[ADDRTLV_BUFFER];
-
-static struct rfc5444_reader _reader = {
+static const struct rfc5444_reader _prototype_reader = {
   .forward_message = _cb_forward_message,
   .malloc_addrblock_entry = _alloc_addrblock_entry,
   .malloc_tlvblock_entry = _alloc_tlvblock_entry,
   .free_addrblock_entry = _free_addrblock_entry,
   .free_tlvblock_entry = _free_tlvblock_entry,
 };
-static struct rfc5444_writer _writer = {
-  .msg_buffer = _msg_buffer,
-  .msg_size = sizeof(_msg_buffer),
-  .addrtlv_buffer = _addrtlv_buffer,
-  .addrtlv_size = sizeof(_addrtlv_buffer),
+static const struct rfc5444_writer _prototype_writer = {
   .malloc_address_entry = _alloc_address_entry,
   .malloc_addrtlv_entry = _alloc_addrtlv_entry,
   .free_address_entry = _free_address_entry,
@@ -186,19 +201,20 @@ static struct rfc5444_writer _writer = {
 };
 
 /* configuration for RFC5444 socket */
-uint8_t _incoming_buffer[MAX_PACKET_SIZE];
+static uint8_t _incoming_buffer[RFC5444_MAX_PACKET_SIZE];
 
-struct olsr_packet_config _socket_config = {
+static struct olsr_packet_config _socket_config = {
   .input_buffer = _incoming_buffer,
   .input_buffer_length = sizeof(_incoming_buffer),
   .receive_data = _cb_receive_data,
 };
 
-/* session data for an ongoing rfc5444 parsing */
-union netaddr_socket *_current_source;
+/* tree of active rfc5444 protocols */
+static struct avl_tree _protocol_tree;
 
-/* session data for an ongoing rfc5444 writer */
-bool _send_ipv4, _send_ipv6;
+/* default protocol */
+static struct olsr_rfc5444_protocol *_rfc5444_protocol = NULL;
+static struct olsr_rfc5444_interface *_rfc5444_unicast = NULL;
 
 /* rfc5444 handler state and logging source */
 OLSR_SUBSYSTEM_STATE(_rfc5444_state);
@@ -208,12 +224,30 @@ static enum log_source LOG_RFC5444;
  * Initialize RFC5444 handling system
  * @return -1 if an error happened, 0 otherwise
  */
-void
+int
 olsr_rfc5444_init(void) {
-  if (olsr_subsystem_init(&_rfc5444_state))
-    return;
+  if (olsr_subsystem_is_initialized(&_rfc5444_state))
+    return 0;
 
   LOG_RFC5444 = olsr_log_register_source(_LOG_RFC5444_NAME);
+
+  olsr_memcookie_add(&_protocol_memcookie);
+
+  _rfc5444_protocol = olsr_rfc5444_add_protocol(RFC5444_PROTOCOL);
+  if (_rfc5444_protocol == NULL) {
+    olsr_memcookie_remove(&_protocol_memcookie);
+    return -1;
+  }
+
+  olsr_memcookie_add(&_interface_memcookie);
+  _rfc5444_unicast = olsr_rfc5444_add_interface(
+      _rfc5444_protocol, NULL, RFC5444_UNICAST_TARGET);
+  if (_rfc5444_unicast == NULL) {
+    olsr_rfc5444_remove_protocol(_rfc5444_protocol);
+    olsr_memcookie_remove(&_protocol_memcookie);
+    olsr_memcookie_remove(&_interface_memcookie);
+    return -1;
+  }
 
   olsr_memcookie_add(&_target_memcookie);
   olsr_memcookie_add(&_addrblock_memcookie);
@@ -221,17 +255,18 @@ olsr_rfc5444_init(void) {
   olsr_memcookie_add(&_address_memcookie);
   olsr_memcookie_add(&_addrtlv_memcookie);
 
-  avl_init(&_targets_tree, avl_comp_strcasecmp, false, NULL);
-
-  rfc5444_reader_init(&_reader);
-  rfc5444_writer_init(&_writer);
+  avl_init(&_protocol_tree, avl_comp_strcasecmp, false, NULL);
 
   olsr_timer_add(&_aggregation_timer);
+
+  cfg_schema_add_section(olsr_cfg_get_schema(), &_rfc5444_section,
+      _rfc5444_entries, ARRAYSIZE(_rfc5444_entries));
 
   cfg_schema_add_section(olsr_cfg_get_schema(), &_interface_section,
       _interface_entries, ARRAYSIZE(_interface_entries));
 
-  _current_source = NULL;
+  olsr_subsystem_init(&_rfc5444_state);
+  return 0;
 }
 
 /**
@@ -239,22 +274,33 @@ olsr_rfc5444_init(void) {
  */
 void
 olsr_rfc5444_cleanup(void) {
+  struct olsr_rfc5444_protocol *protocol, *p_it;
+  struct olsr_rfc5444_interface *interf, *i_it;
   struct olsr_rfc5444_target *target, *t_it;
+
   if (olsr_subsystem_cleanup(&_rfc5444_state))
     return;
 
-  /* cleanup existing interfaces */
-  avl_for_each_element_safe(&_targets_tree, target, _node, t_it) {
-    _remove_target(target);
+  /* cleanup existing instances */
+  avl_for_each_element_safe(&_protocol_tree, protocol, _node, p_it) {
+    avl_for_each_element_safe(&protocol->_interface_tree, interf, _node, i_it) {
+      avl_for_each_element_safe(&interf->_target_tree, target, _node, t_it) {
+        target->_refcount = 1;
+        olsr_rfc5444_remove_target(target);
+      }
+      interf->_refcount = 1;
+      olsr_rfc5444_remove_interface(interf, NULL);
+    }
+    protocol->_refcount = 1;
+    olsr_rfc5444_remove_protocol(protocol);
   }
 
   cfg_schema_remove_section(olsr_cfg_get_schema(), &_interface_section);
 
   olsr_timer_remove(&_aggregation_timer);
 
-  rfc5444_writer_cleanup(&_writer);
-  rfc5444_reader_cleanup(&_reader);
-
+  olsr_memcookie_remove(&_protocol_memcookie);
+  olsr_memcookie_remove(&_interface_memcookie);
   olsr_memcookie_remove(&_target_memcookie);
   olsr_memcookie_remove(&_tlvblock_memcookie);
   olsr_memcookie_remove(&_addrblock_memcookie);
@@ -264,144 +310,370 @@ olsr_rfc5444_cleanup(void) {
 }
 
 /**
- * Get access to an existing RFC5444 interface handler. This also increase
- * the reference counter of
- * @param name interface name
- * @return pointer to RFC5444 target, NULL if an error happened
- */
-struct olsr_rfc5444_target *
-olsr_rfc5444_get_mc_target(const char *name) {
-  struct olsr_rfc5444_target *target;
-
-  return avl_find_element(&_targets_tree, name, target, _node);
-}
-
-/**
- * Release an active RFC5444 handler
- * @param target pointer to RFC5444 target
- */
-static void
-_remove_target(struct olsr_rfc5444_target *target) {
-  /* stop aggregation timer */
-  olsr_timer_stop(&target->_aggregation_v4);
-  olsr_timer_stop(&target->_aggregation_v6);
-
-  /* unhook interface listener */
-  olsr_interface_remove_listener(&target->_if_listener);
-
-  /* remove from avl tree */
-  avl_remove(&_targets_tree, &target->_node);
-
-  /* disable rfc5444 interface */
-  rfc5444_writer_unregister_interface(&_writer, &target->if_ipv4);
-  rfc5444_writer_unregister_interface(&_writer, &target->if_ipv6);
-
-  /* free memory */
-  olsr_memcookie_free(&_target_memcookie, target);
-}
-
-/**
- * @return pointer to global rfc5444 reader
- */
-struct rfc5444_reader *
-olsr_rfc5444_get_reader(void) {
-  return &_reader;
-}
-
-/**
- * @return pointer to global rfc5444 writer
- */
-struct rfc5444_writer *
-olsr_rfc5444_get_writer(void) {
-  return &_writer;
-}
-
-/**
- * This function allows access to the source address of a
- * RFC5444 packet which is currently parsed.
- * @return socket of incoming packet,
- */
-const union netaddr_socket *
-olsr_rfc5444_get_source_address(void) {
-  return _current_source;
-}
-
-/**
  * Trigger the creation of a RFC5444 message
- * @param target interface for outgoing message, NULL for all interfaces
+ * @param target interface for outgoing message
  * @param msgid id of created message
- * @param ipv4 true if message should send with IPv4
- * @param ipv6 true if message should send with IPv6
  * @return return code of rfc5444 writer
  */
 enum rfc5444_result olsr_rfc5444_send(
-    struct olsr_rfc5444_target *target, uint8_t msgid, bool ipv4, bool ipv6) {
-  /* store IP selection in session variables */
-  _send_ipv4 = ipv4;
-  _send_ipv6 = ipv6;
+    struct olsr_rfc5444_target *target, uint8_t msgid) {
+  struct olsr_rfc5444_interface *interf;
 
-  if (ipv4 && !olsr_timer_is_active(&target->_aggregation_v4)) {
-    olsr_timer_start(&target->_aggregation_v4, _aggregation_interval);
+  interf = target->interface;
+
+  /* check if socket can send data */
+  if (!olsr_packet_managed_is_active(&interf->_socket, target->dst.type)) {
+    return RFC5444_OKAY;
   }
-  if (ipv6 && !olsr_timer_is_active(&target->_aggregation_v6)) {
-    olsr_timer_start(&target->_aggregation_v6, _aggregation_interval);
+
+  if (!olsr_timer_is_active(&target->_aggregation)) {
+    /* activate aggregation timer */
+    olsr_timer_start(&target->_aggregation, _aggregation_interval);
   }
-  return rfc5444_writer_create_message(&_writer, msgid, _cb_writer_ifselector, target);
+
+  /* create message */
+  return rfc5444_writer_create_message(&target->interface->protocol->writer,
+      msgid, _cb_single_ifselector, target);
 }
 
+struct olsr_rfc5444_protocol *
+olsr_rfc5444_add_protocol(const char *name) {
+  struct olsr_rfc5444_protocol *protocol;
 
-static struct olsr_rfc5444_target *
-_create_target(const char *name) {
-  struct olsr_rfc5444_target *target;
+  protocol = avl_find_element(&_protocol_tree, name, protocol, _node);
+  if (protocol) {
+    protocol->_refcount++;
+    return protocol;
+  }
 
-  assert (name);
+  protocol = olsr_memcookie_malloc(&_protocol_memcookie);
+  if (protocol == NULL) {
+    return NULL;
+  }
 
-  target = avl_find_element(&_targets_tree, name, target, _node);
-  if (target == NULL) {
-    target = olsr_memcookie_malloc(&_target_memcookie);
-    if (target == NULL) {
+  /* set name */
+  strscpy(protocol->name, name, sizeof(protocol->name));
+
+  /* hook into global protocol tree */
+  protocol->_node.key = protocol->name;
+  avl_insert(&_protocol_tree, &protocol->_node);
+
+  /* initialize rfc5444 reader/writer */
+  memcpy(&protocol->reader, &_prototype_reader, sizeof(_prototype_reader));
+  memcpy(&protocol->writer, &_prototype_writer, sizeof(_prototype_writer));
+  protocol->writer.msg_buffer = protocol->_msg_buffer;
+  protocol->writer.msg_size = RFC5444_MAX_MESSAGE_SIZE;
+  protocol->writer.addrtlv_buffer = protocol->_addrtlv_buffer;
+  protocol->writer.addrtlv_size = RFC5444_ADDRTLV_BUFFER;
+  rfc5444_reader_init(&protocol->reader);
+  rfc5444_writer_init(&protocol->writer);
+
+  /* init interface subtree */
+  avl_init(&protocol->_interface_tree, avl_comp_strcasecmp, false, NULL);
+
+  /* set initial refcount */
+  protocol->_refcount = 1;
+
+  return protocol;
+}
+
+void
+olsr_rfc5444_remove_protocol(struct olsr_rfc5444_protocol *protocol) {
+  if (protocol->_refcount > 1) {
+    protocol->_refcount--;
+    return;
+  }
+
+  rfc5444_reader_cleanup(&protocol->reader);
+  rfc5444_writer_cleanup(&protocol->writer);
+  olsr_memcookie_free(&_protocol_memcookie, protocol);
+}
+
+void
+olsr_rfc5444_reconfigure_protocol(
+    struct olsr_rfc5444_protocol *protocol, uint16_t port) {
+  struct olsr_rfc5444_interface *interf;
+
+  /* nothing to do? */
+  if (port == protocol->port) {
+    return;
+  }
+
+  /* store protocol port */
+  protocol->port = port;
+
+  avl_for_each_element(&protocol->_interface_tree, interf, _node) {
+    olsr_packet_remove_managed(&interf->_socket, true);
+    olsr_packet_add_managed(&interf->_socket);
+
+    if (port) {
+      olsr_rfc5444_reconfigure_interface(interf, &interf->_socket_config);
+    }
+  }
+}
+
+struct olsr_rfc5444_interface *
+olsr_rfc5444_add_interface(struct olsr_rfc5444_protocol *protocol,
+    struct olsr_rfc5444_interface_listener *listener, const char *name) {
+  struct olsr_rfc5444_interface *interf;
+
+  interf = avl_find_element(&protocol->_interface_tree,
+      name, interf, _node);
+  if (interf == NULL) {
+    interf = olsr_memcookie_malloc(&_interface_memcookie);
+    if (interf == NULL) {
       return NULL;
     }
 
-    /* copy interface name */
-    strscpy(target->name, name, sizeof(target->name));
+    /* set name */
+    strscpy(interf->name, name, sizeof(interf->name));
 
-    /* initialize rfc5444 interfaces */
-    target->if_ipv4.packet_buffer =
-        ((uint8_t*)target) + sizeof(*target);
-    target->if_ipv4.packet_size = MAX_PACKET_SIZE;
-    target->if_ipv4.addPacketHeader = _cb_add_seqno;
-    target->if_ipv4.sendPacket = _cb_send_packet_v4;
-    target->if_ipv4.last_seqno = random() & 0xffff;
-    rfc5444_writer_register_interface(&_writer, &target->if_ipv4);
+    /* set protocol reference */
+    interf->protocol = protocol;
 
-    target->if_ipv6.packet_buffer =
-        ((uint8_t*)target) + sizeof(*target) + MAX_PACKET_SIZE;
-    target->if_ipv6.packet_size = MAX_PACKET_SIZE;
-    target->if_ipv6.addPacketHeader = _cb_add_seqno;
-    target->if_ipv6.sendPacket = _cb_send_packet_v6;
-    target->if_ipv6.last_seqno = random() & 0xffff;
-    rfc5444_writer_register_interface(&_writer, &target->if_ipv6);
+    /* hook into protocol */
+    interf->_node.key = interf->name;
+    avl_insert(&protocol->_interface_tree, &interf->_node);
 
-    /* avl node */
-    target->_node.key = target->name;
-    avl_insert(&_targets_tree, &target->_node);
+    /* initialize target subtree */
+    avl_init(&interf->_target_tree, avl_comp_netaddr, false, NULL);
 
-    /* interface socket */
-    olsr_packet_add_managed(&target->_socket);
+    /* initialize socket */
+    memcpy (&interf->_socket.config, &_socket_config, sizeof(_socket_config));
+    interf->_socket.config.user = interf;
+    interf->_socket.cb_settings_change = _cb_interface_changed;
+    olsr_packet_add_managed(&interf->_socket);
 
-    /* interface listener */
-    target->_if_listener.name = target->name;
-    olsr_interface_add_listener(&target->_if_listener);
+    /* initialize listener list */
+    list_init_head(&interf->_listener);
 
-    /* aggregation timer */
-    target->_aggregation_v4.info = &_aggregation_timer;
-    target->_aggregation_v4.cb_context = &target->if_ipv4;
-
-    target->_aggregation_v6.info = &_aggregation_timer;
-    target->_aggregation_v6.cb_context = &target->if_ipv6;
+    /* increase protocol refcount */
+    protocol->_refcount++;
   }
+
+  /* increase reference count */
+  interf->_refcount += 1;
+
+  if (listener) {
+    /* hookup listener */
+    list_add_tail(&interf->_listener, &listener->_node);
+    listener->interface = interf;
+  }
+  return interf;
+}
+
+void
+olsr_rfc5444_remove_interface(struct olsr_rfc5444_interface *interf,
+    struct olsr_rfc5444_interface_listener *listener) {
+  if (listener != NULL && listener->interface != NULL) {
+    list_remove(&listener->_node);
+    listener->interface = NULL;
+  }
+
+  if (interf->_refcount > 1) {
+    interf->_refcount--;
+    return;
+  }
+
+  /* remove from protocol tree */
+  avl_remove(&interf->protocol->_interface_tree, &interf->_node);
+
+  /* decrease protocol refcount */
+  olsr_rfc5444_remove_protocol(interf->protocol);
+
+  /* remove socket */
+  olsr_packet_remove_managed(&interf->_socket, false);
+
+  /* free memory */
+  olsr_memcookie_free(&_interface_memcookie, interf);
+}
+
+/**
+ * Reconfigure the parameters of an rfc5444 interface. You cannot reconfigure
+ * the interface name with this command.
+ * @param interf pointer to existing rfc5444 interface
+ * @param config new socket configuration
+ */
+void
+olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
+    struct olsr_packet_managed_config *config) {
+  struct olsr_rfc5444_target *target, *old;
+  uint16_t port;
+
+  struct netaddr_str buf;
+
+  old = NULL;
+
+  /* copy socket configuration */
+  memcpy(&interf->_socket_config, config, sizeof(interf->_socket_config));
+
+  /* overwrite interface name */
+  strscpy(interf->_socket_config.interface, interf->name,
+      sizeof(interf->_socket_config.interface));
+
+  /* get port */
+  port = interf->protocol->port;
+
+  /* set fixed configuration options */
+  if (interf->_socket_config.multicast_port == 0) {
+    interf->_socket_config.multicast_port = port;
+  }
+  if (interf->_socket_config.port != 0) {
+    interf->_socket_config.port = port;
+  }
+
+  if (strcmp(interf->name, RFC5444_UNICAST_TARGET) == 0) {
+    /* unicast interface */
+    interf->_socket_config.multicast_v4.type = AF_UNSPEC;
+    interf->_socket_config.multicast_v6.type = AF_UNSPEC;
+    interf->_socket_config.port = port;
+    interf->_socket_config.interface[0] = 0;
+  }
+
+  if (port == 0) {
+    /* delay configuration apply */
+    return;
+  }
+
+  /* apply socket configuration */
+  olsr_packet_apply_managed(&interf->_socket, config);
+
+  /* handle IPv4 multicast target */
+  if (interf->multicast4) {
+    old = interf->multicast4;
+    interf->multicast4 = NULL;
+  }
+  if (config->multicast_v4.type != AF_UNSPEC) {
+    target = _create_target(interf, &config->multicast_v4, false);
+    if (target == NULL) {
+      OLSR_WARN(LOG_RFC5444, "Could not create multicast target %s for interface %s",
+          netaddr_to_string(&buf, &config->multicast_v4), interf->name);
+      interf->multicast4 = old;
+      old = NULL;
+    }
+    else {
+      interf->multicast4 = target;
+    }
+  }
+  if (old) {
+    _destroy_target(old);
+  }
+
+  /* handle IPv6 multicast target */
+  if (interf->multicast6) {
+    old = interf->multicast6;
+    interf->multicast6 = NULL;
+  }
+  if (config->multicast_v6.type != AF_UNSPEC) {
+    target = _create_target(interf, &config->multicast_v6, false);
+    if (target == NULL) {
+      OLSR_WARN(LOG_RFC5444, "Could not create multicast socket %s for interface %s",
+          netaddr_to_string(&buf, &config->multicast_v6), interf->name);
+      interf->multicast6 = old;
+      old = NULL;
+    }
+    else {
+      interf->multicast6 = target;
+    }
+  }
+  if (old) {
+    _destroy_target(old);
+  }
+}
+
+struct olsr_rfc5444_target *
+olsr_rfc5444_add_target(struct olsr_rfc5444_interface *interf,
+    struct netaddr *dst) {
+  struct olsr_rfc5444_target *target;
+
+  target = avl_find_element(&interf->_target_tree, dst, target, _node);
+  if (target) {
+    target->_refcount++;
+    return target;
+  }
+
+  target = _create_target(interf, dst, true);
+  if (target == NULL) {
+    return NULL;
+  }
+
+  /* hook into interface tree */
+  target->_node.key = &target->dst;
+  avl_insert(&interf->_target_tree, &target->_node);
+
+  /* increase interface refcount */
+  interf->_refcount++;
   return target;
+}
+
+void
+olsr_rfc5444_remove_target(struct olsr_rfc5444_target *target) {
+  if (target->_refcount > 1) {
+    target->_refcount--;
+    return;
+  }
+
+  /* remove from protocol tree */
+  avl_remove(&target->interface->_target_tree, &target->_node);
+
+  /* decrease protocol refcount */
+  olsr_rfc5444_remove_interface(target->interface, NULL);
+
+  /* remove target */
+  _destroy_target(target);
+}
+
+static struct olsr_rfc5444_target *
+_create_target(struct olsr_rfc5444_interface *interf,
+    struct netaddr *dst, bool unicast) {
+  static struct olsr_rfc5444_target *target;
+
+  target = olsr_memcookie_malloc(&_target_memcookie);
+  if (target == NULL) {
+    return NULL;
+  }
+
+  /* initialize rfc5444 interfaces */
+  target->rfc5444_if.packet_buffer =
+      ((uint8_t*)target) + sizeof(*target);
+  target->rfc5444_if.packet_size = RFC5444_MAX_PACKET_SIZE;
+  target->rfc5444_if.addPacketHeader = _cb_add_seqno;
+  if (unicast) {
+    target->rfc5444_if.sendPacket = _cb_send_unicast_packet;
+  }
+  else {
+    target->rfc5444_if.sendPacket = _cb_send_multicast_packet;
+  }
+  target->rfc5444_if.last_seqno = random() & 0xffff;
+  rfc5444_writer_register_interface(
+      &interf->protocol->writer, &target->rfc5444_if);
+
+  /* copy socket description */
+  memcpy(&target->dst, dst, sizeof(target->dst));
+
+
+  /* set interface reference */
+  target->interface = interf;
+
+  /* aggregation timer */
+  target->_aggregation.info = &_aggregation_timer;
+  target->_aggregation.cb_context = target;
+
+  target->_refcount = 1;
+  return target;
+}
+
+static void
+_destroy_target(struct olsr_rfc5444_target *target) {
+  /* cleanup interface */
+  rfc5444_writer_unregister_interface(
+      &target->interface->protocol->writer, &target->rfc5444_if);
+
+  /* stop timer */
+  olsr_timer_stop(&target->_aggregation);
+
+  /* free memory */
+  olsr_memcookie_free(&_target_memcookie, target);
 }
 
 /**
@@ -413,11 +685,19 @@ _create_target(const char *name) {
 static void
 _cb_receive_data(struct olsr_packet_socket *sock,
       union netaddr_socket *from, size_t length) {
+  struct olsr_rfc5444_protocol *protocol;
+  struct olsr_rfc5444_interface *interf;
   enum rfc5444_result result;
   struct netaddr_str buf;
 
-  _current_source = from;
-  result = rfc5444_reader_handle_packet(&_reader, sock->config.input_buffer, length);
+  interf = sock->config.user;
+  protocol = interf->protocol;
+
+  protocol->input_address = from;
+  protocol->input_interface = interf;
+
+  result = rfc5444_reader_handle_packet(
+      &protocol->reader, sock->config.input_buffer, length);
   if (result) {
     OLSR_WARN(LOG_RFC5444, "Error while parsing incoming packet from %s: %s (%d)",
         netaddr_socket_to_string(&buf, from), rfc5444_strerror(result), result);
@@ -432,34 +712,46 @@ _cb_receive_data(struct olsr_packet_socket *sock,
  * @param size_t length of buffer
  */
 static void
-_cb_send_packet_v4(struct rfc5444_writer *writer __attribute__((unused)),
+_cb_send_multicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
     struct rfc5444_writer_interface *interf, void *ptr, size_t len) {
   struct olsr_rfc5444_target *target;
+  union netaddr_socket sock;
 
-  target = container_of(interf, struct olsr_rfc5444_target, if_ipv4);
-  olsr_packet_send_managed_multicast(&target->_socket, ptr, len, AF_INET);
+  target = container_of(interf, struct olsr_rfc5444_target, rfc5444_if);
+
+  netaddr_socket_init(&sock, &target->dst, target->interface->protocol->port,
+      if_nametoindex(target->interface->name));
+
+  olsr_packet_send_managed_multicast(&target->interface->_socket,
+      ptr, len, target->dst.type);
 }
 
 /**
- * Callback for sending an ipv6 packet to a rfc5444 target
+ * Callback for sending an ipv4 packet to a rfc5444 target
  * @param writer rfc5444 writer
  * @param interf rfc5444 interface
  * @param ptr pointer to outgoing buffer
  * @param size_t length of buffer
  */
 static void
-_cb_send_packet_v6(struct rfc5444_writer *writer __attribute__((unused)),
+_cb_send_unicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
     struct rfc5444_writer_interface *interf, void *ptr, size_t len) {
   struct olsr_rfc5444_target *target;
+  union netaddr_socket sock;
 
-  target = container_of(interf, struct olsr_rfc5444_target, if_ipv6);
-  olsr_packet_send_managed_multicast(&target->_socket, ptr, len, AF_INET6);
+  target = container_of(interf, struct olsr_rfc5444_target, rfc5444_if);
+
+  netaddr_socket_init(&sock, &target->dst, target->interface->protocol->port,
+      if_nametoindex(target->interface->name));
+
+  olsr_packet_send_managed(&target->interface->_socket, &sock, ptr, len);
 }
 
 static void
 _cb_forward_message(
     struct rfc5444_reader_tlvblock_context *context,
     uint8_t *buffer, size_t length) {
+  struct olsr_rfc5444_protocol *protocol;
   enum rfc5444_result result;
 
   if (!context->has_origaddr || !context->has_seqno) {
@@ -468,10 +760,10 @@ _cb_forward_message(
   }
 
   // TODO: handle duplicate detection
+  return;
 
-  // TODO: handle MPRs
-
-  result = rfc5444_writer_forward_msg(&_writer, buffer, length,
+  protocol = container_of(context->reader, struct olsr_rfc5444_protocol, reader);
+  result = rfc5444_writer_forward_msg(&protocol->writer, buffer, length,
       _cb_forward_ifselector, NULL);
   if (result) {
     OLSR_WARN(LOG_RFC5444, "Error while forwarding message: %s (%d)",
@@ -488,14 +780,11 @@ _cb_forward_message(
  * @return true if ptr is NULL or interface corresponds to custom pointer
  */
 static bool
-_cb_writer_ifselector(struct rfc5444_writer *writer __attribute__((unused)),
+_cb_single_ifselector(struct rfc5444_writer *writer __attribute__((unused)),
     struct rfc5444_writer_interface *interf, void *ptr) {
-  struct olsr_rfc5444_target *target;
+  struct olsr_rfc5444_target *target = ptr;
 
-  target = ptr;
-  return ptr == NULL
-      || (_send_ipv4 && interf == &target->if_ipv4)
-      || (_send_ipv6 && interf == &target->if_ipv6);
+  return &target->rfc5444_if == interf;
 }
 
 /**
@@ -602,33 +891,61 @@ _cb_add_seqno(struct rfc5444_writer *writer, struct rfc5444_writer_interface *in
  */
 static void
 _cb_aggregation_event (void *ptr) {
-  struct rfc5444_writer_interface *interf;
+  struct olsr_rfc5444_target *target;
 
-  interf = ptr;
+  target = ptr;
 
-  rfc5444_writer_flush(&_writer, interf, false);
+  rfc5444_writer_flush(
+      &target->interface->protocol->writer, &target->rfc5444_if, false);
 }
 
 /**
  * Configuration has changed, handle the changes
  */
 static void
-_cb_config_changed(void) {
-  struct _interface_config config;
-  struct olsr_rfc5444_target *target;
+_cb_cfg_rfc5444_changed(void) {
+  struct _rfc5444_config config;
   int result;
+
+  memset(&config, 0, sizeof(config));
+  result = cfg_schema_tobin(&config, _rfc5444_section.post,
+      _rfc5444_entries, ARRAYSIZE(_rfc5444_entries));
+  if (result) {
+    OLSR_WARN(LOG_RFC5444,
+        "Could not convert "CFG_RFC5444_SECTION" to binary (%d)",
+        -(result+1));
+    return;
+  }
+
+  /* apply values */
+  olsr_rfc5444_reconfigure_protocol(_rfc5444_protocol, config.socket.port);
+  _aggregation_interval = config.aggregation_interval;
+
+  /* create unicast socket */
+
+}
+
+/**
+ * Configuration has changed, handle the changes
+ */
+static void
+_cb_cfg_interface_changed(void) {
+  struct olsr_packet_managed_config config;
+
+  struct olsr_rfc5444_interface *interf;
+  int result;
+
+  interf = NULL;
+
+  interf = avl_find_element(
+      &_rfc5444_protocol->_interface_tree,
+      _interface_section.section_name, interf, _node);
 
   if (_interface_section.post == NULL) {
     /* this section has been removed */
-    target = olsr_rfc5444_get_mc_target(
-        _interface_section.pre->name);
-    if (target == NULL) {
-      OLSR_WARN(LOG_RFC5444, "Warning, unknown "_CFG_SECTION" section '%s' was removed",
-          _interface_section.pre->name);
-      return;
+    if (interf) {
+      olsr_rfc5444_remove_interface(interf, NULL);
     }
-
-    _remove_target(target);
     return;
   }
 
@@ -636,30 +953,37 @@ _cb_config_changed(void) {
   result = cfg_schema_tobin(&config, _interface_section.post,
       _interface_entries, ARRAYSIZE(_interface_entries));
   if (result) {
-    OLSR_WARN(LOG_RFC5444, "Could not convert interface config to binary (%d)", -(result+1));
+    OLSR_WARN(LOG_RFC5444,
+        "Could not convert "CFG_INTERFACE_SECTION" '%s' to binary (%d)",
+        _interface_section.section_name, -(result+1));
     return;
   }
 
-  /* set interface name in socket config */
-  strscpy(config.socket.interface, _interface_section.post->name,
-      sizeof(config.socket.interface));
-
-  if (_interface_section.pre == NULL) {
-    /* section has been added */
-    target = _create_target(config.socket.interface);
-  }
-  else {
-    /* section has been changed */
-    target = olsr_rfc5444_get_mc_target(config.socket.interface);
+  if (interf == NULL) {
+    interf = olsr_rfc5444_add_interface(_rfc5444_protocol,
+        NULL, _interface_section.post->name);
+    if (interf == NULL) {
+      OLSR_WARN(LOG_RFC5444,
+          "Could not generate interface '%s' for protocol '%s'",
+          _interface_section.section_name, _rfc5444_protocol->name);
+      return;
+    }
   }
 
-  if (target == NULL) {
-    OLSR_WARN(LOG_RFC5444, "Warning, unknown "_CFG_SECTION" section '%s'",
-        _interface_section.post->name);
-    return;
+  olsr_rfc5444_reconfigure_interface(interf, &config);
+}
+
+/**
+ * Interface settings of a rfc5444 interface changed
+ * @param managed
+ */
+static void
+_cb_interface_changed(struct olsr_packet_managed *managed) {
+  struct olsr_rfc5444_interface *interf;
+  struct olsr_rfc5444_interface_listener *l;
+
+  interf = container_of(managed, struct olsr_rfc5444_interface, _socket);
+  list_for_each_element(&interf->_listener, l, _node) {
+
   }
-
-  olsr_packet_apply_managed(&target->_socket, &config.socket);
-
-  _aggregation_interval = config.aggregation_interval;
 }

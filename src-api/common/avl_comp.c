@@ -130,6 +130,21 @@ avl_comp_netaddr(const void *k1, const void *k2,
 }
 
 /**
+ * AVL tree comparator for netaddr objects.
+ * @param k1 pointer to key 1
+ * @param k2 pointer to key 2
+ * @param ptr not used in this comparator
+ * @return +1 if k1>k2, -1 if k1<k2, 0 if k1==k2
+ */
+int
+avl_comp_netaddr_socket(const void *k1, const void *k2,
+    void *ptr __attribute__ ((unused))) {
+  const union netaddr_socket *s1 = k1;
+  const union netaddr_socket *s2 = k2;
+  return memcmp(s1, s2, sizeof(union netaddr_socket));
+}
+
+/**
  * AVL tree comparator for case insensitive strings.
  * Custom pointer is the length of the memory to compare.
  * @param txt1 pointer to string 1

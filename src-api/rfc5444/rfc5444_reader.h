@@ -104,6 +104,9 @@ struct rfc5444_reader_tlvblock_entry {
 
 /* common context for packet, message and address TLV block */
 struct rfc5444_reader_tlvblock_context {
+  /* backpointer to reader */
+  struct rfc5444_reader *reader;
+
   /* applicable for all TLV blocks */
   enum rfc5444_reader_tlvblock_context_type type;
 

@@ -40,6 +40,7 @@
  */
 
 #include <ifaddrs.h>
+#include <netinet/in.h>
 
 #include "common/common_types.h"
 #include "common/avl.h"
@@ -108,7 +109,7 @@ olsr_interface_cleanup(void) {
     freeifaddrs(_ifaddrs_buffer);
   }
 
-  list_for_each_element_safe(&_interface_listener, listener, node, l_it) {
+  list_for_each_element_safe(&_interface_listener, listener, _node, l_it) {
     olsr_interface_remove_listener(listener);
   }
 
@@ -123,7 +124,7 @@ olsr_interface_cleanup(void) {
 int
 olsr_interface_add_listener(
     struct olsr_interface_listener *listener) {
-  if (list_is_node_added(&listener->node)) {
+  if (list_is_node_added(&listener->_node)) {
     return 0;
   }
 
@@ -134,7 +135,7 @@ olsr_interface_add_listener(
     }
   }
 
-  list_add_tail(&_interface_listener, &listener->node);
+  list_add_tail(&_interface_listener, &listener->_node);
   return 0;
 }
 
@@ -145,7 +146,7 @@ olsr_interface_add_listener(
 void
 olsr_interface_remove_listener(
     struct olsr_interface_listener *listener) {
-  if (!list_is_node_added(&listener->node)) {
+  if (!list_is_node_added(&listener->_node)) {
     return;
   }
 
@@ -153,7 +154,7 @@ olsr_interface_remove_listener(
     _interface_remove(listener->interface, listener->mesh);
   }
 
-  list_remove(&listener->node);
+  list_remove(&listener->_node);
 }
 
 /**
@@ -401,7 +402,7 @@ _cb_change_handler(void *ptr) {
   memcpy(&interf->data, &new_data, sizeof(interf->data));
 
   /* call listeners */
-  list_for_each_element_safe(&_interface_listener, listener, node, l_it) {
+  list_for_each_element_safe(&_interface_listener, listener, _node, l_it) {
     if (listener->process != NULL
         && strcasecmp(listener->name, interf->data.name) == 0) {
       listener->interface = interf;

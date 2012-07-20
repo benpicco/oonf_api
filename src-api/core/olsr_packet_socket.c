@@ -57,16 +57,14 @@ static char input_buffer[65536];
 /* remember if initialized or not */
 OLSR_SUBSYSTEM_STATE(_packet_state);
 
-static int _apply_managed(struct olsr_packet_managed *managed,
-    struct olsr_packet_managed_config *config, bool if_event);
+static int _apply_managed(struct olsr_packet_managed *managed);
 static int _apply_managed_socketpair(struct olsr_packet_managed *managed,
-    struct olsr_interface_data *data,
-    struct olsr_packet_socket *sock, struct netaddr *bind_ip, int port,
-    struct olsr_packet_socket *mc_sock, struct netaddr *mc_ip, int mc_port,
-    bool mc_loopback, bool if_event);
-static int _apply_managed_socket(struct olsr_packet_socket *stream,
-    struct netaddr *bindto, int port, struct olsr_interface_data *data,
-    struct olsr_packet_config *config, bool if_event);
+    struct olsr_interface_data *data, bool *changed,
+    struct olsr_packet_socket *sock, struct netaddr *bind_ip,
+    struct olsr_packet_socket *mc_sock, struct netaddr *mc_ip);
+static int _apply_managed_socket(struct olsr_packet_managed *managed,
+    struct olsr_packet_socket *stream, struct netaddr *bindto, int port,
+    struct olsr_interface_data *data);
 static void _cb_packet_event_unicast(int fd, void *data, bool r, bool w);
 static void _cb_packet_event_multicast(int fd, void *data, bool r, bool w);
 static void _cb_packet_event(int fd, void *data, bool r, bool w, bool mc);
@@ -219,7 +217,7 @@ olsr_packet_add_managed(struct olsr_packet_managed *managed) {
   }
 
   managed->_if_listener.process = _cb_interface_listener;
-  managed->_if_listener.name = managed->interface;
+  managed->_if_listener.name = managed->_managed_config.interface;
 }
 
 /**
@@ -235,7 +233,7 @@ olsr_packet_remove_managed(struct olsr_packet_managed *managed, bool forced) {
   olsr_packet_remove(&managed->multicast_v6, forced);
 
   olsr_interface_remove_listener(&managed->_if_listener);
-  olsr_acl_remove(&managed->acl);
+  olsr_acl_remove(&managed->_managed_config.acl);
 }
 
 /**
@@ -248,23 +246,29 @@ olsr_packet_remove_managed(struct olsr_packet_managed *managed, bool forced) {
 int
 olsr_packet_apply_managed(struct olsr_packet_managed *managed,
     struct olsr_packet_managed_config *config) {
-  olsr_acl_copy(&managed->acl, &config->acl);
+  /* copy config */
+  memcpy(&managed->_managed_config, config, sizeof(*config));
+
+  /* copy acl */
+  memset(&managed->_managed_config.acl, 0, sizeof(managed->_managed_config.acl));
+  olsr_acl_copy(&managed->_managed_config.acl, &config->acl);
 
   OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socket (if %s)", config->interface);
-  if (strcmp(config->interface, managed->interface) != 0) {
+  if (strcmp(config->interface, managed->_managed_config.interface) != 0) {
     /* interface changed, remove old listener if necessary */
     olsr_interface_remove_listener(&managed->_if_listener);
 
     /* copy interface name */
-    strscpy(managed->interface, config->interface, sizeof(managed->interface));
+    strscpy(managed->_managed_config.interface, config->interface,
+        sizeof(managed->_managed_config.interface));
 
-    if (*managed->interface) {
+    if (managed->_managed_config.interface[0]) {
       /* create new interface listener */
       olsr_interface_add_listener(&managed->_if_listener);
     }
   }
 
-  return _apply_managed(managed, config, false);
+  return _apply_managed(managed);
 }
 
 /**
@@ -328,17 +332,34 @@ olsr_packet_send_managed_multicast(struct olsr_packet_managed *managed,
 }
 
 /**
+ * Returns true if the socket for IPv4/6 is active to send data.
+ * @param managed pointer to managed UDP socket
+ * @param af_type address familty
+ * @return true if the selected socket is active.
+ */
+bool
+olsr_packet_managed_is_active(
+    struct olsr_packet_managed *managed, int af_type) {
+  switch (af_type) {
+    case AF_INET:
+      return olsr_packet_is_active(&managed->socket_v4);
+    case AF_INET6:
+      return olsr_packet_is_active(&managed->socket_v6);
+    default:
+      return false;
+  }
+}
+
+/**
  * Apply a new configuration to all attached sockets
  * @param managed pointer to managed socket
  * @param config pointer to configuration
- * @param if_event true if this is just a reapply of current values
- *   because interface came up again.
  * @return -1 if an error happened, 0 otherwise
  */
 static int
-_apply_managed(struct olsr_packet_managed *managed,
-    struct olsr_packet_managed_config *config, bool if_event) {
+_apply_managed(struct olsr_packet_managed *managed) {
   struct olsr_interface_data *data = NULL;
+  bool changed = false;
   int result = 0;
 
   /* get interface */
@@ -346,20 +367,21 @@ _apply_managed(struct olsr_packet_managed *managed,
     data = &managed->_if_listener.interface->data;
   }
 
-  if (_apply_managed_socketpair(managed, data,
-      &managed->socket_v4, &config->bindto_v4, config->port,
-      &managed->multicast_v4, &config->multicast_v4, config->multicast_port,
-      config->loop_multicast, if_event)) {
+  if (_apply_managed_socketpair(managed, data, &changed,
+      &managed->socket_v4, &managed->_managed_config.bindto_v4,
+      &managed->multicast_v4, &managed->_managed_config.multicast_v4)) {
     result = -1;
   }
 
-  if (_apply_managed_socketpair(managed, data,
-      &managed->socket_v6, &config->bindto_v6, config->port,
-      &managed->multicast_v6, &config->multicast_v6, config->multicast_port,
-      config->loop_multicast, if_event)) {
+  if (_apply_managed_socketpair(managed, data, &changed,
+      &managed->socket_v6, &managed->_managed_config.bindto_v6,
+      &managed->multicast_v6, &managed->_managed_config.multicast_v6)) {
     result = -1;
   }
 
+  if (managed->cb_settings_change) {
+    managed->cb_settings_change(managed);
+  }
   return result;
 }
 
@@ -369,30 +391,26 @@ _apply_managed(struct olsr_packet_managed *managed,
  * @param data pointer to interface to bind sockets, NULL if unbound socket
  * @param sock pointer to unicast packet socket
  * @param bind_ip address to bind unicast socket to
- * @param port source port for unicast socket
  * @param mc_sock pointer to multicast packet socket
  * @param mc_ip multicast address
- * @param mc_port multicast port
- * @param mc_loopback
- * @param if_event true if this is just a reapply of current values
- *   because interface came up again.
  * @return
  */
 static int
 _apply_managed_socketpair(struct olsr_packet_managed *managed,
-    struct olsr_interface_data *data,
-    struct olsr_packet_socket *sock, struct netaddr *bind_ip, int port,
-    struct olsr_packet_socket *mc_sock, struct netaddr *mc_ip, int mc_port,
-    bool mc_loopback, bool if_event) {
+    struct olsr_interface_data *data, bool *changed,
+    struct olsr_packet_socket *sock, struct netaddr *bind_ip,
+    struct olsr_packet_socket *mc_sock, struct netaddr *mc_ip) {
   int sockstate = 0, result = 0;
+  uint16_t mc_port;
   bool real_multicast;
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   struct netaddr_str buf1, buf2;
 #endif
 
   /* copy unicast port if necessary */
+  mc_port = managed->_managed_config.multicast_port;
   if (mc_port == 0) {
-    mc_port = port;
+    mc_port = managed->_managed_config.port;
   }
 
   if (bind_ip->type == AF_UNSPEC) {
@@ -409,24 +427,31 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
       mc_ip->type == AF_INET ? &NETADDR_IPV4_MULTICAST : &NETADDR_IPV6_MULTICAST,
       mc_ip);
 
-  sockstate = _apply_managed_socket(sock, bind_ip, port, data,
-      &managed->config, if_event);
-  if (sockstate == 0 && real_multicast && data != NULL && data->up) {
-    /* everything okay */
-    os_net_join_mcast_send(sock->scheduler_entry.fd,
-        bind_ip, data, mc_loopback, LOG_SOCKET_PACKET);
+  sockstate = _apply_managed_socket(
+      managed, sock, bind_ip, managed->_managed_config.port, data);
+  if (sockstate == 0) {
+    /* settings really changed */
+    *changed = true;
+
+    if (real_multicast && data != NULL && data->up) {
+      os_net_join_mcast_send(sock->scheduler_entry.fd,
+          bind_ip, data, managed->_managed_config.loop_multicast, LOG_SOCKET_PACKET);
+    }
   }
   else if (sockstate < 0) {
     /* error */
     result = -1;
+    olsr_packet_remove(sock, true);
   }
 
   if (real_multicast && mc_ip->type != AF_UNSPEC) {
     /* multicast */
-    sockstate = _apply_managed_socket(mc_sock, mc_ip, mc_port, data,
-        &managed->config, if_event);
+    sockstate = _apply_managed_socket(
+        managed, mc_sock, mc_ip, mc_port, data);
     if (sockstate == 0) {
-      /* everything okay */
+      /* settings really changed */
+      *changed = true;
+
       mc_sock->scheduler_entry.process = _cb_packet_event_multicast;
 
       /* join multicast group */
@@ -436,6 +461,7 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
     else if (sockstate < 0) {
       /* error */
       result = -1;
+      olsr_packet_remove(sock, true);
     }
   }
   else {
@@ -460,46 +486,45 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
  * @param port local port number
  * @param if_event true if this is just a reapply of current values
  *   because interface came up again.
- * @return -1 if an error happened, 0 otherwise.
+ * @return -1 if an error happened, 0 if everything is okay,
+ *   1 if the socket wasn't touched.
  */
 static int
-_apply_managed_socket(struct olsr_packet_socket *packet,
+_apply_managed_socket(struct olsr_packet_managed *managed,
+    struct olsr_packet_socket *packet,
     struct netaddr *bindto, int port,
-    struct olsr_interface_data *data,
-    struct olsr_packet_config *config,
-    bool if_event) {
+    struct olsr_interface_data *data) {
   union netaddr_socket sock;
+  struct netaddr _bind_to;
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
 #endif
-  if (if_event) {
-    /* we are just reinitializing the socket because of an interface event */
-    memcpy(&sock, &packet->local_socket, sizeof(sock));
-  }
-  else {
-    /* Handle prefix based address selection */
-    if (bindto->prefix_len != netaddr_get_maxprefix(bindto)) {
-      if (data == NULL) {
-        OLSR_WARN(LOG_SOCKET_PACKET, "Cannot use prefix %s to look for "
-            "an interface address without specified interface",
-            netaddr_to_string(&buf, bindto));
-        return -1;
-      }
-      if (olsr_interface_find_address(bindto, bindto, data->name)) {
-        OLSR_WARN(LOG_SOCKET_PACKET, "Could not find a fitting address for "
-            "prefix %s on interface %s",
-            netaddr_to_string(&buf, bindto), data->name);
-        return -1;
-      }
-    }
 
-    /* create binding socket */
-    if (netaddr_socket_init(&sock, bindto, port,
-        data == NULL ? 0 : data->index)) {
-      OLSR_WARN(LOG_SOCKET_PACKET, "Cannot create managed socket address: %s/%u",
-          netaddr_to_string(&buf, bindto), port);
+
+  /* Handle prefix based address selection */
+  if (bindto->prefix_len != netaddr_get_maxprefix(bindto)) {
+    if (data == NULL) {
+      OLSR_WARN(LOG_SOCKET_PACKET, "Cannot use prefix %s to look for "
+          "an interface address without specified interface",
+          netaddr_to_string(&buf, bindto));
       return -1;
     }
+    if (olsr_interface_find_address(&_bind_to, bindto, data->name)) {
+      OLSR_WARN(LOG_SOCKET_PACKET, "Could not find a fitting address for "
+          "prefix %s on interface %s",
+          netaddr_to_string(&buf, bindto), data->name);
+      return -1;
+    }
+
+    bindto = &_bind_to;
+  }
+
+  /* create binding socket */
+  if (netaddr_socket_init(&sock, bindto, port,
+      data == NULL ? 0 : data->index)) {
+    OLSR_WARN(LOG_SOCKET_PACKET, "Cannot create managed socket address: %s/%u",
+        netaddr_to_string(&buf, bindto), port);
+    return -1;
   }
 
   if (list_is_node_added(&packet->node)
@@ -517,7 +542,10 @@ _apply_managed_socket(struct olsr_packet_socket *packet,
   }
 
   /* copy configuration */
-  memcpy(&packet->config, config, sizeof(packet->config));
+  memcpy(&packet->config, &managed->config, sizeof(packet->config));
+  if (packet->config.user == NULL) {
+    packet->config.user = managed;
+  }
 
   /* create new socket */
   if (olsr_packet_add(packet, &sock, data)) {
@@ -639,11 +667,9 @@ static void
 _cb_interface_listener(struct olsr_interface_listener *l,
     struct olsr_interface_data *old __attribute__((unused))) {
   struct olsr_packet_managed *managed;
-  struct olsr_packet_managed_config cfg;
 
   /* calculate managed socket for this event */
   managed = container_of(l, struct olsr_packet_managed, _if_listener);
 
-  memset(&cfg, 0, sizeof(cfg));
-  _apply_managed(managed, &cfg, true);
+  _apply_managed(managed);
 }

@@ -458,6 +458,7 @@ olsr_log_file(struct log_handler_entry *entry,
   f = entry->custom;
   fputs(param->buffer, f);
   fputc('\n', f);
+  fflush(f);
 }
 
 /**

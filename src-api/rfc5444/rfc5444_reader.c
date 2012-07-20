@@ -143,6 +143,7 @@ rfc5444_reader_handle_packet(struct rfc5444_reader *parser, uint8_t *buffer, siz
   /* initialize tlv context */
   memset(&context, 0, sizeof(context));
   context.type = RFC5444_CONTEXT_PACKET;
+  context.reader = parser;
 
   /* read header of packet */
   first_byte = _rfc5444_get_u8(&ptr, eob, &result);

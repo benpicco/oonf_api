@@ -121,7 +121,6 @@ static struct olsr_telnet_command _builtin[] = {
 OLSR_SUBSYSTEM_STATE(_telnet_state);
 
 /* telnet session handling */
-static struct olsr_stream_managed _telnet_managed;
 static struct olsr_memcookie_info _telnet_memcookie = {
   .name = "telnet session",
   .size = sizeof(struct olsr_telnet_session),
@@ -130,6 +129,19 @@ static struct olsr_timer_info _telnet_repeat_timerinfo = {
   .name = "txt repeat timer",
   .callback = _cb_telnet_repeat_timer,
   .periodic = true,
+};
+
+static struct olsr_stream_managed _telnet_managed = {
+  .config = {
+    .session_timeout = 120000, /* 120 seconds */
+    .maximum_input_buffer = 4096,
+    .allowed_sessions = 3,
+    .memcookie = &_telnet_memcookie,
+    .init = _cb_telnet_init,
+    .cleanup = _cb_telnet_cleanup,
+    .receive_data = _cb_telnet_receive_data,
+    .create_error = _cb_telnet_create_error,
+  },
 };
 
 struct avl_tree telnet_cmd_tree;
@@ -151,14 +163,6 @@ olsr_telnet_init(void) {
       telnet_entries, ARRAYSIZE(telnet_entries));
 
   olsr_stream_add_managed(&_telnet_managed);
-  _telnet_managed.config.session_timeout = 120000; /* 120 seconds */
-  _telnet_managed.config.maximum_input_buffer = 4096;
-  _telnet_managed.config.allowed_sessions = 3;
-  _telnet_managed.config.memcookie = &_telnet_memcookie;
-  _telnet_managed.config.init = _cb_telnet_init;
-  _telnet_managed.config.cleanup = _cb_telnet_cleanup;
-  _telnet_managed.config.receive_data = _cb_telnet_receive_data;
-  _telnet_managed.config.create_error = _cb_telnet_create_error;
 
   /* initialize telnet commands */
   avl_init(&telnet_cmd_tree, avl_comp_strcasecmp, false, NULL);

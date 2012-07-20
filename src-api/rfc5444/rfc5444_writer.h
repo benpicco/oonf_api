@@ -223,8 +223,8 @@ struct rfc5444_writer_message {
   struct avl_tree _provider_tree;
 
   /*
-   * true if the _creator has already _registered
-   * false if the _creator was _registered because of a tlvtype or content
+   * true if the creator has already registered
+   * false if the creator was registered because of a tlvtype or content
    * provider registration
    */
   bool _registered;
@@ -272,7 +272,7 @@ struct rfc5444_writer_message {
   void (*finishMessageHeader)(struct rfc5444_writer *, struct rfc5444_writer_message *,
       struct rfc5444_writer_address *, struct rfc5444_writer_address *, bool);
 
-  /* number of bytes neccessary for addressblocks including tlvs */
+  /* number of bytes necessary for addressblocks including tlvs */
   size_t _bin_addr_size;
 
   /* custom user data */

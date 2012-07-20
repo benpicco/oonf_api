@@ -47,9 +47,12 @@
 #include <arpa/inet.h>
 #include <netinet/if_ether.h>
 #include <netinet/ip.h>
+#include <net/if.h>
 #else
 #include <winsock2.h>
 #include <ws2tcpip.h>
+
+#define IF_NAMESIZE 16
 #endif
 
 #include <assert.h>

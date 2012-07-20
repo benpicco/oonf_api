@@ -120,7 +120,15 @@ static struct cfg_schema_entry _http_entries[] = {
 static struct avl_tree _http_site_tree;
 
 /* http session handling */
-static struct olsr_stream_managed _http_managed_socket;
+static struct olsr_stream_managed _http_managed_socket = {
+  .config = {
+    .session_timeout = 120000, /* 120 seconds */
+    .maximum_input_buffer = 65536,
+    .allowed_sessions = 3,
+    .receive_data = _cb_receive_data,
+    .create_error = _cb_create_error,
+  },
+};
 
 /* remember if initialized or not */
 OLSR_SUBSYSTEM_STATE(_http_state);
@@ -137,11 +145,6 @@ olsr_http_init(void) {
       _http_entries, ARRAYSIZE(_http_entries));
 
   olsr_stream_add_managed(&_http_managed_socket);
-  _http_managed_socket.config.session_timeout = 120000; /* 120 seconds */
-  _http_managed_socket.config.maximum_input_buffer = 65536;
-  _http_managed_socket.config.allowed_sessions = 3;
-  _http_managed_socket.config.receive_data = _cb_receive_data;
-  _http_managed_socket.config.create_error = _cb_create_error;
 
   avl_init(&_http_site_tree, avl_comp_strcasecmp, false, NULL);
 }

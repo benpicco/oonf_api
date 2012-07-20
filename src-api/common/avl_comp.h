@@ -49,6 +49,7 @@ EXPORT int avl_comp_uint32(const void *k1, const void *k2, void *ptr);
 EXPORT int avl_comp_uint16(const void *k1, const void *k2, void *ptr);
 EXPORT int avl_comp_uint8(const void *k1, const void *k2, void *ptr);
 EXPORT int avl_comp_netaddr(const void *k1, const void *k2, void *ptr);
+EXPORT int avl_comp_netaddr_socket(const void *k1, const void *k2, void *ptr);
 EXPORT int avl_comp_strcasecmp(const void *, const void *, void *);
 
 #endif /* AVL_COMP_H_ */

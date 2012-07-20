@@ -143,7 +143,7 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
   }
 
   /*
-   * initialize packet buffers for all _interfaces if necessary
+   * initialize packet buffers for all interfaces if necessary
    * and calculate message MTU
    */
   max_msg_size = writer->msg_size;

@@ -42,12 +42,6 @@
 #ifndef INTERFACE_H_
 #define INTERFACE_H_
 
-#ifndef _WIN32
-#include <net/if.h>
-#else
-#define IF_NAMESIZE 16
-#endif
-
 #include "common/common_types.h"
 #include "common/avl.h"
 #include "common/list.h"
@@ -106,9 +100,6 @@ struct olsr_interface {
 };
 
 struct olsr_interface_listener {
-  /* hook into list of listeners */
-  struct list_entity node;
-
   /* name of interface */
   const char *name;
 
@@ -124,6 +115,9 @@ struct olsr_interface_listener {
 
   /* pointer to the interface this listener is registered to */
   struct olsr_interface *interface;
+
+  /* hook into list of listeners */
+  struct list_entity _node;
 };
 
 #define OLSR_FOR_ALL_INTERFACES(interf, ptr) avl_for_each_element_safe(&olsr_interface_tree, interf, node, ptr)

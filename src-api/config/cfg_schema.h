@@ -62,6 +62,14 @@ struct cfg_schema_entry;
 
 #include "config/cfg_db.h"
 
+/* text names for defining netaddr prefixes */
+#define NETADDR_STR_ANY4       "any4"
+#define NETADDR_STR_ANY6       "any6"
+#define NETADDR_STR_LINKLOCAL4 "linklocal4"
+#define NETADDR_STR_LINKLOCAL6 "linklocal6"
+#define NETADDR_STR_ULA        "ula"
+
+/* macros for creating schema entries */
 #if !defined(REMOVE_HELPTEXT)
 #define _CFG_VALIDATE(p_name, p_def, p_help,args...)                         { .key.entry = (p_name), .def = { .value = (p_def), .length = sizeof(p_def)}, .help = (p_help), ##args }
 #else
@@ -217,6 +225,12 @@ struct cfg_schema_section {
    * during call of cb_delta_handler
    */
   struct cfg_named_section *pre, *post;
+
+  /*
+   * Name of configured section (or NULL if unnamed section), only valid
+   * during call of cb_delta_handler
+   */
+  const char *section_name;
 
   /* list of entries in section */
   struct cfg_schema_entry *_entries;

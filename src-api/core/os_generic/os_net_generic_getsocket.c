@@ -64,6 +64,10 @@ os_net_getsocket(union netaddr_socket *bind_to,
 
   int sock;
 
+  if (bind_to->std.sa_family == AF_INET6) {
+    return -1;
+  }
+
   sock = socket(bind_to->std.sa_family,
       tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
   if (sock < 0) {

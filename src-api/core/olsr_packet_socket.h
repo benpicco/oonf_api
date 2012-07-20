@@ -64,6 +64,8 @@ struct olsr_packet_config {
 
   void (*receive_data)(struct olsr_packet_socket *,
       union netaddr_socket *from, size_t length);
+
+  void *user;
 };
 
 struct olsr_packet_socket {
@@ -78,17 +80,6 @@ struct olsr_packet_socket {
   struct olsr_packet_config config;
 };
 
-struct olsr_packet_managed {
-  struct olsr_packet_socket socket_v4, multicast_v4;
-  struct olsr_packet_socket socket_v6, multicast_v6;
-  struct olsr_netaddr_acl acl;
-
-  struct olsr_packet_config config;
-
-  struct olsr_interface_listener _if_listener;
-  char interface[IF_NAMESIZE];
-};
-
 struct olsr_packet_managed_config {
   struct olsr_netaddr_acl acl;
   char interface[IF_NAMESIZE];
@@ -96,6 +87,17 @@ struct olsr_packet_managed_config {
   struct netaddr bindto_v6, multicast_v6;
   int port, multicast_port;
   bool loop_multicast;
+};
+
+struct olsr_packet_managed {
+  struct olsr_packet_socket socket_v4, multicast_v4;
+  struct olsr_packet_socket socket_v6, multicast_v6;
+
+  struct olsr_packet_config config;
+  void (*cb_settings_change)(struct olsr_packet_managed *);
+
+  struct olsr_packet_managed_config _managed_config;
+  struct olsr_interface_listener _if_listener;
 };
 
 EXPORT void olsr_packet_init(void);
@@ -112,10 +114,20 @@ EXPORT int olsr_packet_send_managed(struct olsr_packet_managed *,
 EXPORT int olsr_packet_send_managed_multicast(
     struct olsr_packet_managed *managed,
     const void *data, size_t length, int af_type);
-
 EXPORT void olsr_packet_add_managed(struct olsr_packet_managed *);
 EXPORT int olsr_packet_apply_managed(struct olsr_packet_managed *,
     struct olsr_packet_managed_config *);
 EXPORT void olsr_packet_remove_managed(struct olsr_packet_managed *, bool force);
+EXPORT bool olsr_packet_managed_is_active(
+    struct olsr_packet_managed *managed, int af_type);
+
+/**
+ * @param sock pointer to packet socket
+ * @return true if the socket is active to send data, false otherwise
+ */
+static INLINE bool
+olsr_packet_is_active(struct olsr_packet_socket *sock) {
+  return list_is_node_added(&sock->node);
+}
 
 #endif /* OLSR_PACKET_SOCKET_H_ */

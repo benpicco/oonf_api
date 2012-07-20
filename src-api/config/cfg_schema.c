@@ -82,9 +82,11 @@ const struct {
   const char *name;
   const struct netaddr *prefix;
 } _known_prefixes[] = {
-  { "linklocal4", &NETADDR_IPV4_LINKLOCAL },
-  { "linklocal6", &NETADDR_IPV6_LINKLOCAL },
-  { "ula", &NETADDR_IPV6_ULA },
+  { NETADDR_STR_ANY4, &NETADDR_IPV4_ANY },
+  { NETADDR_STR_ANY6, &NETADDR_IPV6_ANY },
+  { NETADDR_STR_LINKLOCAL4, &NETADDR_IPV4_LINKLOCAL },
+  { NETADDR_STR_LINKLOCAL6, &NETADDR_IPV6_LINKLOCAL },
+  { NETADDR_STR_ULA, &NETADDR_IPV6_ULA },
 };
 
 /**
@@ -1079,6 +1081,7 @@ _handle_named_section_change(struct cfg_schema_section *s_section,
   }
 
   if (changed || startup) {
+    s_section->section_name = name;
     s_section->cb_delta_handler();
   }
 }
