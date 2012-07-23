@@ -316,6 +316,9 @@ olsr_rfc5444_cleanup(void) {
 enum rfc5444_result olsr_rfc5444_send(
     struct olsr_rfc5444_target *target, uint8_t msgid) {
   struct olsr_rfc5444_interface *interf;
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+  struct netaddr_str buf;
+#endif
 
   interf = target->interface;
 
@@ -330,6 +333,10 @@ enum rfc5444_result olsr_rfc5444_send(
   }
 
   /* create message */
+  OLSR_DEBUG(LOG_RFC5444, "Create message id %d for protocol %s/target %s on interface %s",
+      msgid, target->interface->protocol->name, netaddr_to_string(&buf, &target->dst),
+      target->interface->name);
+
   return rfc5444_writer_create_message(&target->interface->protocol->writer,
       msgid, _cb_single_ifselector, target);
 }
@@ -986,6 +993,8 @@ _cb_interface_changed(struct olsr_packet_managed *managed) {
   struct olsr_rfc5444_interface_listener *l;
 
   interf = container_of(managed, struct olsr_rfc5444_interface, _socket);
+
+  olsr_rfc5444_reconfigure_interface(interf, &interf->_socket_config);
   list_for_each_element(&interf->_listener, l, _node) {
     l->cb_interface_changed(l);
   }

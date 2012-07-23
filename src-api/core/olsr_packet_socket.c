@@ -381,7 +381,7 @@ _apply_managed(struct olsr_packet_managed *managed) {
     result = -1;
   }
 
-  if (managed->cb_settings_change) {
+  if (changed && managed->cb_settings_change) {
     managed->cb_settings_change(managed);
   }
   return result;
@@ -516,7 +516,7 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
         return -1;
       }
     }
-    else {
+    else if (data->up) {
       if (olsr_interface_find_address(&_bind_to, bindto, data->name)) {
         OLSR_WARN(LOG_SOCKET_PACKET, "Could not find a fitting address for "
             "prefix %s on interface %s",
@@ -537,19 +537,27 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
     return -1;
   }
 
-  if (list_is_node_added(&packet->node)
-      && memcmp(&sock, &packet->local_socket, sizeof(sock)) == 0
-      && data == packet->interface) {
-    /* nothing changed */
-    OLSR_DEBUG(LOG_SOCKET_PACKET, "Nothing changed for socket");
-    return 1;
+  if (list_is_node_added(&packet->node)) {
+    if (data == packet->interface
+        && memcmp(&sock, &packet->local_socket, sizeof(sock)) == 0) {
+      /* nothing changed */
+      OLSR_DEBUG(LOG_SOCKET_PACKET, "Nothing changed for socket");
+      return 1;
+    }
+  }
+  else {
+    if (data != NULL && !data->up) {
+      /* nothing changed */
+      OLSR_DEBUG(LOG_SOCKET_PACKET, "Nothing changed for socket");
+      return 1;
+    }
   }
 
   /* remove old socket */
   olsr_packet_remove(packet, true);
 
   if (data != NULL && !data->up) {
-    OLSR_DEBUG(LOG_SOCKET_PACKET, "Interface of socket is down");
+    OLSR_DEBUG(LOG_SOCKET_PACKET, "Interface of socket went down");
     return 0;
   }
 
@@ -682,9 +690,12 @@ static void
 _cb_interface_listener(struct olsr_interface_listener *l,
     struct olsr_interface_data *old __attribute__((unused))) {
   struct olsr_packet_managed *managed;
+  int result;
 
   /* calculate managed socket for this event */
   managed = container_of(l, struct olsr_packet_managed, _if_listener);
 
-  _apply_managed(managed);
+  result = _apply_managed(managed);
+  OLSR_DEBUG(LOG_SOCKET_PACKET,
+      "Result from interface triggered socket reconfiguration: %d", result);
 }

@@ -83,6 +83,8 @@ static uint32_t _total_timer_events;
 /* true if scheduler is active */
 static bool _scheduling_now;
 
+static struct list_entity *_scheduler_next_ptr;
+
 /* Memory cookie for the timer manager */
 struct list_entity timerinfo_list;
 
@@ -129,6 +131,7 @@ olsr_timer_init(void)
   _next_event = ~0ull;
   _total_timer_events = 0;
   _scheduling_now = false;
+  _scheduler_next_ptr = NULL;
   _next_event_valid = true;
 
   list_init_head(&timerinfo_list);
@@ -218,11 +221,15 @@ olsr_timer_start(struct olsr_timer_entry *timer, uint64_t rel_time)
   assert(rel_time > 0 && rel_time < TIMER_MAX_RELTIME);
 
   if (timer->_clock) {
+    /* move scheduler next ptr if necessary */
+    if (&timer->_node == _scheduler_next_ptr) {
+      _scheduler_next_ptr = _scheduler_next_ptr->next;
+    }
+
     list_remove(&timer->_node);
     _total_timer_events--;
   }
   else {
-    /* The cookie is used for debugging to traceback the originator */
     timer->info->usage++;
   }
   timer->info->changes++;
@@ -291,6 +298,11 @@ olsr_timer_stop(struct olsr_timer_entry *timer)
 
   OLSR_DEBUG(LOG_TIMER, "TIMER: stop %s\n", timer->info->name);
 
+  /* move scheduler next ptr if necessary */
+  if (&timer->_node == _scheduler_next_ptr) {
+    _scheduler_next_ptr = _scheduler_next_ptr->next;
+  }
+
   /* remove timer from buckets */
   list_remove(&timer->_node);
   timer->_clock = 0;
@@ -338,7 +350,7 @@ olsr_timer_set(struct olsr_timer_entry *timer, uint64_t rel_time)
 void
 olsr_timer_walk(void)
 {
-  struct olsr_timer_entry *timer, *t_it;
+  struct olsr_timer_entry *timer;
   struct olsr_timer_info *info;
 
   int i;
@@ -347,9 +359,16 @@ olsr_timer_walk(void)
 
   while (_next_event <= olsr_clock_getNow()) {
     i = _bucket_ptr[0];
-    list_for_each_element_safe(&_buckets[i][0], timer, _node, t_it) {
+
+    _scheduler_next_ptr = _buckets[i][0].next;
+    while (_scheduler_next_ptr != &_buckets[i][0]) {
+      timer = container_of(_scheduler_next_ptr, struct olsr_timer_entry, _node);
+      _scheduler_next_ptr = _scheduler_next_ptr->next;
+
       OLSR_DEBUG(LOG_TIMER, "TIMER: fire '%s' at clocktick %" PRIu64 "\n",
                   timer->info->name, _next_event);
+
+      /* get pointer to next timer */
 
       /*
        * The timer->info pointer is invalidated by olsr_timer_stop()

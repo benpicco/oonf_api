@@ -167,6 +167,8 @@ void
 olsr_interface_trigger_change(const char *name, bool down) {
   struct olsr_interface *interf;
 
+  OLSR_DEBUG(LOG_INTERFACE, "Change of interface %s was triggered", name);
+
   interf = avl_find_element(&olsr_interface_tree, name, interf, _node);
   if (interf == NULL) {
     return;
@@ -300,15 +302,17 @@ _interface_add(const char *name, bool mesh) {
  */
 static void
 _interface_remove(struct olsr_interface *interf, bool mesh) {
-  interf->usage_counter--;
+  /* handle mesh interface flag */
   if (mesh) {
     interf->mesh_counter--;
 
     if (interf->mesh_counter < 1) {
+      /* no mesh interface anymore, remove routing settings */
       os_routing_cleanup_mesh_if(interf);
     }
   }
 
+  interf->usage_counter--;
   if (interf->usage_counter > 0) {
     return;
   }
@@ -379,6 +383,8 @@ _cb_change_handler(void *ptr) {
 
   interf = ptr;
 
+  OLSR_DEBUG(LOG_INTERFACE, "CHange of interface %s in progress", interf->data.name);
+
   /* read interface data */
   if (os_net_update_interface(&new_data, interf->data.name)) {
     /* an error happened, try again */
@@ -392,11 +398,11 @@ _cb_change_handler(void *ptr) {
     return;
   }
 
-  /* something changed ? */
+  /* something changed ?
   if (memcmp(&interf->data, &new_data, sizeof(new_data)) == 0) {
     return;
   }
-
+*/
   /* copy data to interface object, but remember the old data */
   memcpy(&old_data, &interf->data, sizeof(old_data));
   memcpy(&interf->data, &new_data, sizeof(interf->data));
