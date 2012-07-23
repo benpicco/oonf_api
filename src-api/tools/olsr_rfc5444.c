@@ -100,17 +100,17 @@ static void _cb_interface_changed(struct olsr_packet_managed *managed);
 /* memory block for rfc5444 targets plus MTU sized packet buffer */
 static struct olsr_memcookie_info _protocol_memcookie = {
   .name = "RFC5444 Protocol",
-  .size = sizeof(struct olsr_rfc5444_interface),
+  .size = sizeof(struct olsr_rfc5444_protocol),
 };
 
 static struct olsr_memcookie_info _interface_memcookie = {
-  .name = "RFC5444 Target",
+  .name = "RFC5444 Interface",
   .size = sizeof(struct olsr_rfc5444_interface),
 };
 
 static struct olsr_memcookie_info _target_memcookie = {
   .name = "RFC5444 Target",
-  .size = sizeof(struct olsr_rfc5444_target) + RFC5444_MAX_PACKET_SIZE,
+  .size = sizeof(struct olsr_rfc5444_target),
 };
 
 static struct olsr_memcookie_info _tlvblock_memcookie = {
@@ -155,7 +155,7 @@ static struct cfg_schema_entry _rfc5444_entries[] = {
     "Access control list for RFC5444 interface"),
   CFG_MAP_NETADDR_V4(_rfc5444_config, socket.bindto_v4, "bindto_v4", NETADDR_STR_ANY4,
     "Bind RFC5444 ipv4 socket to this address", true, true),
-  CFG_MAP_NETADDR_V6(_rfc5444_config, socket.bindto_v6, "bindto_v6", NETADDR_STR_LINKLOCAL6,
+  CFG_MAP_NETADDR_V6(_rfc5444_config, socket.bindto_v6, "bindto_v6", NETADDR_STR_ANY6,
     "Bind RFC5444 ipv6 socket to this address", true, true),
   CFG_MAP_INT_MINMAX(_rfc5444_config, socket.port, "port", RFC5444_MANET_UDP_PORT_TXT,
     "UDP port for RFC5444 interface", 1, 65535),
@@ -173,9 +173,9 @@ static struct cfg_schema_section _interface_section = {
 static struct cfg_schema_entry _interface_entries[] = {
   CFG_MAP_ACL_V46(olsr_packet_managed_config, acl, "acl", "default_accept",
     "Access control list for RFC5444 interface"),
-  CFG_MAP_NETADDR_V4(olsr_packet_managed_config, bindto_v4, "bindto_v4", "0.0.0.0",
+  CFG_MAP_NETADDR_V4(olsr_packet_managed_config, bindto_v4, "bindto_v4", NETADDR_STR_ANY4,
     "Bind RFC5444 ipv4 socket to this address", true, true),
-  CFG_MAP_NETADDR_V6(olsr_packet_managed_config, bindto_v6, "bindto_v6", "linklocal6",
+  CFG_MAP_NETADDR_V6(olsr_packet_managed_config, bindto_v6, "bindto_v6", NETADDR_STR_LINKLOCAL6,
     "Bind RFC5444 ipv6 socket to this address", true, true),
   CFG_MAP_NETADDR_V4(olsr_packet_managed_config, multicast_v4, "multicast_v4", RFC5444_MANET_MULTICAST_V4_TXT,
     "ipv4 multicast address of this socket", false, true),
@@ -198,6 +198,8 @@ static const struct rfc5444_writer _prototype_writer = {
   .malloc_addrtlv_entry = _alloc_addrtlv_entry,
   .free_address_entry = _free_address_entry,
   .free_addrtlv_entry = _free_addrtlv_entry,
+  .msg_size = RFC5444_MAX_MESSAGE_SIZE,
+  .addrtlv_size = RFC5444_ADDRTLV_BUFFER,
 };
 
 /* configuration for RFC5444 socket */
@@ -226,36 +228,19 @@ static enum log_source LOG_RFC5444;
  */
 int
 olsr_rfc5444_init(void) {
-  if (olsr_subsystem_is_initialized(&_rfc5444_state))
+  if (olsr_subsystem_init(&_rfc5444_state))
     return 0;
 
   LOG_RFC5444 = olsr_log_register_source(_LOG_RFC5444_NAME);
 
+  avl_init(&_protocol_tree, avl_comp_strcasecmp, false, NULL);
+
   olsr_memcookie_add(&_protocol_memcookie);
-
-  _rfc5444_protocol = olsr_rfc5444_add_protocol(RFC5444_PROTOCOL);
-  if (_rfc5444_protocol == NULL) {
-    olsr_memcookie_remove(&_protocol_memcookie);
-    return -1;
-  }
-
-  olsr_memcookie_add(&_interface_memcookie);
-  _rfc5444_unicast = olsr_rfc5444_add_interface(
-      _rfc5444_protocol, NULL, RFC5444_UNICAST_TARGET);
-  if (_rfc5444_unicast == NULL) {
-    olsr_rfc5444_remove_protocol(_rfc5444_protocol);
-    olsr_memcookie_remove(&_protocol_memcookie);
-    olsr_memcookie_remove(&_interface_memcookie);
-    return -1;
-  }
-
   olsr_memcookie_add(&_target_memcookie);
   olsr_memcookie_add(&_addrblock_memcookie);
   olsr_memcookie_add(&_tlvblock_memcookie);
   olsr_memcookie_add(&_address_memcookie);
   olsr_memcookie_add(&_addrtlv_memcookie);
-
-  avl_init(&_protocol_tree, avl_comp_strcasecmp, false, NULL);
 
   olsr_timer_add(&_aggregation_timer);
 
@@ -265,7 +250,20 @@ olsr_rfc5444_init(void) {
   cfg_schema_add_section(olsr_cfg_get_schema(), &_interface_section,
       _interface_entries, ARRAYSIZE(_interface_entries));
 
-  olsr_subsystem_init(&_rfc5444_state);
+  _rfc5444_protocol = olsr_rfc5444_add_protocol(RFC5444_PROTOCOL);
+  if (_rfc5444_protocol == NULL) {
+    olsr_rfc5444_cleanup();
+    return -1;
+  }
+
+  olsr_memcookie_add(&_interface_memcookie);
+  _rfc5444_unicast = olsr_rfc5444_add_interface(
+      _rfc5444_protocol, NULL, RFC5444_UNICAST_TARGET);
+  if (_rfc5444_unicast == NULL) {
+    olsr_rfc5444_cleanup();
+    return -1;
+  }
+
   return 0;
 }
 
@@ -362,9 +360,7 @@ olsr_rfc5444_add_protocol(const char *name) {
   memcpy(&protocol->reader, &_prototype_reader, sizeof(_prototype_reader));
   memcpy(&protocol->writer, &_prototype_writer, sizeof(_prototype_writer));
   protocol->writer.msg_buffer = protocol->_msg_buffer;
-  protocol->writer.msg_size = RFC5444_MAX_MESSAGE_SIZE;
   protocol->writer.addrtlv_buffer = protocol->_addrtlv_buffer;
-  protocol->writer.addrtlv_size = RFC5444_ADDRTLV_BUFFER;
   rfc5444_reader_init(&protocol->reader);
   rfc5444_writer_init(&protocol->writer);
 
@@ -475,6 +471,14 @@ olsr_rfc5444_remove_interface(struct olsr_rfc5444_interface *interf,
     return;
   }
 
+  /* remove multicast targets */
+  if (interf->multicast4) {
+    _destroy_target(interf->multicast4);
+  }
+  if (interf->multicast6) {
+    _destroy_target(interf->multicast6);
+  }
+
   /* remove from protocol tree */
   avl_remove(&interf->protocol->_interface_tree, &interf->_node);
 
@@ -536,7 +540,7 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
   }
 
   /* apply socket configuration */
-  olsr_packet_apply_managed(&interf->_socket, config);
+  olsr_packet_apply_managed(&interf->_socket, &interf->_socket_config);
 
   /* handle IPv4 multicast target */
   if (interf->multicast4) {
@@ -634,8 +638,7 @@ _create_target(struct olsr_rfc5444_interface *interf,
   }
 
   /* initialize rfc5444 interfaces */
-  target->rfc5444_if.packet_buffer =
-      ((uint8_t*)target) + sizeof(*target);
+  target->rfc5444_if.packet_buffer = target->_packet_buffer;
   target->rfc5444_if.packet_size = RFC5444_MAX_PACKET_SIZE;
   target->rfc5444_if.addPacketHeader = _cb_add_seqno;
   if (unicast) {
@@ -984,6 +987,6 @@ _cb_interface_changed(struct olsr_packet_managed *managed) {
 
   interf = container_of(managed, struct olsr_rfc5444_interface, _socket);
   list_for_each_element(&interf->_listener, l, _node) {
-
+    l->cb_interface_changed(l);
   }
 }

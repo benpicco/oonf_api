@@ -43,7 +43,7 @@
 struct olsr_rfc5444_target;
 
 struct olsr_rfc5444_protocol {
-  char name[IF_NAMESIZE];
+  char name[32];
   uint16_t port;
 
   union netaddr_socket *input_address;
@@ -96,6 +96,8 @@ struct olsr_rfc5444_target {
   struct olsr_timer_entry _aggregation;
 
   int _refcount;
+
+  uint8_t _packet_buffer[RFC5444_MAX_PACKET_SIZE];
 };
 
 EXPORT int olsr_rfc5444_init(void)  __attribute__((warn_unused_result));

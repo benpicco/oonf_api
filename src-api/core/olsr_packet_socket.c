@@ -246,6 +246,10 @@ olsr_packet_remove_managed(struct olsr_packet_managed *managed, bool forced) {
 int
 olsr_packet_apply_managed(struct olsr_packet_managed *managed,
     struct olsr_packet_managed_config *config) {
+  bool if_changed;
+
+  if_changed = strcmp(config->interface, managed->_managed_config.interface) != 0;
+
   /* copy config */
   memcpy(&managed->_managed_config, config, sizeof(*config));
 
@@ -253,14 +257,10 @@ olsr_packet_apply_managed(struct olsr_packet_managed *managed,
   memset(&managed->_managed_config.acl, 0, sizeof(managed->_managed_config.acl));
   olsr_acl_copy(&managed->_managed_config.acl, &config->acl);
 
-  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socket (if %s)", config->interface);
-  if (strcmp(config->interface, managed->_managed_config.interface) != 0) {
+  /* handle change in interface listener */
+  if (if_changed) {
     /* interface changed, remove old listener if necessary */
     olsr_interface_remove_listener(&managed->_if_listener);
-
-    /* copy interface name */
-    strscpy(managed->_managed_config.interface, config->interface,
-        sizeof(managed->_managed_config.interface));
 
     if (managed->_managed_config.interface[0]) {
       /* create new interface listener */
@@ -268,6 +268,8 @@ olsr_packet_apply_managed(struct olsr_packet_managed *managed,
     }
   }
 
+
+  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socket (if %s)", config->interface);
   return _apply_managed(managed);
 }
 
@@ -496,27 +498,35 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
     struct olsr_interface_data *data) {
   union netaddr_socket sock;
   struct netaddr _bind_to;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   struct netaddr_str buf;
 #endif
 
+  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socket: %s",
+      netaddr_to_string(&buf, bindto));
 
   /* Handle prefix based address selection */
   if (bindto->prefix_len != netaddr_get_maxprefix(bindto)) {
     if (data == NULL) {
-      OLSR_WARN(LOG_SOCKET_PACKET, "Cannot use prefix %s to look for "
-          "an interface address without specified interface",
-          netaddr_to_string(&buf, bindto));
-      return -1;
+      if (memcmp(bindto, &NETADDR_IPV4_ANY, sizeof(*bindto)) != 0
+          && memcmp(bindto, &NETADDR_IPV6_ANY, sizeof(*bindto)) != 0) {
+        OLSR_WARN(LOG_SOCKET_PACKET, "Cannot use prefix %s to look for "
+            "an interface address without specified interface",
+            netaddr_to_string(&buf, bindto));
+        return -1;
+      }
     }
-    if (olsr_interface_find_address(&_bind_to, bindto, data->name)) {
-      OLSR_WARN(LOG_SOCKET_PACKET, "Could not find a fitting address for "
-          "prefix %s on interface %s",
-          netaddr_to_string(&buf, bindto), data->name);
-      return -1;
+    else {
+      if (olsr_interface_find_address(&_bind_to, bindto, data->name)) {
+        OLSR_WARN(LOG_SOCKET_PACKET, "Could not find a fitting address for "
+            "prefix %s on interface %s",
+            netaddr_to_string(&buf, bindto), data->name);
+        return -1;
+      }
+      else {
+        bindto = &_bind_to;
+      }
     }
-
-    bindto = &_bind_to;
   }
 
   /* create binding socket */
@@ -531,6 +541,7 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
       && memcmp(&sock, &packet->local_socket, sizeof(sock)) == 0
       && data == packet->interface) {
     /* nothing changed */
+    OLSR_DEBUG(LOG_SOCKET_PACKET, "Nothing changed for socket");
     return 1;
   }
 
@@ -538,6 +549,7 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
   olsr_packet_remove(packet, true);
 
   if (data != NULL && !data->up) {
+    OLSR_DEBUG(LOG_SOCKET_PACKET, "Interface of socket is down");
     return 0;
   }
 
@@ -551,6 +563,9 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
   if (olsr_packet_add(packet, &sock, data)) {
     return -1;
   }
+
+  OLSR_DEBUG(LOG_SOCKET_PACKET, "Opened new socket and bound it to %s",
+      netaddr_to_string(&buf, bindto));
   return 0;
 }
 
