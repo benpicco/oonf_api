@@ -75,26 +75,26 @@ const struct netaddr NETADDR_IPV6_ULA = { { 0xfc,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
  * @param binary source pointer
  * @param len length of source buffer
  * @param addr_type address type of source
+ * @param prefix_len prefix length of source
  * @return 0 if successful read binary data, -1 otherwise
  */
 int
-netaddr_from_binary(struct netaddr *dst, const void *binary,
-    size_t len, uint8_t addr_type) {
-  uint32_t prefix_len, addr_len;
+netaddr_from_binary_prefix(struct netaddr *dst, const void *binary,
+    size_t len, uint8_t addr_type, uint8_t prefix_len) {
+  uint32_t addr_len;
 
-  prefix_len = netaddr_get_af_maxprefix(addr_type);
   addr_len = prefix_len >> 3;
 
   if (addr_len == 0 || len < addr_len) {
     /* unknown address type */
-    dst->type = AF_UNSPEC;
+    dst->_type = AF_UNSPEC;
     return -1;
   }
 
-  memset(dst->addr, 0, sizeof(dst->addr));
-  dst->type = addr_type;
-  dst->prefix_len = prefix_len;
-  memcpy(dst->addr, binary, addr_len);
+  memset(dst->_addr, 0, sizeof(dst->_addr));
+  dst->_type = addr_type;
+  dst->_prefix_len = prefix_len;
+  memcpy(dst->_addr, binary, addr_len);
 
   return 0;
 }
@@ -116,7 +116,7 @@ netaddr_to_binary(void *dst, const struct netaddr *src, size_t len) {
     return -1;
   }
 
-  memcpy(dst, src->addr, addr_len);
+  memcpy(dst, src->_addr, addr_len);
   return 0;
 }
 
@@ -129,23 +129,23 @@ netaddr_to_binary(void *dst, const struct netaddr *src, size_t len) {
  */
 int
 netaddr_from_socket(struct netaddr *dst, const union netaddr_socket *src) {
-  memset(dst->addr, 0, sizeof(dst->addr));
+  memset(dst->_addr, 0, sizeof(dst->_addr));
   if (src->std.sa_family == AF_INET) {
     /* ipv4 */
-    memcpy(dst->addr, &src->v4.sin_addr, 4);
-    dst->prefix_len = 32;
+    memcpy(dst->_addr, &src->v4.sin_addr, 4);
+    dst->_prefix_len = 32;
   }
   else if (src->std.sa_family == AF_INET6){
     /* ipv6 */
-    memcpy(dst->addr, &src->v6.sin6_addr, 16);
-    dst->prefix_len = 128;
+    memcpy(dst->_addr, &src->v6.sin6_addr, 16);
+    dst->_prefix_len = 128;
   }
   else {
     /* unknown address type */
-    dst->type = AF_UNSPEC;
+    dst->_type = AF_UNSPEC;
     return -1;
   }
-  dst->type = (uint8_t)src->std.sa_family;
+  dst->_type = (uint8_t)src->std.sa_family;
   return 0;
 }
 
@@ -159,23 +159,24 @@ netaddr_from_socket(struct netaddr *dst, const union netaddr_socket *src) {
 int
 netaddr_to_socket(union netaddr_socket *dst, const struct netaddr *src) {
   /* copy address type */
-  dst->std.sa_family = src->type;
+  dst->std.sa_family = src->_type;
 
-  if (src->type == AF_INET) {
-    /* ipv4 */
-    memcpy(&dst->v4.sin_addr, src->addr, 4);
-  }
-  else if (src->type == AF_INET6) {
-    /* ipv6 */
-    memcpy(&dst->v6.sin6_addr, src->addr, 16);
-  }
-  else {
-    /* unknown address type */
-    return -1;
+  switch (src->_type) {
+    case AF_INET:
+      /* ipv4 */
+      memcpy(&dst->v4.sin_addr, src->_addr, 4);
+      break;
+    case AF_INET6:
+      /* ipv6 */
+      memcpy(&dst->v6.sin6_addr, src->_addr, 16);
+      break;
+    default:
+      /* unknown address type */
+      return -1;
   }
 
   /* copy address type */
-  dst->std.sa_family= src->type;
+  dst->std.sa_family= src->_type;
   return 0;
 }
 
@@ -189,7 +190,7 @@ netaddr_to_autobuf(struct autobuf *abuf, const struct netaddr *src) {
     return -1;
   }
 
-  abuf_memcpy(abuf, src->addr, addr_len);
+  abuf_memcpy(abuf, src->_addr, addr_len);
   return 0;
 }
 
@@ -215,39 +216,39 @@ netaddr_create_host_bin(struct netaddr *host, const struct netaddr *netmask,
 
   /* copy netmask with prefixlength max */
   memcpy(host, netmask, sizeof(*netmask));
-  host->prefix_len = netaddr_get_maxprefix(host);
+  host->_prefix_len = netaddr_get_maxprefix(host);
 
   /* unknown address type */
-  if (host->prefix_len == 0) {
+  if (host->_prefix_len == 0) {
     return -1;
   }
 
   /* netmask has no host part */
-  if (host->prefix_len == netmask->prefix_len || num_length == 0) {
+  if (host->_prefix_len == netmask->_prefix_len || num_length == 0) {
     return 0;
   }
 
   /* calculate starting byte in host and number */
-  host_part_length = (host->prefix_len - netmask->prefix_len + 7)/8;
+  host_part_length = (host->_prefix_len - netmask->_prefix_len + 7)/8;
   if (host_part_length > num_length) {
-    host_index = host->prefix_len/8 - num_length;
+    host_index = host->_prefix_len/8 - num_length;
     number_index = 0;
   }
   else {
-    host_index = netmask->prefix_len / 8;
+    host_index = netmask->_prefix_len / 8;
     number_index = num_length - host_part_length;
 
     /* copy bit masked part */
-    if ((netmask->prefix_len & 7) != 0) {
-      mask = (255 >> (netmask->prefix_len & 7));
-      host->addr[host_index] &= (~mask);
-      host->addr[host_index] |= (number_byte[number_index++]) & mask;
+    if ((netmask->_prefix_len & 7) != 0) {
+      mask = (255 >> (netmask->_prefix_len & 7));
+      host->_addr[host_index] &= (~mask);
+      host->_addr[host_index] |= (number_byte[number_index++]) & mask;
       host_index++;
     }
   }
 
   /* copy bytes */
-  memcpy(&host->addr[host_index], &number_byte[number_index], num_length - number_index);
+  memcpy(&host->_addr[host_index], &number_byte[number_index], num_length - number_index);
   return 0;
 }
 
@@ -265,24 +266,25 @@ netaddr_socket_init(union netaddr_socket *combined, const struct netaddr *addr,
   /* initialize memory block */
   memset(combined, 0, sizeof(*combined));
 
-  if (addr->type == AF_INET) {
-    /* ipv4 */
-    memcpy(&combined->v4.sin_addr, addr->addr, 4);
-    combined->v4.sin_port = htons(port);
-  }
-  else if (addr->type == AF_INET6) {
-    /* ipv6 */
-    memcpy(&combined->v6.sin6_addr, addr->addr, 16);
-    combined->v6.sin6_port = htons(port);
-    combined->v6.sin6_scope_id = if_index;
-  }
-  else {
-    /* unknown address type */
-    return -1;
+  switch (addr->_type) {
+    case AF_INET:
+      /* ipv4 */
+      memcpy(&combined->v4.sin_addr, addr->_addr, 4);
+      combined->v4.sin_port = htons(port);
+      break;
+    case AF_INET6:
+      /* ipv6 */
+      memcpy(&combined->v6.sin6_addr, addr->_addr, 16);
+      combined->v6.sin6_port = htons(port);
+      combined->v6.sin6_scope_id = if_index;
+      break;
+    default:
+      /* unknown address type */
+      return -1;
   }
 
   /* copy address type */
-  combined->std.sa_family = addr->type;
+  combined->std.sa_family = addr->_type;
   return 0;
 }
 
@@ -317,18 +319,18 @@ netaddr_to_prefixstring(struct netaddr_str *dst,
   int maxprefix;
 
   maxprefix = netaddr_get_maxprefix(src);
-  switch (src->type) {
+  switch (src->_type) {
     case AF_INET:
-      result = inet_ntop(AF_INET, src->addr, dst->buf, sizeof(*dst));
+      result = inet_ntop(AF_INET, src->_addr, dst->buf, sizeof(*dst));
       break;
     case AF_INET6:
-      result = inet_ntop(AF_INET6, src->addr, dst->buf, sizeof(*dst));
+      result = inet_ntop(AF_INET6, src->_addr, dst->buf, sizeof(*dst));
       break;
     case AF_MAC48:
-      result = _mac_to_string(dst->buf, src->addr, sizeof(*dst), 6, ':');
+      result = _mac_to_string(dst->buf, src->_addr, sizeof(*dst), 6, ':');
       break;
     case AF_EUI64:
-      result = _mac_to_string(dst->buf, src->addr, sizeof(*dst), 8, '-');
+      result = _mac_to_string(dst->buf, src->_addr, sizeof(*dst), 8, '-');
       break;
     case AF_UNSPEC:
       result = strcpy(dst->buf, "-");
@@ -337,9 +339,9 @@ netaddr_to_prefixstring(struct netaddr_str *dst,
     default:
       return NULL;
   }
-  if (forceprefix || src->prefix_len < maxprefix) {
+  if (forceprefix || src->_prefix_len < maxprefix) {
     /* append prefix */
-    snprintf(dst->buf + strlen(result), 5, "/%d", src->prefix_len);
+    snprintf(dst->buf + strlen(result), 5, "/%d", src->_prefix_len);
   }
   return result;
 }
@@ -418,7 +420,7 @@ netaddr_from_string(struct netaddr *dst, const char *src) {
 
     if (*ptr2 == 0) {
       /* prefixlength is missing */
-      dst->type = AF_UNSPEC;
+      dst->_type = AF_UNSPEC;
       return -1;
     }
 
@@ -434,25 +436,25 @@ netaddr_from_string(struct netaddr *dst, const char *src) {
   if ((colon_count == 5 || minus_count == 5)
       && (colon_count == 0 || minus_count == 0)
       && !has_point && !has_coloncolon) {
-    dst->type = AF_MAC48;
-    dst->prefix_len = 48;
+    dst->_type = AF_MAC48;
+    dst->_prefix_len = 48;
     if (colon_count > 0) {
-      result = _mac_from_string(dst->addr, 6, ptr1, ':');
+      result = _mac_from_string(dst->_addr, 6, ptr1, ':');
     }
     else {
-      result = _mac_from_string(dst->addr, 6, ptr1, '-');
+      result = _mac_from_string(dst->_addr, 6, ptr1, '-');
     }
   }
   else if (colon_count == 0 && !has_point && minus_count == 7) {
-    dst->type = AF_EUI64;
-    dst->prefix_len = 64;
-    dst->addr[7] = 2;
-    result = _mac_from_string(dst->addr, 8, ptr1, '-');
+    dst->_type = AF_EUI64;
+    dst->_prefix_len = 64;
+    dst->_addr[7] = 2;
+    result = _mac_from_string(dst->_addr, 8, ptr1, '-');
   }
   else if (colon_count == 0 && has_point && minus_count == 0) {
-    dst->type = AF_INET;
-    dst->prefix_len = 32;
-    result = inet_pton(AF_INET, ptr1, dst->addr) == 1 ? 0 : -1;
+    dst->_type = AF_INET;
+    dst->_prefix_len = 32;
+    result = inet_pton(AF_INET, ptr1, dst->_addr) == 1 ? 0 : -1;
 
     if (result == 0 && *ptr2 && prefix_len == -1) {
       /* we need a prefix length, but its not a numerical one */
@@ -460,26 +462,26 @@ netaddr_from_string(struct netaddr *dst, const char *src) {
     }
   }
   else if ((has_coloncolon || colon_count == 7) && minus_count == 0) {
-    dst->type = AF_INET6;
-    dst->prefix_len = 128;
-    result = inet_pton(AF_INET6, ptr1, dst->addr) == 1 ? 0 : -1;
+    dst->_type = AF_INET6;
+    dst->_prefix_len = 128;
+    result = inet_pton(AF_INET6, ptr1, dst->_addr) == 1 ? 0 : -1;
   }
 
   /* stop if an error happened */
   if (result) {
-    dst->type = AF_UNSPEC;
+    dst->_type = AF_UNSPEC;
     return -1;
   }
 
   if (*ptr2) {
-    if (prefix_len < 0 || prefix_len > dst->prefix_len) {
+    if (prefix_len < 0 || prefix_len > dst->_prefix_len) {
       /* prefix is too long */
-      dst->type = AF_UNSPEC;
+      dst->_type = AF_UNSPEC;
       return -1;
     }
 
     /* store real prefix length */
-    dst->prefix_len = (uint8_t)prefix_len;
+    dst->_prefix_len = (uint8_t)prefix_len;
   }
   return 0;
 }
@@ -563,24 +565,24 @@ int
 netaddr_cmp_to_socket(const struct netaddr *a1, const union netaddr_socket *a2) {
   int result = 0;
 
-  result = (int)a1->type - (int)a2->std.sa_family;
+  result = (int)a1->_type - (int)a2->std.sa_family;
   if (result) {
     return result;
   }
 
-  if (a1->type == AF_INET) {
-    result = memcmp(a1->addr, &a2->v4.sin_addr, 4);
+  if (a1->_type == AF_INET) {
+    result = memcmp(a1->_addr, &a2->v4.sin_addr, 4);
   }
-  else if (a1->type == AF_INET6) {
+  else if (a1->_type == AF_INET6) {
     /* ipv6 */
-    result = memcmp(a1->addr, &a2->v6.sin6_addr, 16);
+    result = memcmp(a1->_addr, &a2->v6.sin6_addr, 16);
   }
 
   if (result) {
     return result;
   }
 
-  return (int)a1->prefix_len - (a1->type == AF_INET ? 32 : 128);
+  return (int)a1->_prefix_len - (a1->_type == AF_INET ? 32 : 128);
 }
 
 /**
@@ -597,7 +599,7 @@ netaddr_isequal_binary(const struct netaddr *addr,
     const void *bin, size_t len, uint16_t af, uint8_t prefix_len) {
   uint32_t addr_len;
 
-  if (addr->type != af || addr->prefix_len != prefix_len) {
+  if (addr->_type != af || addr->_prefix_len != prefix_len) {
     return false;
   }
 
@@ -606,7 +608,7 @@ netaddr_isequal_binary(const struct netaddr *addr,
     return false;
   }
 
-  return memcmp(addr->addr, bin, addr_len) == 0;
+  return memcmp(addr->_addr, bin, addr_len) == 0;
 }
 
 /**
@@ -620,7 +622,7 @@ netaddr_isequal_binary(const struct netaddr *addr,
 bool
 netaddr_binary_is_in_subnet(const struct netaddr *subnet,
     const void *bin, size_t len, uint8_t af_family) {
-  if (subnet->type != af_family
+  if (subnet->_type != af_family
       || netaddr_get_maxprefix(subnet) != len * 8) {
     return false;
   }
@@ -637,12 +639,12 @@ netaddr_binary_is_in_subnet(const struct netaddr *subnet,
 bool
 netaddr_is_in_subnet(const struct netaddr *subnet,
     const struct netaddr *addr) {
-  if (subnet->type != addr->type
-      || subnet->prefix_len > addr->prefix_len) {
+  if (subnet->_type != addr->_type
+      || subnet->_prefix_len > addr->_prefix_len) {
     return false;
   }
 
-  return _binary_is_in_subnet(subnet, addr->addr);
+  return _binary_is_in_subnet(subnet, addr->_addr);
 }
 
 /**
@@ -901,17 +903,17 @@ _binary_is_in_subnet(const struct netaddr *subnet, const void *bin) {
   _bin = bin;
 
   /* split prefix length into whole bytes and bit rest */
-  byte_length = subnet->prefix_len / 8;
-  bit_length = subnet->prefix_len % 8;
+  byte_length = subnet->_prefix_len / 8;
+  bit_length = subnet->_prefix_len % 8;
 
   /* compare whole bytes */
-  if (memcmp(subnet->addr, bin, byte_length) != 0) {
+  if (memcmp(subnet->_addr, bin, byte_length) != 0) {
     return false;
   }
 
   /* compare bits if necessary */
   if (bit_length != 0) {
-    return (subnet->addr[byte_length] >> (8 - bit_length))
+    return (subnet->_addr[byte_length] >> (8 - bit_length))
         == (_bin[byte_length] >> (8 - bit_length));
   }
   return true;

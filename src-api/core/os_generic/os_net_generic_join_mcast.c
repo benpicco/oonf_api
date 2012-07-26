@@ -68,7 +68,7 @@ os_net_join_mcast_recv(int sock, struct netaddr *multicast,
   struct ip_mreq   v4_mreq;
   struct ipv6_mreq v6_mreq;
 
-  if (multicast->type == AF_INET) {
+  if (netaddr_get_address_family(multicast) == AF_INET) {
     const struct netaddr *src;
 
     src = oif == NULL ? &NETADDR_IPV4_ANY : &oif->if_v4;
@@ -139,14 +139,14 @@ os_net_join_mcast_send(int sock,
 #endif
   unsigned i;
 
-  if (multicast->type == AF_INET) {
+  if (netaddr_get_address_family(multicast) == AF_INET) {
     OLSR_DEBUG(log_src,
         "Socket on interface %s joining sending multicast %s (src %s)\n",
         oif->name,
         netaddr_to_string(&buf2, multicast),
         netaddr_to_string(&buf1, &oif->if_v4));
 
-    if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, oif->if_v4.addr, 4) < 0) {
+    if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, netaddr_get_binptr(&oif->if_v4), 4) < 0) {
       OLSR_WARN(log_src, "Cannot set multicast interface: %s (%d)\n",
           strerror(errno), errno);
       return -1;

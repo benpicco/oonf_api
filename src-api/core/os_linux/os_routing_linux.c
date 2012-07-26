@@ -98,9 +98,9 @@ OLSR_SUBSYSTEM_STATE(_os_routing_state);
 /* default wildcard route */
 const struct os_route OS_ROUTE_WILDCARD = {
   .family = AF_UNSPEC,
-  .src = { .type = AF_UNSPEC },
-  .gw = { .type = AF_UNSPEC },
-  .dst = { .type = AF_UNSPEC },
+  .src = { ._type = AF_UNSPEC },
+  .gw = { ._type = AF_UNSPEC },
+  .dst = { ._type = AF_UNSPEC },
   .table = RT_TABLE_UNSPEC,
   .metric = -1,
   .protocol = RTPROT_UNSPEC,
@@ -285,7 +285,7 @@ os_routing_set(struct os_route *route, bool set, bool del_similar) {
     msg->nlmsg_type = RTM_DELROUTE;
 
     os_rt.protocol = -1;
-    os_rt.src.type = AF_UNSPEC;
+    netaddr_invalidate(&os_rt.src);
 
     if (del_similar) {
       /* no interface necessary */
@@ -296,8 +296,8 @@ os_routing_set(struct os_route *route, bool set, bool del_similar) {
     }
   }
 
-  if (os_rt.gw.type == AF_UNSPEC
-      && os_rt.dst.prefix_len == netaddr_get_maxprefix(&os_rt.dst)) {
+  if (netaddr_get_address_family(&os_rt.gw) == AF_UNSPEC
+      && netaddr_get_prefix_length(&os_rt.dst) == netaddr_get_maxprefix(&os_rt.dst)) {
     /* use destination as gateway, to 'force' linux kernel to do proper source address selection */
     os_rt.gw = os_rt.dst;
   }
@@ -399,20 +399,21 @@ _routing_set(struct nlmsghdr *msg, struct os_route *route,
   struct rtmsg *rt_msg;
 
   /* calculate address af_type */
-  if (route->dst.type != AF_UNSPEC) {
-    route->family = route->dst.type;
+  if (netaddr_get_address_family(&route->dst) != AF_UNSPEC) {
+    route->family = netaddr_get_address_family(&route->dst);
   }
-  if (route->gw.type != AF_UNSPEC) {
-    if (route->family  != AF_UNSPEC && route->family  != route->gw.type) {
+  if (netaddr_get_address_family(&route->gw) != AF_UNSPEC) {
+    if (route->family  != AF_UNSPEC
+        && route->family  != netaddr_get_address_family(&route->gw)) {
       return -1;
     }
-    route->family  = route->gw.type;
+    route->family  = netaddr_get_address_family(&route->gw);
   }
-  if (route->src.type != AF_UNSPEC) {
-    if (route->family  != AF_UNSPEC && route->family  != route->src.type) {
+  if (netaddr_get_address_family(&route->src) != AF_UNSPEC) {
+    if (route->family  != AF_UNSPEC && route->family  != netaddr_get_address_family(&route->src)) {
       return -1;
     }
-    route->family  = route->src.type;
+    route->family  = netaddr_get_address_family(&route->src);
   }
 
   if (route->family  == AF_UNSPEC) {
@@ -429,8 +430,8 @@ _routing_set(struct nlmsghdr *msg, struct os_route *route,
   rt_msg->rtm_table = route->table;
 
   /* add attributes */
-  if (route->src.type != AF_UNSPEC) {
-    rt_msg->rtm_src_len = route->src.prefix_len;
+  if (netaddr_get_address_family(&route->src) != AF_UNSPEC) {
+    rt_msg->rtm_src_len = netaddr_get_prefix_length(&route->src);
 
     /* add src-ip */
     if (os_system_netlink_addnetaddr(msg, RTA_PREFSRC, &route->src)) {
@@ -438,7 +439,7 @@ _routing_set(struct nlmsghdr *msg, struct os_route *route,
     }
   }
 
-  if (route->gw.type != AF_UNSPEC) {
+  if (netaddr_get_address_family(&route->gw) != AF_UNSPEC) {
     rt_msg->rtm_flags = RTNH_F_ONLINK;
 
     /* add gateway */
@@ -447,8 +448,8 @@ _routing_set(struct nlmsghdr *msg, struct os_route *route,
     }
   }
 
-  if (route->dst.type != AF_UNSPEC) {
-    rt_msg->rtm_dst_len = route->dst.prefix_len;
+  if (netaddr_get_address_family(&route->dst) != AF_UNSPEC) {
+    rt_msg->rtm_dst_len = netaddr_get_prefix_length(&route->dst);
 
     /* add destination */
     if (os_system_netlink_addnetaddr(msg, RTA_DST, &route->dst)) {
@@ -502,15 +503,15 @@ _routing_parse_nlmsg(struct os_route *route, struct nlmsghdr *msg) {
   for(; RTA_OK(rt_attr, rt_len); rt_attr = RTA_NEXT(rt_attr,rt_len)) {
     switch(rt_attr->rta_type) {
       case RTA_SRC:
-        netaddr_from_binary(&route->src, RTA_DATA(rt_attr), RTA_PAYLOAD(rt_attr), rt_msg->rtm_family);
-        route->src.prefix_len = rt_msg->rtm_src_len;
+        netaddr_from_binary_prefix(&route->src, RTA_DATA(rt_attr), RTA_PAYLOAD(rt_attr),
+            rt_msg->rtm_family, rt_msg->rtm_src_len);
         break;
       case RTA_GATEWAY:
         netaddr_from_binary(&route->gw, RTA_DATA(rt_attr), RTA_PAYLOAD(rt_attr), rt_msg->rtm_family);
         break;
       case RTA_DST:
-        netaddr_from_binary(&route->dst, RTA_DATA(rt_attr), RTA_PAYLOAD(rt_attr), rt_msg->rtm_family);
-        route->dst.prefix_len = rt_msg->rtm_dst_len;
+        netaddr_from_binary_prefix(&route->dst, RTA_DATA(rt_attr), RTA_PAYLOAD(rt_attr),
+            rt_msg->rtm_family, rt_msg->rtm_dst_len);
         break;
       case RTA_PRIORITY:
         memcpy(&route->metric, RTA_DATA(rt_attr), sizeof(route->metric));
@@ -523,9 +524,10 @@ _routing_parse_nlmsg(struct os_route *route, struct nlmsghdr *msg) {
     }
   }
 
-  if (route->dst.type == AF_UNSPEC) {
-    route->dst = route->family == AF_INET ? NETADDR_IPV4_ANY : NETADDR_IPV6_ANY;
-    route->dst.prefix_len = rt_msg->rtm_dst_len;
+  if (netaddr_get_address_family(&route->dst) == AF_UNSPEC) {
+    memcpy(&route->dst, route->family == AF_INET ? &NETADDR_IPV4_ANY : &NETADDR_IPV6_ANY,
+        sizeof(route->dst));
+    netaddr_set_prefix_length(&route->dst, rt_msg->rtm_dst_len);
   }
   return 0;
 }
@@ -541,15 +543,15 @@ _match_routes(struct os_route *filter, struct os_route *route) {
   if (filter->family != route->family) {
     return false;
   }
-  if (filter->src.type != AF_UNSPEC
+  if (netaddr_get_address_family(&filter->src) != AF_UNSPEC
       && memcmp(&filter->src, &route->src, sizeof(filter->src)) != 0) {
     return false;
   }
-  if (filter->gw.type != AF_UNSPEC
+  if (netaddr_get_address_family(&filter->gw) != AF_UNSPEC
       && memcmp(&filter->gw, &route->gw, sizeof(filter->gw)) != 0) {
     return false;
   }
-  if (filter->dst.type != AF_UNSPEC
+  if (netaddr_get_address_family(&filter->dst) != AF_UNSPEC
       && memcmp(&filter->dst, &route->dst, sizeof(filter->dst)) != 0) {
     return false;
   }

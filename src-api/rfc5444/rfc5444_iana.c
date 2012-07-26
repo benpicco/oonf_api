@@ -44,13 +44,13 @@
 #include "rfc5444/rfc5444_iana.h"
 
 const struct netaddr RFC5444_MANET_MULTICAST_V4 = {
-  .addr = { 224,0,0,109, 0,0,0,0,0,0,0,0,0,0,0,0 },
-  .type = AF_INET,
-  .prefix_len = 32,
+  ._addr = { 224,0,0,109, 0,0,0,0,0,0,0,0,0,0,0,0 },
+  ._type = AF_INET,
+  ._prefix_len = 32,
 };
 
 const struct netaddr RFC5444_MANET_MULTICAST_V6 = {
-  .addr = { 0xff,0x02,0,0,0,0,0,0,0,0,0,0,0,0,0,0x6D },
-  .type = AF_INET6,
-  .prefix_len = 128,
+  ._addr = { 0xff,0x02,0,0,0,0,0,0,0,0,0,0,0,0,0,0x6D },
+  ._type = AF_INET6,
+  ._prefix_len = 128,
 };

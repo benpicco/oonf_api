@@ -124,4 +124,14 @@ EXPORT void olsr_rfc5444_remove_target(struct olsr_rfc5444_target *target);
 EXPORT enum rfc5444_result olsr_rfc5444_send(
     struct olsr_rfc5444_target *, uint8_t msgid);
 
+static INLINE struct olsr_rfc5444_target *
+olsr_rfc5444_get_target_from_provider(struct rfc5444_writer_content_provider *prv) {
+  struct rfc5444_writer_message *msg;
+
+  msg = prv->_creator;
+  assert (msg->if_specific);
+
+  return container_of(msg->specific_if, struct olsr_rfc5444_target, rfc5444_if);
+}
+
 #endif /* OLSR_RFC5444_H_ */

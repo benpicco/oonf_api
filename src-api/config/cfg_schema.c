@@ -562,13 +562,13 @@ cfg_schema_validate_netaddr(const struct cfg_schema_entry *entry,
   max_prefix = netaddr_get_maxprefix(&addr);
 
   /* check prefix length */
-  if (addr.prefix_len > max_prefix) {
+  if (netaddr_get_prefix_length(&addr) > max_prefix) {
     cfg_append_printable_line(out, "Value '%s' for entry '%s'"
         " in section %s has an illegal prefix length",
         value, entry->key.entry, section_name);
     return -1;
   }
-  if (!entry->validate_param[1].b && addr.prefix_len != max_prefix) {
+  if (!entry->validate_param[1].b && netaddr_get_prefix_length(&addr) != max_prefix) {
     cfg_append_printable_line(out, "Value '%s' for entry '%s'"
         " in section %s must be a single address, not a prefix",
         value, entry->key.entry, section_name);
@@ -579,7 +579,7 @@ cfg_schema_validate_netaddr(const struct cfg_schema_entry *entry,
     int8_t type;
 
     type = entry->validate_param[0].i8[i];
-    if (type == addr.type) {
+    if (type == netaddr_get_address_family(&addr)) {
       return 0;
     }
   }

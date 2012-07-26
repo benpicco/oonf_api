@@ -323,7 +323,8 @@ enum rfc5444_result olsr_rfc5444_send(
   interf = target->interface;
 
   /* check if socket can send data */
-  if (!olsr_packet_managed_is_active(&interf->_socket, target->dst.type)) {
+  if (!olsr_packet_managed_is_active(&interf->_socket,
+      netaddr_get_address_family(&target->dst))) {
     return RFC5444_OKAY;
   }
 
@@ -535,8 +536,8 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
 
   if (strcmp(interf->name, RFC5444_UNICAST_TARGET) == 0) {
     /* unicast interface */
-    interf->_socket_config.multicast_v4.type = AF_UNSPEC;
-    interf->_socket_config.multicast_v6.type = AF_UNSPEC;
+    netaddr_invalidate(&interf->_socket_config.multicast_v4);
+    netaddr_invalidate(&interf->_socket_config.multicast_v6);
     interf->_socket_config.port = port;
     interf->_socket_config.interface[0] = 0;
   }
@@ -554,7 +555,7 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
     old = interf->multicast4;
     interf->multicast4 = NULL;
   }
-  if (config->multicast_v4.type != AF_UNSPEC) {
+  if (netaddr_get_address_family(&config->multicast_v4) != AF_UNSPEC) {
     target = _create_target(interf, &config->multicast_v4, false);
     if (target == NULL) {
       OLSR_WARN(LOG_RFC5444, "Could not create multicast target %s for interface %s",
@@ -575,7 +576,7 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
     old = interf->multicast6;
     interf->multicast6 = NULL;
   }
-  if (config->multicast_v6.type != AF_UNSPEC) {
+  if (netaddr_get_address_family(&config->multicast_v6) != AF_UNSPEC) {
     target = _create_target(interf, &config->multicast_v6, false);
     if (target == NULL) {
       OLSR_WARN(LOG_RFC5444, "Could not create multicast socket %s for interface %s",
@@ -733,7 +734,7 @@ _cb_send_multicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
       if_nametoindex(target->interface->name));
 
   olsr_packet_send_managed_multicast(&target->interface->_socket,
-      ptr, len, target->dst.type);
+      ptr, len, netaddr_get_address_family(&target->dst));
 }
 
 /**

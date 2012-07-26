@@ -83,7 +83,7 @@ EXPORT int os_system_netlink_addreq(struct nlmsghdr *n,
 static INLINE int
 os_system_netlink_addnetaddr(struct nlmsghdr *n,
     int type, const struct netaddr *addr) {
-  return os_system_netlink_addreq(n, type, addr->addr, netaddr_get_maxprefix(addr)/8);
+  return os_system_netlink_addreq(n, type, netaddr_get_binptr(addr), netaddr_get_maxprefix(addr)/8);
 }
 
 /**

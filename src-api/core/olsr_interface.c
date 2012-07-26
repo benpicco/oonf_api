@@ -351,10 +351,10 @@ _update_ifaddrs(struct olsr_interface_data *data) {
 
     ptr = netaddr_get_binptr(&addr);
 
-    if (addr.type == AF_INET) {
+    if (netaddr_get_address_family(&addr) == AF_INET) {
       memcpy(&data->if_v4, &addr, sizeof(data->if_v4));
     }
-    else if (addr.type == AF_INET6) {
+    else if (netaddr_get_address_family(&addr) == AF_INET6) {
       if (IN6_IS_ADDR_LINKLOCAL(ptr)) {
         memcpy(&data->linklocal_v6, &addr,
             sizeof(data->linklocal_v6));

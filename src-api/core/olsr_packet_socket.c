@@ -415,7 +415,7 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
     mc_port = managed->_managed_config.port;
   }
 
-  if (bind_ip->type == AF_UNSPEC) {
+  if (netaddr_get_address_family(bind_ip) == AF_UNSPEC) {
     olsr_packet_remove(sock, false);
     olsr_packet_remove(mc_sock, false);
     return 0;
@@ -426,7 +426,8 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
 
   /* check if multicast IP is a real multicast (and not a broadcast) */
   real_multicast = netaddr_is_in_subnet(
-      mc_ip->type == AF_INET ? &NETADDR_IPV4_MULTICAST : &NETADDR_IPV6_MULTICAST,
+      netaddr_get_address_family(mc_ip) == AF_INET
+        ? &NETADDR_IPV4_MULTICAST : &NETADDR_IPV6_MULTICAST,
       mc_ip);
 
   sockstate = _apply_managed_socket(
@@ -446,7 +447,7 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
     olsr_packet_remove(sock, true);
   }
 
-  if (real_multicast && mc_ip->type != AF_UNSPEC) {
+  if (real_multicast && netaddr_get_address_family(mc_ip) != AF_UNSPEC) {
     /* multicast */
     sockstate = _apply_managed_socket(
         managed, mc_sock, mc_ip, mc_port, data);
@@ -506,7 +507,7 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
       netaddr_to_string(&buf, bindto));
 
   /* Handle prefix based address selection */
-  if (bindto->prefix_len != netaddr_get_maxprefix(bindto)) {
+  if (netaddr_get_prefix_length(bindto) != netaddr_get_maxprefix(bindto)) {
     if (data == NULL) {
       if (memcmp(bindto, &NETADDR_IPV4_ANY, sizeof(*bindto)) != 0
           && memcmp(bindto, &NETADDR_IPV6_ANY, sizeof(*bindto)) != 0) {

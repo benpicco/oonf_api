@@ -396,7 +396,7 @@ _apply_managed_socket(struct olsr_stream_managed *managed,
   struct netaddr_str buf;
 #endif
 
-  if (bindto->type == AF_UNSPEC) {
+  if (netaddr_get_address_family(bindto) == AF_UNSPEC) {
     olsr_stream_remove(stream, true);
     return 0;
   }

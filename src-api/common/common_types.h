@@ -42,6 +42,8 @@
 #ifndef COMMON_TYPES_H_
 #define COMMON_TYPES_H_
 
+#include <stddef.h>
+
 /* support EXPORT macro of OLSR */
 #ifndef EXPORT
 #  define EXPORT __attribute__((visibility ("default")))

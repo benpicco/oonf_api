@@ -74,13 +74,13 @@ enum { NETADDR_MAX_LENGTH = 16 };
  */
 struct netaddr {
   /* 16 bytes of memory for address */
-  uint8_t addr[NETADDR_MAX_LENGTH];
+  uint8_t _addr[NETADDR_MAX_LENGTH];
 
   /* address type */
-  uint8_t type;
+  uint8_t _type;
 
   /* address prefix length */
-  uint8_t prefix_len;
+  uint8_t _prefix_len;
 };
 
 /**
@@ -110,7 +110,8 @@ EXPORT extern const struct netaddr NETADDR_IPV4_LINKLOCAL;
 EXPORT extern const struct netaddr NETADDR_IPV6_LINKLOCAL;
 EXPORT extern const struct netaddr NETADDR_IPV6_ULA;
 
-EXPORT int netaddr_from_binary(struct netaddr *dst, const void *binary, size_t len, uint8_t addr_type);
+EXPORT int netaddr_from_binary_prefix(struct netaddr *dst,
+    const void *binary, size_t len, uint8_t addr_type, uint8_t prefix_len);
 EXPORT int netaddr_to_binary(void *dst, const struct netaddr *src, size_t len);
 EXPORT int netaddr_from_socket(struct netaddr *dst, const union netaddr_socket *src);
 EXPORT int netaddr_to_socket(union netaddr_socket *dst, const struct netaddr *src);
@@ -144,13 +145,21 @@ EXPORT int inet_pton(int af, const char *cp, void * buf);
 #endif
 
 /**
+ * Sets the address type of a netaddr object to AF_UNSPEC
+ * @param addr netaddr object
+ */
+static INLINE void
+netaddr_invalidate(struct netaddr *addr) {
+  addr->_type = AF_UNSPEC;
+}
+/**
  * Calculates the maximum prefix length of an address type
  * @param addr netaddr object
  * @return prefix length, 0 if unknown address family
  */
 static INLINE uint8_t
 netaddr_get_maxprefix(const struct netaddr *addr) {
-  return netaddr_get_af_maxprefix(addr->type);
+  return netaddr_get_af_maxprefix(addr->_type);
 }
 
 /**
@@ -177,8 +186,23 @@ netaddr_to_string(struct netaddr_str *dst, const struct netaddr *src) {
 static INLINE int
 netaddr_create_host(struct netaddr *host, const struct netaddr *netmask,
     const struct netaddr *host_number) {
-  return netaddr_create_host_bin(host, netmask, host_number->addr,
+  return netaddr_create_host_bin(host, netmask, host_number->_addr,
       netaddr_get_maxprefix(host_number));
+}
+
+/**
+ * Read the binary representation of an address into a netaddr object
+ * @param dst pointer to netaddr object
+ * @param binary source pointer
+ * @param len length of source buffer
+ * @param addr_type address type of source
+ * @return 0 if successful read binary data, -1 otherwise
+ */
+static INLINE int
+netaddr_from_binary(struct netaddr *dst, const void *binary,
+    size_t len, uint8_t addr_type) {
+  return netaddr_from_binary_prefix(dst, binary, len, addr_type,
+      netaddr_get_af_maxprefix(addr_type));
 }
 
 /**
@@ -210,7 +234,7 @@ netaddr_socket_cmp(const union netaddr_socket *s1, const union netaddr_socket *s
  */
 static INLINE const void *
 netaddr_get_binptr(const struct netaddr *n) {
-  return &n->addr[0];
+  return &n->_addr[0];
 }
 
 /**
@@ -220,6 +244,33 @@ netaddr_get_binptr(const struct netaddr *n) {
 static INLINE size_t
 netaddr_get_binlength(const struct netaddr *n) {
   return netaddr_get_maxprefix(n) >> 3;
+}
+
+/**
+ * @param n pointer to netaddr
+ * @return address family
+ */
+static INLINE uint8_t
+netaddr_get_address_family(const struct netaddr *n) {
+  return n->_type;
+}
+
+/**
+ * @param n pointer to netaddr
+ * @return prefix length
+ */
+static INLINE uint8_t
+netaddr_get_prefix_length(const struct netaddr *n) {
+  return n->_prefix_len;
+}
+
+/**
+ * @param n pointer to netaddr
+ * @param prefix_length new prefix length
+ */
+static INLINE void
+netaddr_set_prefix_length(struct netaddr *n, uint8_t prefix_len) {
+  n->_prefix_len = prefix_len;
 }
 
 /**
