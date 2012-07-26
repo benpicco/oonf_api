@@ -45,7 +45,7 @@
 #include "config/cfg_db.h"
 #include "config/cfg_cmd.h"
 
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 struct cfg_db *db = NULL;
 struct cfg_instance instance;
@@ -177,17 +177,16 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
 
   cfg_add(&instance);
 
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   test_cmd_sections();
   test_cmd_namedsections();
   test_cmd_entries();
 
-  FINISH_TESTING();
   abuf_free(&log_buf);
   cfg_db_remove(db);
   cfg_remove(&instance);
 
-  return total_fail;
+  return FINISH_TESTING();
 }
 

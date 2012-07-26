@@ -45,7 +45,7 @@
 #include "config/cfg_db.h"
 #include "config/cfg_schema.h"
 
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 #define CFG_SEC "sec"
 #define CFG_SECNAME "secname"
@@ -939,7 +939,7 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   cfg_schema_add_section(&schema, &section, entries, ARRAYSIZE(entries));
 
   abuf_init(&out);
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   test_validate_success();
   test_validate_stringarray_miss();
@@ -964,11 +964,12 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   test_validate_netaddr_ipv46_prefix_miss();
 
   test_validate_double_schema();
-  FINISH_TESTING();
 
   abuf_free(&out);
   if (db) {
     cfg_db_remove(db);
   }
-  return total_fail;
+  cfg_schema_remove_section(&schema, &section);
+
+  return FINISH_TESTING();
 }

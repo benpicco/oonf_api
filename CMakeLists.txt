@@ -45,6 +45,7 @@ include (cmake/OONFBuildLibrary.cmake)
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(external)
 include_directories(src-api)
+include_directories(tests)
 
 if (NOT OONF_NO_TESTING)
     ENABLE_TESTING()

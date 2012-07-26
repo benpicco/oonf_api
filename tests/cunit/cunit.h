@@ -42,19 +42,21 @@
 #ifndef CUNIT_H_
 #define CUNIT_H_
 
-#include <stdio.h>
+#include "common/common_types.h"
 
-#define BEGIN_TESTING() { printf("Start testing...\n\n"); total_success = total_fail = 0; }
-#define FINISH_TESTING() { printf("\n%d tests ended: %d successes, %d fails\n", total_success + total_fail, total_success, total_fail); }
+EXPORT void BEGIN_TESTING(void (*clear_elements)(void));
+EXPORT int FINISH_TESTING(void);
 
-#define START_TEST() { printf("Start %s\n", __func__); clear_elements(); success = fail = 0; }
-#define END_TEST() { printf("End %s: %d successes, %d fails\n", __func__, success, fail); total_success += success; total_fail += fail; }
+EXPORT void cunit_start_test(const char *);
+EXPORT void cunit_end_test(const char *);
 
-#define CHECK_NAMED_TRUE(cond, name, format, args...) \
-  if (!(cond)) { fail++; printf("\t%s fail: " format "\n", name, ##args); } else { success++; }
+EXPORT void cunit_named_check(bool cond, const char *name, const char *format, ...)
+    __attribute__ ((format(printf, 3, 4)));
 
-#define CHECK_TRUE(cond, format, args...) CHECK_NAMED_TRUE(cond, __func__, format, ##args)
+#define START_TEST() cunit_start_test(__func__)
+#define END_TEST() cunit_end_test(__func__)
 
-static int success, fail, total_success, total_fail;
+#define CHECK_NAMED_TRUE(cond, name, format, args...) cunit_named_check(cond, name, format, ##args);
+#define CHECK_TRUE(cond, format, args...) cunit_named_check(cond, __func__, format, ##args);
 
 #endif /* CUNIT_H_ */

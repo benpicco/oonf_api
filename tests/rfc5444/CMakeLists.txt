@@ -4,6 +4,7 @@ function(compile_rfc5444_test executable source)
 
     TARGET_LINK_LIBRARIES(${executable} oonf_rfc5444)
     TARGET_LINK_LIBRARIES(${executable} oonf_common)
+    TARGET_LINK_LIBRARIES(${executable} static_cunit)
 
     # link regex for windows and android
     IF (WIN32 OR ANDROID)

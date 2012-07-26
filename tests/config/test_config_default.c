@@ -48,7 +48,7 @@
 #include "config/cfg_db.h"
 #include "config/cfg_schema.h"
 
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 #define CFG_SECTION "sec_type"
 #define CFG_SECTION_NAME "sec_name"
@@ -116,7 +116,7 @@ test_default_named_section_set(void) {
 
   value = cfg_db_get_entry_value(db, CFG_SECTION, NULL, CFG_ENTRY_NODEF);
   CHECK_TRUE(value == NULL, "value found for unnamed section entry without default: %s",
-      value->value);
+      value == NULL ? "" : value->value);
   END_TEST();
 }
 
@@ -186,7 +186,7 @@ test_default_nothing_set(void) {
 
   value = cfg_db_get_entry_value(db, CFG_SECTION, NULL, CFG_ENTRY_NODEF);
   CHECK_TRUE(value == NULL, "value found for unnamed section entry without default: %s",
-      value->value);
+      value == NULL ? "" : value->value);
   END_TEST();
 }
 
@@ -234,18 +234,17 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   cfg_schema_add_section(&schema, &section, entries, ARRAYSIZE(entries));
 
   abuf_init(&out);
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   test_default_named_section_set();
   test_default_unnamed_named_section_set();
   test_default_unnamed_section_set();
   test_default_nothing_set();
 
-  FINISH_TESTING();
-
   abuf_free(&out);
   if (db) {
     cfg_db_remove(db);
   }
-  return total_fail;
+
+  return FINISH_TESTING();
 }

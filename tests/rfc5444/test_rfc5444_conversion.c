@@ -38,7 +38,7 @@
  */
 #include "common/common_types.h"
 #include "rfc5444/rfc5444_conversion.h"
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 static const uint32_t _timetlv_table[256] = {
   0x00000000,0x00000001,0x00000001,0x00000001,0x00000001,0x00000001,0x00000001,0x00000001,
@@ -591,10 +591,6 @@ static const uint32_t _metric_table[4096] = {
 };
 
 static void
-clear_elements(void) {
-}
-
-static void
 test_timetlv_decoding(void) {
   uint32_t encoded, decoded;
 
@@ -760,7 +756,7 @@ test_metric_encoding_average(void) {
 
 
 int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
-  BEGIN_TESTING();
+  BEGIN_TESTING(NULL);
 
   test_timetlv_decoding();
   test_timetlv_encoding_exact();
@@ -770,6 +766,5 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
   test_metric_encoding_exact();
   test_metric_encoding_average();
 
-  FINISH_TESTING();
-  return total_fail;
+  return FINISH_TESTING();
 }

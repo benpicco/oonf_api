@@ -45,7 +45,7 @@
 
 #include "common/avl.h"
 #include "common/avl_comp.h"
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 struct tree_element {
   uint32_t value;
@@ -851,13 +851,12 @@ static void do_tests(bool do_random) {
 }
 
 int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   do_tests(false);
   do_tests(true);
   test_random_insert();
   test_for_each_key_macros();
 
-  FINISH_TESTING();
-  return total_fail;
+  return FINISH_TESTING();
 }

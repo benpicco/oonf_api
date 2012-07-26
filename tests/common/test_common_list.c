@@ -44,7 +44,7 @@
 #include <stdio.h>
 
 #include "common/list.h"
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 struct list_element {
   int value;
@@ -377,7 +377,7 @@ static void test_for_each_reverse_save_macro(void) {
 }
 
 int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   test_add_tail();
   test_add_head();
@@ -392,6 +392,5 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
   test_for_each_save_macro();
   test_for_each_reverse_save_macro();
 
-  FINISH_TESTING();
-  return total_fail;
+  return FINISH_TESTING();
 }

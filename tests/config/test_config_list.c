@@ -44,7 +44,7 @@
 #include "config/cfg_schema.h"
 #include "config/cfg_db.h"
 
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 static struct cfg_schema schema;
 
@@ -54,10 +54,6 @@ static struct cfg_schema_section section =
 static struct cfg_schema_entry entries[] = {
     CFG_VALIDATE_PRINTABLE("key1", "default", "helptext list", .list = true),
 };
-
-static void
-clear_elements(void) {
-}
 
 static void
 test_list_1(void) {
@@ -262,12 +258,13 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   cfg_schema_add(&schema);
   cfg_schema_add_section(&schema, &section, entries, ARRAYSIZE(entries));
 
-  BEGIN_TESTING();
+  BEGIN_TESTING(NULL);
 
   test_list_1();
   test_list_2();
   test_list_3();
 
-  FINISH_TESTING();
-  return total_fail;
+  cfg_schema_remove_section(&schema, &section);
+
+  return FINISH_TESTING();
 }

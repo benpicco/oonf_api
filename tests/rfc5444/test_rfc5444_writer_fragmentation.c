@@ -44,7 +44,7 @@
 
 #include "rfc5444/rfc5444_context.h"
 #include "rfc5444/rfc5444_writer.h"
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 #define MSG_TYPE 1
 
@@ -266,7 +266,7 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
 
   rfc5444_writer_register_msgcontentprovider(&writer, &cpr, addrtlvs, ARRAYSIZE(addrtlvs));
 
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   test_frag_80_1();
   test_frag_80_2();
@@ -274,8 +274,7 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
   test_frag_50_3();
   test_frag_150_3();
 
-  FINISH_TESTING();
-
   rfc5444_writer_cleanup(&writer);
-  return total_fail;
+
+  return FINISH_TESTING();
 }

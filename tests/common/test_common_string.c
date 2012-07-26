@@ -44,7 +44,7 @@
 
 #include "common/string.h"
 
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 static char output[16];
 static char *output_start;
@@ -685,7 +685,7 @@ int
 main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   strarray_init(&string_array);
 
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   test_strscpy_1();
   test_strscpy_2();
@@ -719,9 +719,7 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   test_str_hasnextword_2();
   test_str_hasnextword_3();
 
-  FINISH_TESTING();
-
   strarray_free(&string_array);
 
-  return total_fail;
+  return FINISH_TESTING();
 }

@@ -47,7 +47,7 @@
 #define PRINT_CB 1
 
 #if DISALLOW_CONSUMER_CONTEXT_DROP == 0
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 /*
  * consumer definition 1
@@ -2502,7 +2502,7 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   msg2_consumer.end_callback = cb_end_message2;
   msg2_consumer.block_callback = cb_blocktlv_message2;
 
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   test_result_okay();
 
@@ -2535,10 +2535,9 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   test_tlvcb_msg_result_droptlv1();
   test_tlvcb_addr1_result_droptlv1();
 
-  FINISH_TESTING();
-
   rfc5444_reader_cleanup(&context);
-  return total_fail;
+
+  return FINISH_TESTING();
 #else
   return 0;
 #endif

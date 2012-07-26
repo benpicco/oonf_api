@@ -48,7 +48,7 @@
 #include "config/cfg_db.h"
 #include "config/cfg_schema.h"
 
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 #define CFG_SEC "sec"
 #define CFG_SECNAME "secname"
@@ -146,11 +146,11 @@ test_binary_mapping(void) {
           "String-Array is not 'pm' but '%s'", data.string_array);
       CHECK_TRUE(data.choice == 1, "Choice is not '1' but '%d'", data.choice);
       CHECK_TRUE(data.integer == 42, "Integer is not '42' but '%d'", data.integer);
-      CHECK_TRUE(memcmp(data.address.addr, IP_10_coloncolon_1, 16) == 0,
+      CHECK_TRUE(memcmp(netaddr_get_binptr(&data.address), IP_10_coloncolon_1, 16) == 0,
           "Netaddr Address part is not consistent");
-      CHECK_TRUE(data.address.prefix_len == 128,
-          "Netaddr Prefixlen is not 128 but %d", data.address.prefix_len);
-      CHECK_TRUE(data.address.type == AF_INET6,
+      CHECK_TRUE(netaddr_get_prefix_length(&data.address) == 128,
+          "Netaddr Prefixlen is not 128 but %d", netaddr_get_prefix_length(&data.address));
+      CHECK_TRUE(netaddr_get_address_family(&data.address) == AF_INET6,
           "Netaddr Addresstype is not IPv6");
       CHECK_TRUE(data.boolean, "Boolean was false");
     }
@@ -190,11 +190,11 @@ test_dual_binary_mapping(void) {
           "String-Array is not 'pm' but '%s'", data.string_array);
       CHECK_TRUE(data.choice == 1, "Choice is not '1' but '%d'", data.choice);
       CHECK_TRUE(data.integer == 42, "Integer is not '42' but '%d'", data.integer);
-      CHECK_TRUE(memcmp(data.address.addr, IP_10_coloncolon_1, 16) == 0,
+      CHECK_TRUE(memcmp(netaddr_get_binptr(&data.address), IP_10_coloncolon_1, 16) == 0,
           "Netaddr Address part is not consistent");
-      CHECK_TRUE(data.address.prefix_len == 128,
-          "Netaddr Prefixlen is not 128 but %d", data.address.prefix_len);
-      CHECK_TRUE(data.address.type == AF_INET6,
+      CHECK_TRUE(netaddr_get_prefix_length(&data.address) == 128,
+          "Netaddr Prefixlen is not 128 but %d", netaddr_get_prefix_length(&data.address));
+      CHECK_TRUE(netaddr_get_address_family(&data.address) == AF_INET6,
           "Netaddr Addresstype is not IPv6");
       CHECK_TRUE(data.boolean, "Boolean was false");
     }
@@ -219,16 +219,17 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   cfg_schema_add_section(&schema, &section2, entries2, ARRAYSIZE(entries2));
 
   abuf_init(&out);
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   test_binary_mapping();
   test_dual_binary_mapping();
-
-  FINISH_TESTING();
 
   abuf_free(&out);
   if (db) {
     cfg_db_remove(db);
   }
-  return total_fail;
+  cfg_schema_remove_section(&schema, &section);
+  cfg_schema_remove_section(&schema, &section2);
+
+  return FINISH_TESTING();
 }

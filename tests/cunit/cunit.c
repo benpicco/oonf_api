@@ -1,7 +1,7 @@
 
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2012, the olsr.org team - see HISTORY file
+ * Copyright (c) 2004-2011, the olsr.org team - see HISTORY file
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,36 +40,60 @@
  */
 
 #include <stdio.h>
+#include <stdarg.h>
 
-#include "common/common_types.h"
+#include "cunit.h"
 
-#include "regex/regex.h"
-#include "cunit/cunit.h"
+static int success, fail, total_success, total_fail;
+static void (*clear_elements)(void);
+
+void
+BEGIN_TESTING(void (*clear)(void)) {
+  printf("Start testing...\n\n");
+  total_success = total_fail = 0;
+
+  clear_elements = clear;
+}
 
 int
-main(int argc __attribute__((unused)), char **argv __attribute__((unused))) {
-  static const char *pattern = "^a.*b$";
-  static const char *test1 = "abc";
-  static const char *test2 = "abbbcb";
+FINISH_TESTING(void) {
+  printf("\n%d tests ended: %d successes, %d fails\n",
+      total_success + total_fail, total_success, total_fail);
+  return total_fail;
+}
 
-  regex_t regexp;
-  regmatch_t matchers[8];
-  int result;
+void
+cunit_start_test(const char *func) {
+  printf("Start %s\n", func);
+  if (clear_elements) {
+    clear_elements();
+  }
+  success = 0;
+  fail = 0;
+}
 
-  BEGIN_TESTING(NULL);
-  START_TEST();
-  result = regcomp(&regexp, pattern, REG_EXTENDED);
-  CHECK_TRUE(result == 0,
-      "Error while compiling pattern %s", pattern);
+void
+cunit_end_test(const char *func) {
+  printf("End %s: %d successes, %d fails\n", func, success, fail);
+  total_success += success;
+  total_fail += fail;
+}
 
+void
+cunit_named_check(bool cond, const char *name, const char *format, ...) {
+  va_list ap;
 
-  CHECK_TRUE (regexec(&regexp, test1, ARRAYSIZE(matchers), matchers, 0) != 0,
-      "Pattern %s should not match %s", pattern, test1);
-  CHECK_TRUE (regexec(&regexp, test2, ARRAYSIZE(matchers), matchers, 0) == 0,
-      "Pattern %s should not match %s", pattern, test2);
-  END_TEST();
+  if (cond) {
+    success++;
+    return;
+  }
 
-  regfree(&regexp);
+  fail++;
 
-  return FINISH_TESTING();
+  va_start(ap, format);
+
+  printf("\t%s fail: ", name);
+  vprintf(format, ap);
+
+  va_end(ap);
 }

@@ -45,7 +45,7 @@
 #include "config/cfg_db.h"
 #include "config/cfg_schema.h"
 
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 #define SECTION_TYPE_1     "type_1"
 #define SECTION_TYPE_2     "type_2"
@@ -492,7 +492,7 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   cfg_schema_add_section(&schema, &handler_1, entries_1, ARRAYSIZE(entries_1));
 
   abuf_init(&out);
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   test_delta_add_single_section();
   test_delta_add_two_sections();
@@ -501,8 +501,6 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   test_delta_modify_single_section();
   test_delta_modify_two_sections();
 
-  FINISH_TESTING();
-
   abuf_free(&out);
   if (db_post) {
     cfg_db_remove(db_post);
@@ -510,5 +508,6 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   if (db_pre) {
     cfg_db_remove(db_pre);
   }
-  return total_fail;
+
+  return FINISH_TESTING();
 }

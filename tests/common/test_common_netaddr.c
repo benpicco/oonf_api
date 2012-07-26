@@ -44,7 +44,7 @@
 #include <stdio.h>
 
 #include "common/netaddr.h"
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 struct netaddr_string_tests {
   const char *str;
@@ -227,10 +227,6 @@ static struct create_host_test _create_host_test[] = {
 };
 
 static void
-clear_elements(void) {
-}
-
-static void
 test_netaddr_to_string(void) {
   size_t i;
   const char *ptr;
@@ -356,7 +352,7 @@ test_netaddr_is_in_subnet(void) {
 }
 
 int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
-  BEGIN_TESTING();
+  BEGIN_TESTING(NULL);
 
   test_netaddr_to_string();
   test_netaddr_from_string();
@@ -365,6 +361,5 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
 
   test_netaddr_create_host();
 
-  FINISH_TESTING();
-  return total_fail;
+  return FINISH_TESTING();
 }

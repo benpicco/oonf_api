@@ -3,7 +3,8 @@ function(compile_common_test executable source)
     ADD_EXECUTABLE(${executable} ${source})
 
     TARGET_LINK_LIBRARIES(${executable} oonf_common)
-
+    TARGET_LINK_LIBRARIES(${executable} static_cunit)
+    
     # link regex for windows and android
     IF (WIN32 OR ANDROID)
         TARGET_LINK_LIBRARIES(${executable} oonf_regex)

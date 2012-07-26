@@ -44,7 +44,7 @@
 
 #include "rfc5444/rfc5444_context.h"
 #include "rfc5444/rfc5444_writer.h"
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 static void write_packet(struct rfc5444_writer *,
     struct rfc5444_writer_interface *,void *, size_t);
@@ -142,7 +142,6 @@ static void test_not_ip_specific(void) {
   END_TEST();
 }
 
-
 int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   struct rfc5444_writer_message *msg[2];
 
@@ -159,14 +158,12 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
   msg[1]->addMessageHeader = addMessageHeader;
   msg[1]->finishMessageHeader = finishMessageHeader;
 
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   test_ip_specific();
   test_not_ip_specific();
 
-  FINISH_TESTING();
-
   rfc5444_writer_cleanup(&writer);
 
-  return total_fail;
+  return FINISH_TESTING();
 }

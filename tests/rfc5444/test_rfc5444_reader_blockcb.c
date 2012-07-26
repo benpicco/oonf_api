@@ -43,7 +43,7 @@
 
 #include "common/common_types.h"
 #include "rfc5444/rfc5444_reader.h"
-#include "../cunit.h"
+#include "cunit/cunit.h"
 
 /*
  * consumer definition 1
@@ -188,15 +188,14 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
   consumer.block_callback = cb_blocktlv_packet_okay;
   consumer.block_callback_failed_constraints = cb_blocktlv_packet_failed;
 
-  BEGIN_TESTING();
+  BEGIN_TESTING(clear_elements);
 
   test_packet1();
   test_packet12();
   test_packet121();
   test_packet212();
 
-  FINISH_TESTING();
-
   rfc5444_reader_cleanup(&reader);
-  return total_fail;
+
+  return FINISH_TESTING();
 }
