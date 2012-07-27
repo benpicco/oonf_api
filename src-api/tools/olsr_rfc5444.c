@@ -403,6 +403,8 @@ olsr_rfc5444_reconfigure_protocol(
     return;
   }
 
+  OLSR_DEBUG(LOG_RFC5444, "Reconfigure protocol %s to port %u", protocol->name, port);
+
   /* store protocol port */
   protocol->port = port;
 
@@ -515,6 +517,8 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
   struct netaddr_str buf;
 
   old = NULL;
+
+  OLSR_DEBUG(LOG_RFC5444, "Reconfigure RFC5444 interface: %s", config->interface);
 
   /* copy socket configuration */
   memcpy(&interf->_socket_config, config, sizeof(interf->_socket_config));
@@ -635,6 +639,13 @@ olsr_rfc5444_remove_target(struct olsr_rfc5444_target *target) {
   _destroy_target(target);
 }
 
+uint16_t
+olsr_rfc5444_next_target_seqno(struct olsr_rfc5444_target *target) {
+  target->_seqno++;
+
+  return target->_seqno;
+}
+
 static struct olsr_rfc5444_target *
 _create_target(struct olsr_rfc5444_interface *interf,
     struct netaddr *dst, bool unicast) {
@@ -658,6 +669,9 @@ _create_target(struct olsr_rfc5444_interface *interf,
   target->rfc5444_if.last_seqno = random() & 0xffff;
   rfc5444_writer_register_interface(
       &interf->protocol->writer, &target->rfc5444_if);
+
+  /* get initial sequence number */
+  target->_seqno = random() & 0xffff;
 
   /* copy socket description */
   memcpy(&target->dst, dst, sizeof(target->dst));
@@ -918,6 +932,8 @@ _cb_cfg_rfc5444_changed(void) {
   struct _rfc5444_config config;
   int result;
 
+  OLSR_DEBUG(LOG_RFC5444, "RFC5444 configuration changed");
+
   memset(&config, 0, sizeof(config));
   result = cfg_schema_tobin(&config, _rfc5444_section.post,
       _rfc5444_entries, ARRAYSIZE(_rfc5444_entries));
@@ -992,6 +1008,8 @@ static void
 _cb_interface_changed(struct olsr_packet_managed *managed) {
   struct olsr_rfc5444_interface *interf;
   struct olsr_rfc5444_interface_listener *l;
+
+  OLSR_DEBUG(LOG_RFC5444, "RFC5444 Interface change event: %s", managed->_managed_config.interface);
 
   interf = container_of(managed, struct olsr_rfc5444_interface, _socket);
 

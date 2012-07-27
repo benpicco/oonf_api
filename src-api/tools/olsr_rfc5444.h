@@ -91,8 +91,10 @@ struct olsr_rfc5444_target {
   struct netaddr dst;
 
   struct olsr_rfc5444_interface *interface;
-  struct avl_node _node;
 
+  uint16_t _seqno;
+
+  struct avl_node _node;
   struct olsr_timer_entry _aggregation;
 
   int _refcount;
@@ -116,22 +118,25 @@ EXPORT void olsr_rfc5444_remove_interface(struct olsr_rfc5444_interface *,
     struct olsr_rfc5444_interface_listener *);
 EXPORT void olsr_rfc5444_reconfigure_interface(
     struct olsr_rfc5444_interface *interf, struct olsr_packet_managed_config *config);
-
 EXPORT struct olsr_rfc5444_target *olsr_rfc5444_add_target(
     struct olsr_rfc5444_interface *interface, struct netaddr *dst);
 EXPORT void olsr_rfc5444_remove_target(struct olsr_rfc5444_target *target);
+EXPORT uint16_t olsr_rfc5444_next_target_seqno(struct olsr_rfc5444_target *);
+
 
 EXPORT enum rfc5444_result olsr_rfc5444_send(
     struct olsr_rfc5444_target *, uint8_t msgid);
 
 static INLINE struct olsr_rfc5444_target *
-olsr_rfc5444_get_target_from_provider(struct rfc5444_writer_content_provider *prv) {
-  struct rfc5444_writer_message *msg;
-
-  msg = prv->_creator;
+olsr_rfc5444_get_target_from_message(struct rfc5444_writer_message *msg) {
   assert (msg->if_specific);
 
   return container_of(msg->specific_if, struct olsr_rfc5444_target, rfc5444_if);
+}
+
+static INLINE struct olsr_rfc5444_target *
+olsr_rfc5444_get_target_from_provider(struct rfc5444_writer_content_provider *prv) {
+  return olsr_rfc5444_get_target_from_message(prv->_creator);
 }
 
 #endif /* OLSR_RFC5444_H_ */
