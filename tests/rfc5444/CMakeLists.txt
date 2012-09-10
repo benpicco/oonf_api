@@ -28,3 +28,5 @@ foreach(TEST ${TESTS})
     compile_rfc5444_test(${TEST} ${TEST}.c)
     ADD_TEST(NAME ${TEST} COMMAND ${TEST})
 endforeach(TEST)
+
+add_subdirectory(interop2010)
