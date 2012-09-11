@@ -69,7 +69,7 @@ static enum olsr_http_result _cb_generate_site(
 static void _cb_config_changed(void);
 
 /* html handler */
-struct olsr_http_handler _http_site_handler = {
+static struct olsr_http_handler _http_site_handler = {
   .content_handler = _cb_generate_site,
 };
 
