@@ -216,7 +216,7 @@ rfc5444_writer_add_addrtlv(struct rfc5444_writer *writer, struct rfc5444_writer_
  */
 struct rfc5444_writer_address *
 rfc5444_writer_add_address(struct rfc5444_writer *writer __attribute__ ((unused)),
-    struct rfc5444_writer_message *msg, const void *addr_ptr, uint8_t prefix) {
+    struct rfc5444_writer_message *msg, const void *addr_ptr, uint8_t prefix, bool mandatory) {
   struct rfc5444_writer_address *address;
   const uint8_t *addr;
 #if CLEAR_ADDRESS_POSTFIX == true
@@ -269,6 +269,9 @@ rfc5444_writer_add_address(struct rfc5444_writer *writer __attribute__ ((unused)
 
     avl_init(&address->_addrtlv_tree, avl_comp_uint32, true, NULL);
   }
+
+  address->_mandatory_addr |= mandatory;
+
   return address;
 }
 

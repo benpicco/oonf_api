@@ -117,7 +117,7 @@ static void addAddresses(struct rfc5444_writer *wr,
       tlv_value[tlv_value_size-1] = (uint8_t)(i & 255);
     }
 
-    addr = rfc5444_writer_add_address(wr, provider->_creator, ip, 32, false);
+    addr = rfc5444_writer_add_address(wr, provider->_creator, ip, 32, i == 0);
     rfc5444_writer_add_addrtlv(wr, addr, addrtlvs[0]._tlvtype, tlv_value, tlv_value_size, false);
 
     if (tlv_value) {
@@ -184,31 +184,11 @@ static void test_frag_80_2(void) {
   tlv_value = tlv_value_buffer;
   tlv_value_size = 80;
 
-  CHECK_TRUE(0 == rfc5444_writer_create_message_allif(&writer, 1), "Parser should return 0");
-  rfc5444_writer_flush(&writer, &small_if, false);
-  rfc5444_writer_flush(&writer, &large_if, false);
+  CHECK_TRUE(0 != rfc5444_writer_create_message_allif(&writer, 1), "Parser should return -1");
 
-  CHECK_TRUE(fragments == 2, "bad number of fragments: %d\n", fragments);
-  CHECK_TRUE(packets[0] == 2, "bad number of packets on if 1: %d\n", packets[0]);
-  CHECK_TRUE(packets[1] == 1, "bad number of packets on if 2: %d\n", packets[1]);
-
-  END_TEST();
-}
-
-static void test_frag_80_3(void) {
-  START_TEST();
-
-  tlvcount = 3;
-  tlv_value = tlv_value_buffer;
-  tlv_value_size = 80;
-
-  CHECK_TRUE(0 == rfc5444_writer_create_message_allif(&writer, 1), "Parser should return 0");
-  rfc5444_writer_flush(&writer, &small_if, false);
-  rfc5444_writer_flush(&writer, &large_if, false);
-
-  CHECK_TRUE(fragments == 3, "bad number of fragments: %d\n", fragments);
-  CHECK_TRUE(packets[0] == 3, "bad number of packets on if 1: %d\n", packets[0]);
-  CHECK_TRUE(packets[1] == 2, "bad number of packets on if 2: %d\n", packets[1]);
+  CHECK_TRUE(fragments == 0, "bad number of fragments: %d\n", fragments);
+  CHECK_TRUE(packets[0] == 0, "bad number of packets on if 1: %d\n", packets[0]);
+  CHECK_TRUE(packets[1] == 0, "bad number of packets on if 2: %d\n", packets[1]);
 
   END_TEST();
 }
@@ -227,22 +207,6 @@ static void test_frag_50_3(void) {
   CHECK_TRUE(fragments == 2, "bad number of fragments: %d\n", fragments);
   CHECK_TRUE(packets[0] == 2, "bad number of packets on if 1: %d\n", packets[0]);
   CHECK_TRUE(packets[1] == 1, "bad number of packets on if 2: %d\n", packets[1]);
-
-  END_TEST();
-}
-
-static void test_frag_150_3(void) {
-  START_TEST();
-
-  tlvcount = 3;
-  tlv_value = tlv_value_buffer;
-  tlv_value_size = 150;
-
-  CHECK_TRUE(0 != rfc5444_writer_create_message_allif(&writer, 1), "Parser should return -1");
-
-  CHECK_TRUE(fragments == 0, "bad number of fragments: %d\n", fragments);
-  CHECK_TRUE(packets[0] == 0, "bad number of packets on if 1: %d\n", packets[0]);
-  CHECK_TRUE(packets[1] == 0, "bad number of packets on if 2: %d\n", packets[1]);
 
   END_TEST();
 }
@@ -270,9 +234,7 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
 
   test_frag_80_1();
   test_frag_80_2();
-  test_frag_80_3();
   test_frag_50_3();
-  test_frag_150_3();
 
   rfc5444_writer_cleanup(&writer);
 

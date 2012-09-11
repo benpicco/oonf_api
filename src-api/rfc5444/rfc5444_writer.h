@@ -140,6 +140,10 @@ struct rfc5444_writer_address {
   struct rfc5444_writer_address *_block_end;
   uint8_t _block_headlen;
   bool _block_multiple_prefixlen;
+
+  /* handle mandatory addresses for message fragmentation */
+  bool _mandatory_addr;
+  bool _done;
 };
 
 /**
@@ -371,7 +375,7 @@ struct rfc5444_writer {
 
 /* functions that can be called from addAddress callback */
 EXPORT struct rfc5444_writer_address *rfc5444_writer_add_address(struct rfc5444_writer *writer,
-    struct rfc5444_writer_message *msg, const void *addr, uint8_t prefix);
+    struct rfc5444_writer_message *msg, const void *addr, uint8_t prefix, bool mandatory);
 EXPORT enum rfc5444_result rfc5444_writer_add_addrtlv(struct rfc5444_writer *writer,
     struct rfc5444_writer_address *addr, struct rfc5444_writer_tlvtype *tlvtype,
     const void *value, size_t length, bool allow_dup);

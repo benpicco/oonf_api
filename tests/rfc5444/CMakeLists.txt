@@ -22,6 +22,7 @@ set(TESTS test_rfc5444_reader_blockcb
           test_rfc5444_reader_dropcontext
           test_rfc5444_writer_fragmentation
           test_rfc5444_writer_ifspecific
+          test_rfc5444_writer_mandatory
           test_rfc5444_conversion)
 
 foreach(TEST ${TESTS})

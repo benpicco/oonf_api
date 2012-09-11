@@ -85,13 +85,14 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
   struct rfc5444_writer_message *msg;
   struct rfc5444_writer_content_provider *prv;
   struct list_entity *ptr1;
-  struct rfc5444_writer_address *addr = NULL, *temp_addr = NULL, *first_addr = NULL;
+  struct rfc5444_writer_address *addr = NULL, *last_processed = NULL;
+  struct rfc5444_writer_address *first_addr = NULL, *first_mandatory = NULL;
   struct rfc5444_writer_tlvtype *tlvtype;
   struct rfc5444_writer_interface *interface;
 
   struct _rfc5444_internal_addr_compress_session acs[RFC5444_MAX_ADDRLEN];
   int best_size, best_head, same_prefixlen = 0;
-  int i, idx;
+  int i, idx, non_mandatory;
   bool first;
   bool not_fragmented;
   size_t max_msg_size;
@@ -210,15 +211,22 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
     _rfc5444_writer_free_addresses(writer, msg);
     return RFC5444_OKAY;
   }
+
   /* start address compression */
   first = true;
   addr = first_addr = list_first_element(&msg->_addr_head, addr, _addr_node);
 
   /* loop through addresses */
   idx = 0;
+  non_mandatory = 0;
   ptr1 = msg->_addr_head.next;
   while(ptr1 != &msg->_addr_head) {
     addr = container_of(ptr1, struct rfc5444_writer_address, _addr_node);
+    if (addr->_done && !addr->_mandatory_addr) {
+      ptr1 = ptr1->next;
+      continue;
+    }
+
     if (first) {
       /* clear tlvtype information for adress compression */
       list_for_each_element(&msg->_tlvtype_head, tlvtype, _tlvtype_node) {
@@ -229,6 +237,11 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
       /* clear address compression session */
       memset(acs, 0, sizeof(acs));
       same_prefixlen = 1;
+    }
+
+    /* remember first mandatory address */
+    if (first_addr == NULL && addr->_mandatory_addr) {
+      first_addr = addr;
     }
 
     addr->index = idx++;
@@ -259,10 +272,10 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
       }
     }
 
-    /* fragmentation necessary */
+    /* fragmentation necessary ? */
     if (best_head == -1) {
-      if (first_addr == addr) {
-        /* even a single address does not fit into the block */
+      if (non_mandatory == 0) {
+        /* the mandatory addresses plus one non-mandatory do not fit into a block! */
 #if WRITER_STATE_MACHINE == true
         writer->_state = RFC5444_WRITER_NONE;
 #endif
@@ -271,16 +284,18 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
       }
       not_fragmented = false;
 
-      /* get end of last fragment */
-      temp_addr = list_prev_element(addr, _addr_node);
-
       /* close all address blocks */
-      _close_addrblock(acs, msg, temp_addr, 0);
+      _close_addrblock(acs, msg, last_processed, 0);
 
       /* write message fragment */
-      _finalize_message_fragment(writer, msg, first_addr, temp_addr, not_fragmented, useIf, param);
+      _finalize_message_fragment(writer, msg, first_addr, last_processed, not_fragmented, useIf, param);
 
-      first_addr = addr;
+      if (first_mandatory != NULL) {
+        first_addr = first_mandatory;
+      }
+      else {
+        first_addr = addr;
+      }
       first = true;
 
       /* continue without stepping forward */
@@ -298,6 +313,14 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
 #if DEBUG_CLEANUP == true
         acs[i].current = 0;
 #endif
+      }
+      last_processed = addr;
+      if (!addr->_done) {
+        addr->_done = true;
+
+        if (!addr->_mandatory_addr) {
+          non_mandatory++;
+        }
       }
     }
 
