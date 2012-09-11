@@ -42,6 +42,8 @@
 #ifndef INTERFACE_H_
 #define INTERFACE_H_
 
+#include <ifaddrs.h>
+
 #include "common/common_types.h"
 #include "common/avl.h"
 #include "common/list.h"
@@ -132,6 +134,7 @@ EXPORT void olsr_interface_remove_listener(struct olsr_interface_listener *);
 EXPORT struct olsr_interface_data *olsr_interface_get_data(const char *name);
 EXPORT void olsr_interface_trigger_change(const char *name, bool down);
 
+EXPORT const struct ifaddrs *olsr_interface_get_ifaddrs(void);
 EXPORT int olsr_interface_find_address(struct netaddr *dst,
     struct netaddr *prefix, const char *if_name);
 

@@ -198,6 +198,15 @@ olsr_interface_get_data(const char *name) {
   return &interf->data;
 }
 
+const struct ifaddrs *
+olsr_interface_get_ifaddrs(void) {
+  if (!_ifaddrs_buffer) {
+    /* we might call this before the first interface trigger */
+    getifaddrs(&_ifaddrs_buffer);
+  }
+  return _ifaddrs_buffer;
+}
+
 /**
  * Find an IP address of an interface fitting to a specified prefix.
  * Destination will only be overwritten if address was found.
@@ -212,13 +221,6 @@ olsr_interface_find_address(struct netaddr *dst,
   union netaddr_socket *sock;
   struct netaddr addr;
   struct ifaddrs *ifa;
-
-  if (_ifaddrs_buffer) {
-    freeifaddrs(_ifaddrs_buffer);
-  }
-  if (getifaddrs(&_ifaddrs_buffer) == -1) {
-    return -1;
-  }
 
   for (ifa = _ifaddrs_buffer; ifa != NULL; ifa = ifa->ifa_next) {
     if (strcmp(if_name, ifa->ifa_name) != 0) {
@@ -371,6 +373,7 @@ _update_ifaddrs(struct olsr_interface_data *data) {
   }
   return 0;
 }
+
 /**
  * Timer callback to handle potential change of data of an interface
  * @param ptr pointer to interface object
