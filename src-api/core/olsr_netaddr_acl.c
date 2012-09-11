@@ -51,10 +51,10 @@
 static int _handle_control_cmd(struct olsr_netaddr_acl *, const char *);
 static bool _is_in_array(struct netaddr *, size_t, struct netaddr *);
 
-static const char *_FIRST_REJECT = "first_reject";
-static const char *_FIRST_ACCEPT = "first_accept";
-static const char *_DEFAULT_ACCEPT = "default_accept";
-static const char *_DEFAULT_REJECT = "default_reject";
+const char ACL_FIRST_REJECT[13] = "first_reject";
+const char ACL_FIRST_ACCEPT[13] = "first_accept";
+const char ACL_DEFAULT_ACCEPT[15] = "default_accept";
+const char ACL_DEFAULT_REJECT[15] = "default_reject";
 
 /**
  * Initialize an ACL object. It will contain no addresses on both
@@ -224,7 +224,7 @@ olsr_acl_validate(const struct cfg_schema_entry *entry,
   if (value == NULL) {
     cfg_schema_validate_netaddr(entry, section_name, value, out);
     cfg_append_printable_line(out, "    Additional keywords are %s, %s, %s and %s",
-        _FIRST_ACCEPT, _FIRST_REJECT, _DEFAULT_ACCEPT, _DEFAULT_REJECT);
+        ACL_FIRST_ACCEPT, ACL_FIRST_REJECT, ACL_DEFAULT_ACCEPT, ACL_DEFAULT_REJECT);
     return 0;
   }
 
@@ -267,16 +267,16 @@ olsr_acl_tobin(const struct cfg_schema_entry *s_entry __attribute__((unused)),
  */
 static int
 _handle_control_cmd(struct olsr_netaddr_acl *acl, const char *cmd) {
-  if (strcasecmp(cmd, _DEFAULT_ACCEPT) == 0) {
+  if (strcasecmp(cmd, ACL_DEFAULT_ACCEPT) == 0) {
     acl->accept_default = true;
   }
-  else if (strcasecmp(cmd, _DEFAULT_REJECT) == 0) {
+  else if (strcasecmp(cmd, ACL_DEFAULT_REJECT) == 0) {
     acl->accept_default = false;
   }
-  else if (strcasecmp(cmd, _FIRST_ACCEPT) == 0) {
+  else if (strcasecmp(cmd, ACL_FIRST_ACCEPT) == 0) {
     acl->reject_first = false;
   }
-  else if (strcasecmp(cmd, _FIRST_REJECT) == 0) {
+  else if (strcasecmp(cmd, ACL_FIRST_REJECT) == 0) {
     acl->reject_first = true;
   }
   else {

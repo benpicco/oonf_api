@@ -74,6 +74,11 @@ struct olsr_netaddr_acl {
   bool accept_default;
 };
 
+EXPORT extern const char ACL_FIRST_REJECT[13];
+EXPORT extern const char ACL_FIRST_ACCEPT[13];
+EXPORT extern const char ACL_DEFAULT_ACCEPT[15];
+EXPORT extern const char ACL_DEFAULT_REJECT[15];
+
 EXPORT void olsr_acl_add(struct olsr_netaddr_acl *);
 EXPORT int olsr_acl_from_strarray(struct olsr_netaddr_acl *, const struct const_strarray *value);
 EXPORT void olsr_acl_remove(struct olsr_netaddr_acl *);
