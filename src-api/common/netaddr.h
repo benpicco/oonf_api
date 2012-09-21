@@ -201,8 +201,7 @@ netaddr_create_host(struct netaddr *host, const struct netaddr *netmask,
 static INLINE int
 netaddr_from_binary(struct netaddr *dst, const void *binary,
     size_t len, uint8_t addr_type) {
-  return netaddr_from_binary_prefix(dst, binary, len, addr_type,
-      netaddr_get_af_maxprefix(addr_type));
+  return netaddr_from_binary_prefix(dst, binary, len, addr_type, 255);
 }
 
 /**

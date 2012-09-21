@@ -176,6 +176,8 @@ olsr_timer_cleanup(void)
  */
 void
 olsr_timer_add(struct olsr_timer_info *ti) {
+  assert (ti->callback);
+  assert (ti->name);
   list_add_tail(&timerinfo_list, &ti->_node);
 }
 

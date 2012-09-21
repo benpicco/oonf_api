@@ -45,6 +45,7 @@ struct olsr_rfc5444_target;
 struct olsr_rfc5444_protocol {
   char name[32];
   uint16_t port;
+  bool fixed_local_port;
 
   union netaddr_socket *input_address;
   struct olsr_rfc5444_interface *input_interface;
@@ -106,7 +107,7 @@ EXPORT int olsr_rfc5444_init(void)  __attribute__((warn_unused_result));
 EXPORT void olsr_rfc5444_cleanup(void);
 
 EXPORT struct olsr_rfc5444_protocol *olsr_rfc5444_add_protocol(
-    const char *name);
+    const char *name, bool fixed_local_port);
 EXPORT void olsr_rfc5444_remove_protocol(struct olsr_rfc5444_protocol *);
 EXPORT void olsr_rfc5444_reconfigure_protocol(
     struct olsr_rfc5444_protocol *, uint16_t port);

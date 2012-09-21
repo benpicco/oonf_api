@@ -74,14 +74,40 @@ const struct netaddr NETADDR_IPV6_ULA = { { 0xfc,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
  * @param dst pointer to netaddr object
  * @param binary source pointer
  * @param len length of source buffer
- * @param addr_type address type of source
- * @param prefix_len prefix length of source
+ * @param addr_type address type of source,
+ *     0 to autodetect type from length
+ * @param prefix_len prefix length of source,
+ *     255 for maximum prefix length depending on type
  * @return 0 if successful read binary data, -1 otherwise
  */
 int
 netaddr_from_binary_prefix(struct netaddr *dst, const void *binary,
     size_t len, uint8_t addr_type, uint8_t prefix_len) {
   uint32_t addr_len;
+
+  if (addr_type == 0) {
+    switch (len) {
+      case 4:
+        addr_type = AF_INET;
+        break;
+      case 6:
+        addr_type = AF_MAC48;
+        break;
+      case 8:
+        addr_type = AF_EUI64;
+        break;
+      case 16:
+        addr_type = AF_INET6;
+        break;
+      default:
+        dst->_type = AF_UNSPEC;
+        return -1;
+    }
+  }
+
+  if (prefix_len == 255) {
+    prefix_len = netaddr_get_af_maxprefix(addr_type);
+  }
 
   addr_len = prefix_len >> 3;
 

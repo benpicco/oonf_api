@@ -250,7 +250,7 @@ olsr_rfc5444_init(void) {
   cfg_schema_add_section(olsr_cfg_get_schema(), &_interface_section,
       _interface_entries, ARRAYSIZE(_interface_entries));
 
-  _rfc5444_protocol = olsr_rfc5444_add_protocol(RFC5444_PROTOCOL);
+  _rfc5444_protocol = olsr_rfc5444_add_protocol(RFC5444_PROTOCOL, true);
   if (_rfc5444_protocol == NULL) {
     olsr_rfc5444_cleanup();
     return -1;
@@ -343,7 +343,7 @@ enum rfc5444_result olsr_rfc5444_send(
 }
 
 struct olsr_rfc5444_protocol *
-olsr_rfc5444_add_protocol(const char *name) {
+olsr_rfc5444_add_protocol(const char *name, bool fixed_local_port) {
   struct olsr_rfc5444_protocol *protocol;
 
   protocol = avl_find_element(&_protocol_tree, name, protocol, _node);
@@ -359,6 +359,7 @@ olsr_rfc5444_add_protocol(const char *name) {
 
   /* set name */
   strscpy(protocol->name, name, sizeof(protocol->name));
+  protocol->fixed_local_port = fixed_local_port;
 
   /* hook into global protocol tree */
   protocol->_node.key = protocol->name;
@@ -518,8 +519,6 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
 
   old = NULL;
 
-  OLSR_DEBUG(LOG_RFC5444, "Reconfigure RFC5444 interface: %s", config->interface);
-
   /* copy socket configuration */
   memcpy(&interf->_socket_config, config, sizeof(interf->_socket_config));
 
@@ -534,9 +533,12 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
   if (interf->_socket_config.multicast_port == 0) {
     interf->_socket_config.multicast_port = port;
   }
-  if (interf->_socket_config.port != 0) {
+  if (interf->protocol->fixed_local_port && interf->_socket_config.port == 0) {
     interf->_socket_config.port = port;
   }
+
+  OLSR_DEBUG(LOG_RFC5444, "Reconfigure RFC5444 interface %s to port %u/%u",
+      interf->name, interf->_socket_config.port, interf->_socket_config.multicast_port);
 
   if (strcmp(interf->name, RFC5444_UNICAST_TARGET) == 0) {
     /* unicast interface */
@@ -548,6 +550,7 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
 
   if (port == 0) {
     /* delay configuration apply */
+    OLSR_DEBUG_NH(LOG_RFC5444, "    delay configuration, we still lack to protocol port");
     return;
   }
 
