@@ -110,7 +110,7 @@ rfc5444_print_remove(struct rfc5444_print_session *session) {
  * This function converts a rfc5444 buffer into a human readable
  * form and print it into an buffer. To do this it allocates its own
  * rfc5444 reader, hooks in the printer macros, parse the packet and
- * cleanes up the reader again.
+ * cleans up the reader again.
  *
  * @param out pointer to output buffer
  * @param buffer pointer to packet to be printed

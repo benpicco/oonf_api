@@ -45,6 +45,7 @@
 #include "config/cfg_db.h"
 #include "config/cfg_schema.h"
 #include "rfc5444/rfc5444_iana.h"
+#include "rfc5444/rfc5444_print.h"
 #include "rfc5444/rfc5444_reader.h"
 #include "rfc5444/rfc5444_writer.h"
 #include "core/olsr_logging.h"
@@ -186,20 +187,31 @@ static struct cfg_schema_entry _interface_entries[] = {
 static uint64_t _aggregation_interval;
 
 /* rfc5444 handling */
-static const struct rfc5444_reader _prototype_reader = {
+static const struct rfc5444_reader _reader_template = {
   .forward_message = _cb_forward_message,
   .malloc_addrblock_entry = _alloc_addrblock_entry,
   .malloc_tlvblock_entry = _alloc_tlvblock_entry,
   .free_addrblock_entry = _free_addrblock_entry,
   .free_tlvblock_entry = _free_tlvblock_entry,
 };
-static const struct rfc5444_writer _prototype_writer = {
+static const struct rfc5444_writer _writer_template = {
   .malloc_address_entry = _alloc_address_entry,
   .malloc_addrtlv_entry = _alloc_addrtlv_entry,
   .free_address_entry = _free_address_entry,
   .free_addrtlv_entry = _free_addrtlv_entry,
   .msg_size = RFC5444_MAX_MESSAGE_SIZE,
   .addrtlv_size = RFC5444_ADDRTLV_BUFFER,
+};
+
+/* rfc5444_printer */
+static struct autobuf _printer_buffer;
+static struct rfc5444_print_session _printer_session;
+
+static struct rfc5444_reader _printer = {
+  .malloc_addrblock_entry = _alloc_addrblock_entry,
+  .malloc_tlvblock_entry = _alloc_tlvblock_entry,
+  .free_addrblock_entry = _free_addrblock_entry,
+  .free_tlvblock_entry = _free_tlvblock_entry,
 };
 
 /* configuration for RFC5444 socket */
@@ -264,6 +276,15 @@ olsr_rfc5444_init(void) {
     return -1;
   }
 
+  if (abuf_init(&_printer_buffer)) {
+    olsr_rfc5444_cleanup();
+    return -1;
+  }
+  _printer_session.output = &_printer_buffer;
+
+  rfc5444_reader_init(&_printer);
+  rfc5444_print_add(&_printer_session, &_printer);
+
   return 0;
 }
 
@@ -296,6 +317,12 @@ olsr_rfc5444_cleanup(void) {
   cfg_schema_remove_section(olsr_cfg_get_schema(), &_interface_section);
 
   olsr_timer_remove(&_aggregation_timer);
+
+  if (_printer_session.output) {
+    rfc5444_print_remove(&_printer_session);
+    rfc5444_reader_cleanup(&_printer);
+  }
+  abuf_free(&_printer_buffer);
 
   olsr_memcookie_remove(&_protocol_memcookie);
   olsr_memcookie_remove(&_interface_memcookie);
@@ -334,7 +361,7 @@ enum rfc5444_result olsr_rfc5444_send(
   }
 
   /* create message */
-  OLSR_DEBUG(LOG_RFC5444, "Create message id %d for protocol %s/target %s on interface %s",
+  OLSR_INFO(LOG_RFC5444, "Create message id %d for protocol %s/target %s on interface %s",
       msgid, target->interface->protocol->name, netaddr_to_string(&buf, &target->dst),
       target->interface->name);
 
@@ -366,8 +393,8 @@ olsr_rfc5444_add_protocol(const char *name, bool fixed_local_port) {
   avl_insert(&_protocol_tree, &protocol->_node);
 
   /* initialize rfc5444 reader/writer */
-  memcpy(&protocol->reader, &_prototype_reader, sizeof(_prototype_reader));
-  memcpy(&protocol->writer, &_prototype_writer, sizeof(_prototype_writer));
+  memcpy(&protocol->reader, &_reader_template, sizeof(_reader_template));
+  memcpy(&protocol->writer, &_writer_template, sizeof(_writer_template));
   protocol->writer.msg_buffer = protocol->_msg_buffer;
   protocol->writer.addrtlv_buffer = protocol->_addrtlv_buffer;
   rfc5444_reader_init(&protocol->reader);
@@ -404,7 +431,7 @@ olsr_rfc5444_reconfigure_protocol(
     return;
   }
 
-  OLSR_DEBUG(LOG_RFC5444, "Reconfigure protocol %s to port %u", protocol->name, port);
+  OLSR_INFO(LOG_RFC5444, "Reconfigure protocol %s to port %u", protocol->name, port);
 
   /* store protocol port */
   protocol->port = port;
@@ -537,7 +564,7 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
     interf->_socket_config.port = port;
   }
 
-  OLSR_DEBUG(LOG_RFC5444, "Reconfigure RFC5444 interface %s to port %u/%u",
+  OLSR_INFO(LOG_RFC5444, "Reconfigure RFC5444 interface %s to port %u/%u",
       interf->name, interf->_socket_config.port, interf->_socket_config.multicast_port);
 
   if (strcmp(interf->name, RFC5444_UNICAST_TARGET) == 0) {
@@ -550,7 +577,7 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
 
   if (port == 0) {
     /* delay configuration apply */
-    OLSR_DEBUG_NH(LOG_RFC5444, "    delay configuration, we still lack to protocol port");
+    OLSR_INFO_NH(LOG_RFC5444, "    delay configuration, we still lack to protocol port");
     return;
   }
 
@@ -704,6 +731,33 @@ _destroy_target(struct olsr_rfc5444_target *target) {
   olsr_memcookie_free(&_target_memcookie, target);
 }
 
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+static void
+_print_packet_to_buffer(union netaddr_socket *sock,
+    struct olsr_rfc5444_interface *interf, uint8_t *ptr, size_t len,
+    const char *success, const char *error) {
+  enum rfc5444_result result;
+  struct netaddr_str buf;
+
+  if (olsr_log_mask_test(log_global_mask, LOG_RFC5444, LOG_SEVERITY_DEBUG)) {
+    abuf_clear(&_printer_buffer);
+    rfc5444_print_hexdump(&_printer_buffer, "", ptr, len);
+
+    result = rfc5444_reader_handle_packet(&_printer, ptr, len);
+    if (result) {
+      OLSR_WARN(LOG_RFC5444, "%s %s for printing: %s (%d)",
+          error, netaddr_socket_to_string(&buf, sock), rfc5444_strerror(result), result);
+    }
+    else {
+      OLSR_DEBUG(LOG_RFC5444, "%s %s through %s:",
+          success, netaddr_socket_to_string(&buf, sock), interf->name);
+
+      OLSR_DEBUG_NH(LOG_RFC5444, "%s", abuf_getptr(&_printer_buffer));
+    }
+  }
+}
+#endif
+
 /**
  * Handle incoming packet from a socket
  * @param sock pointer to packet socket
@@ -723,6 +777,10 @@ _cb_receive_data(struct olsr_packet_socket *sock,
 
   protocol->input_address = from;
   protocol->input_interface = interf;
+
+  _print_packet_to_buffer(from, interf, sock->config.input_buffer, length,
+      "Incoming RFC5444 packet from",
+      "Error while parsing incoming RFC5444 packet from");
 
   result = rfc5444_reader_handle_packet(
       &protocol->reader, sock->config.input_buffer, length);
@@ -750,6 +808,10 @@ _cb_send_multicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
   netaddr_socket_init(&sock, &target->dst, target->interface->protocol->port,
       if_nametoindex(target->interface->name));
 
+  _print_packet_to_buffer(&sock, target->interface, ptr, len,
+      "Outgoing RFC5444 packet to",
+      "Error while parsing outgoing RFC5444 packet to");
+
   olsr_packet_send_managed_multicast(&target->interface->_socket,
       ptr, len, netaddr_get_address_family(&target->dst));
 }
@@ -771,6 +833,10 @@ _cb_send_unicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
 
   netaddr_socket_init(&sock, &target->dst, target->interface->protocol->port,
       if_nametoindex(target->interface->name));
+
+  _print_packet_to_buffer(&sock, target->interface, ptr, len,
+      "Outgoing RFC5444 packet to",
+      "Error while parsing outgoing RFC5444 packet to");
 
   olsr_packet_send_managed(&target->interface->_socket, &sock, ptr, len);
 }
@@ -935,8 +1001,6 @@ _cb_cfg_rfc5444_changed(void) {
   struct _rfc5444_config config;
   int result;
 
-  OLSR_DEBUG(LOG_RFC5444, "RFC5444 configuration changed");
-
   memset(&config, 0, sizeof(config));
   result = cfg_schema_tobin(&config, _rfc5444_section.post,
       _rfc5444_entries, ARRAYSIZE(_rfc5444_entries));
@@ -1012,7 +1076,7 @@ _cb_interface_changed(struct olsr_packet_managed *managed) {
   struct olsr_rfc5444_interface *interf;
   struct olsr_rfc5444_interface_listener *l;
 
-  OLSR_DEBUG(LOG_RFC5444, "RFC5444 Interface change event: %s", managed->_managed_config.interface);
+  OLSR_INFO(LOG_RFC5444, "RFC5444 Interface change event: %s", managed->_managed_config.interface);
 
   interf = container_of(managed, struct olsr_rfc5444_interface, _socket);
 
