@@ -124,16 +124,22 @@ enum rfc5444_addrtlv_iana {
 };
 
 /* values for LOCAL_IF address TLV */
-static const uint8_t RFC5444_LOCALIF_THIS_IF       = 0;
-static const uint8_t RFC5444_LOCALIF_OTHER_IF      = 1;
+enum rfc5444_localif_values {
+  RFC5444_LOCALIF_THIS_IF       = 0,
+  RFC5444_LOCALIF_OTHER_IF      = 1,
+};
 
 /* values for LINK_STATUS address TLV */
-static const uint8_t RFC5444_LINKSTATUS_LOST       = 0;
-static const uint8_t RFC5444_LINKSTATUS_SYMMETRIC  = 1;
-static const uint8_t RFC5444_LINKSTATUS_HEARD      = 2;
+enum rfc5444_linkstatus_values {
+  RFC5444_LINKSTATUS_LOST       = 0,
+  RFC5444_LINKSTATUS_SYMMETRIC  = 1,
+  RFC5444_LINKSTATUS_HEARD      = 2,
+};
 
 /* values for OTHER_NEIGHB address TLV */
-static const uint8_t RFC5444_OTHERNEIGHB_LOST      = 0;
-static const uint8_t RFC5444_OTHERNEIGHB_SYMMETRIC = 1;
+enum rfc5444_otherneigh_values {
+  RFC5444_OTHERNEIGHB_LOST      = 0,
+  RFC5444_OTHERNEIGHB_SYMMETRIC = 1,
+};
 
 #endif /* RFC5444_IANA_H_ */
