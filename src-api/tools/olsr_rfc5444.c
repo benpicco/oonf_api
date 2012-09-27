@@ -731,7 +731,6 @@ _destroy_target(struct olsr_rfc5444_target *target) {
   olsr_memcookie_free(&_target_memcookie, target);
 }
 
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
 static void
 _print_packet_to_buffer(union netaddr_socket *sock,
     struct olsr_rfc5444_interface *interf, uint8_t *ptr, size_t len,
@@ -756,7 +755,6 @@ _print_packet_to_buffer(union netaddr_socket *sock,
     }
   }
 }
-#endif
 
 /**
  * Handle incoming packet from a socket

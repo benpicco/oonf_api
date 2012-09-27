@@ -197,16 +197,13 @@ _cb_print_pkt_start(struct rfc5444_reader_tlvblock_consumer *c,
 
   session = container_of(c, struct rfc5444_print_session, _pkt);
 
-  /* clear output buffer */
-  abuf_clear(session->output);
-
   abuf_puts(session->output, "\t,------------------\n");
   abuf_puts(session->output, "\t|  PACKET\n");
   abuf_puts(session->output, "\t|------------------\n");
-  abuf_appendf(session->output, "\t| * Packet version:    %d\n", context->pkt_version);
-  abuf_appendf(session->output, "\t| * Packet flags:      %d\n", context->pkt_flags);
+  abuf_appendf(session->output, "\t| * Packet version:    %u\n", context->pkt_version);
+  abuf_appendf(session->output, "\t| * Packet flags:      0x%x\n", context->pkt_flags);
   if (context->has_pktseqno) {
-    abuf_appendf(session->output, "\t| * Packet seq number: %d\n", context->pkt_seqno);
+    abuf_appendf(session->output, "\t| * Packet seq number: %u\n", context->pkt_seqno);
   }
 
   return RFC5444_OKAY;
@@ -230,14 +227,14 @@ _cb_print_pkt_tlv(struct rfc5444_reader_tlvblock_consumer *c,
   session = container_of(c, struct rfc5444_print_session, _pkt);
 
   abuf_puts(session->output, "\t|    | - TLV\n");
-  abuf_appendf(session->output, "\t|    |     Flags = %d\n", tlv->flags);
-  abuf_appendf(session->output, "\t|    |     Type = %d", tlv->type);
+  abuf_appendf(session->output, "\t|    |     Flags = 0x%02x\n", tlv->flags);
+  abuf_appendf(session->output, "\t|    |     Type = %u", tlv->type);
   if (tlv->type_ext != 0) {
-    abuf_appendf(session->output, "; Type ext. = %d", tlv->type_ext);
+    abuf_appendf(session->output, "; Type ext. = %u", tlv->type_ext);
   }
   abuf_puts(session->output, "\n");
   if (tlv->length > 0) {
-    abuf_appendf(session->output, "\t|    |     Value length: %d\n", tlv->length);
+    abuf_appendf(session->output, "\t|    |     Value length: %u\n", tlv->length);
     rfc5444_print_hexdump(session->output, "\t|    |       ", tlv->single_value, tlv->length);
   }
   return RFC5444_OKAY;
@@ -283,9 +280,9 @@ _cb_print_msg_start(struct rfc5444_reader_tlvblock_consumer *c,
   abuf_puts(session->output, "\t|    ,-------------------\n");
   abuf_puts(session->output, "\t|    |  MESSAGE\n");
   abuf_puts(session->output, "\t|    |-------------------\n");
-  abuf_appendf(session->output, "\t|    | * Message type:       %d\n", context->msg_type);
-  abuf_appendf(session->output, "\t|    | * Message flags:      %d\n", context->msg_flags);
-  abuf_appendf(session->output, "\t|    | * Address length:     %d\n", context->addr_len);
+  abuf_appendf(session->output, "\t|    | * Message type:       %u\n", context->msg_type);
+  abuf_appendf(session->output, "\t|    | * Message flags:      0x%02x\n", context->msg_flags);
+  abuf_appendf(session->output, "\t|    | * Address length:     %u\n", context->addr_len);
 
   if (context->has_origaddr) {
     char buffer[100];
@@ -303,13 +300,13 @@ _cb_print_msg_start(struct rfc5444_reader_tlvblock_consumer *c,
     abuf_puts(session->output, "\n");
   }
   if (context->has_hoplimit) {
-    abuf_appendf(session->output, "\t|    | * Hop limit:          %d\n", context->hoplimit);
+    abuf_appendf(session->output, "\t|    | * Hop limit:          %u\n", context->hoplimit);
   }
   if (context->has_hopcount) {
-    abuf_appendf(session->output, "\t|    | * Hop count:          %d\n", context->hopcount);
+    abuf_appendf(session->output, "\t|    | * Hop count:          %u\n", context->hopcount);
   }
   if (context->has_seqno) {
-    abuf_appendf(session->output, "\t|    | * Message seq number: %d\n", context->seqno);
+    abuf_appendf(session->output, "\t|    | * Message seq number: %u\n", context->seqno);
   }
 
   return RFC5444_OKAY;
@@ -333,14 +330,14 @@ _cb_print_msg_tlv(struct rfc5444_reader_tlvblock_consumer *c,
   session = container_of(c, struct rfc5444_print_session, _msg);
 
   abuf_puts(session->output, "\t|    |    | - TLV\n");
-  abuf_appendf(session->output, "\t|    |    |     Flags = %d\n", tlv->flags);
-  abuf_appendf(session->output, "\t|    |    |     Type = %d", tlv->type);
+  abuf_appendf(session->output, "\t|    |    |     Flags = 0x%02x\n", tlv->flags);
+  abuf_appendf(session->output, "\t|    |    |     Type = %u", tlv->type);
   if (tlv->type_ext != 0) {
-    abuf_appendf(session->output, "; Type ext. = %d", tlv->type_ext);
+    abuf_appendf(session->output, "; Type ext. = %u", tlv->type_ext);
   }
   abuf_puts(session->output, "\n");
   if (tlv->length > 0) {
-    abuf_appendf(session->output, "\t|    |    |     Value length: %d\n", tlv->length);
+    abuf_appendf(session->output, "\t|    |    |     Value length: %u\n", tlv->length);
     rfc5444_print_hexdump(session->output, "\t|    |    |       ", tlv->single_value, tlv->length);
   }
   return RFC5444_OKAY;
@@ -416,14 +413,14 @@ _cb_print_addr_tlv(struct rfc5444_reader_tlvblock_consumer *c __attribute__ ((un
   session = container_of(c, struct rfc5444_print_session, _addr);
 
   abuf_puts(session->output, "\t|    |    |    | - TLV\n");
-  abuf_appendf(session->output, "\t|    |    |    |     Flags = %d\n", tlv->flags);
-  abuf_appendf(session->output, "\t|    |    |    |     Type = %d", tlv->type);
+  abuf_appendf(session->output, "\t|    |    |    |     Flags = 0x%02x\n", tlv->flags);
+  abuf_appendf(session->output, "\t|    |    |    |     Type = %u", tlv->type);
   if (tlv->type_ext != 0) {
-    abuf_appendf(session->output, "; Type ext. = %d", tlv->type_ext);
+    abuf_appendf(session->output, "; Type ext. = %u", tlv->type_ext);
   }
   abuf_puts(session->output, "\n");
   if (tlv->length > 0) {
-    abuf_appendf(session->output, "\t|    |    |    |     Value length: %d\n", tlv->length);
+    abuf_appendf(session->output, "\t|    |    |    |     Value length: %u\n", tlv->length);
     rfc5444_print_hexdump(session->output, "\t|    |    |    |       ", tlv->single_value, tlv->length);
   }
   return RFC5444_OKAY;

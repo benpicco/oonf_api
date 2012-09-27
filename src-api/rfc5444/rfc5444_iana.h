@@ -95,8 +95,8 @@ enum rfc5444_pkttlvs_iana {
 
 enum rfc5444_msgtlvs_iana {
   /* RFC 5497 (timetlv) */
-  RFC5444_MSGTLV_VALIDITY_TIME = 0,
-  RFC5444_MSGTLV_INTERVAL_TIME = 1,
+  RFC5444_MSGTLV_INTERVAL_TIME = 0,
+  RFC5444_MSGTLV_VALIDITY_TIME = 1,
 
   /* RFC 6622 (rfc5444-sec) */
   RFC5444_MSGTLV_ICV           = 5,
