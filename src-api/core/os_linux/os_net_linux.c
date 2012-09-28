@@ -124,6 +124,17 @@ int
 os_net_update_interface(struct olsr_interface_data *interf,
     const char *name) {
   struct ifreq ifr;
+  struct ifaddrs *ifaddrs;
+  struct ifaddrs *ifa;
+  size_t addrcount;
+  union netaddr_socket *sock;
+  struct netaddr *addr;
+  const void *ptr;
+
+  /* cleanup data structure */
+  if (interf->addresses) {
+    free(interf->addresses);
+  }
 
   memset(interf, 0, sizeof(*interf));
   strscpy(interf->name, name, sizeof(interf->name));
@@ -160,5 +171,59 @@ os_net_update_interface(struct olsr_interface_data *interf,
   }
 
   netaddr_from_binary(&interf->mac, ifr.ifr_hwaddr.sa_data, 6, AF_MAC48);
+
+  /* get ip addresses */
+  ifaddrs = NULL;
+  addrcount = 0;
+
+  if (getifaddrs(&ifaddrs)) {
+    OLSR_WARN(LOG_OS_NET,
+        "getifaddrs() failed: %s (%d)", strerror(errno), errno);
+    return -1;
+  }
+
+  for (ifa = ifaddrs; ifa != NULL; ifa = ifa->ifa_next) {
+    if (strcmp(interf->name, ifa->ifa_name) == 0 &&
+        (ifa->ifa_addr->sa_family == AF_INET || ifa->ifa_addr->sa_family == AF_INET6)) {
+      addrcount++;
+    }
+  }
+
+  interf->addresses = calloc(addrcount, sizeof(struct netaddr));
+  if (interf->addresses == NULL) {
+    OLSR_WARN(LOG_OS_NET,
+        "Cannot allocate memory for interface %s with %"PRINTF_SIZE_T_SPECIFIER" prefixes",
+        interf->name, addrcount);
+    return -1;
+  }
+
+  for (ifa = ifaddrs; ifa != NULL; ifa = ifa->ifa_next) {
+    if (strcmp(interf->name, ifa->ifa_name) == 0 &&
+        (ifa->ifa_addr->sa_family == AF_INET || ifa->ifa_addr->sa_family == AF_INET6)) {
+      sock = (union netaddr_socket *)ifa->ifa_addr;
+      addr = &interf->addresses[interf->addrcount];
+
+      if (netaddr_from_socket(&interf->addresses[interf->addrcount], sock) == 0) {
+        interf->addrcount++;
+        ptr = netaddr_get_binptr(addr);
+
+        if (netaddr_get_address_family(addr) == AF_INET) {
+          memcpy(&interf->if_v4, addr, sizeof(*addr));
+        }
+        else if (netaddr_get_address_family(addr) == AF_INET6) {
+          if (IN6_IS_ADDR_LINKLOCAL(ptr)) {
+            memcpy(&interf->linklocal_v6_ptr, addr, sizeof(*addr));
+          }
+          else if (!(IN6_IS_ADDR_LOOPBACK(ptr)
+              || IN6_IS_ADDR_MULTICAST(ptr)
+              || IN6_IS_ADDR_UNSPECIFIED(ptr)
+              || IN6_IS_ADDR_V4COMPAT(ptr)
+              || IN6_IS_ADDR_V4MAPPED(ptr))) {
+            memcpy(&interf->if_v6, addr, sizeof(*addr));
+          }
+        }
+      }
+    }
+  }
   return 0;
 }

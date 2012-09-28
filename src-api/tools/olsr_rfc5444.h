@@ -140,4 +140,8 @@ olsr_rfc5444_get_target_from_provider(struct rfc5444_writer_content_provider *pr
   return olsr_rfc5444_get_target_from_message(prv->_creator);
 }
 
+static INLINE struct olsr_interface *
+olsr_rfc5444_get_core_interface(struct olsr_rfc5444_interface *interf) {
+  return interf->_socket._if_listener.interface;
+}
 #endif /* OLSR_RFC5444_H_ */

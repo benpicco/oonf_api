@@ -518,7 +518,7 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
       }
     }
     else if (data->up) {
-      if (olsr_interface_find_address(&_bind_to, bindto, data->name)) {
+      if (olsr_interface_find_address(&_bind_to, bindto, data)) {
         OLSR_WARN(LOG_SOCKET_PACKET, "Could not find a fitting address for "
             "prefix %s on interface %s",
             netaddr_to_string(&buf, bindto), data->name);

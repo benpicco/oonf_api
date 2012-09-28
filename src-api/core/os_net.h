@@ -44,6 +44,7 @@
 
 #include <unistd.h>
 #include <sys/select.h>
+#include <ifaddrs.h>
 
 #include "common/common_types.h"
 #include "common/netaddr.h"
@@ -72,6 +73,7 @@ static INLINE int os_net_bindto_interface(int, struct olsr_interface_data *data)
 static INLINE int os_close(int fd);
 static INLINE int os_select(
     int num, fd_set *r,fd_set *w,fd_set *e, struct timeval *timeout);
+static INLINE int os_getifaddrs (struct ifaddrs **);
 
 #if defined(__linux__)
 #include "core/os_linux/os_net_linux.h"

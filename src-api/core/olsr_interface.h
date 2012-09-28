@@ -53,13 +53,17 @@
 
 struct olsr_interface_data {
   /* Interface addresses with mesh-wide scope (at least) */
-  struct netaddr if_v4, if_v6;
+  struct netaddr *if_v4, *if_v6;
 
   /* IPv6 Interface address with global scope */
-  struct netaddr linklocal_v6;
+  struct netaddr *linklocal_v6_ptr;
 
   /* mac address of interface */
   struct netaddr mac;
+
+  /* list of all addresses of the interface */
+  struct netaddr *addresses;
+  size_t addrcount;
 
   /* interface name */
   char name[IF_NAMESIZE];
@@ -134,8 +138,7 @@ EXPORT void olsr_interface_remove_listener(struct olsr_interface_listener *);
 EXPORT struct olsr_interface_data *olsr_interface_get_data(const char *name);
 EXPORT void olsr_interface_trigger_change(const char *name, bool down);
 
-EXPORT const struct ifaddrs *olsr_interface_get_ifaddrs(void);
 EXPORT int olsr_interface_find_address(struct netaddr *dst,
-    struct netaddr *prefix, const char *if_name);
+    struct netaddr *prefix, struct olsr_interface_data *);
 
 #endif /* INTERFACE_H_ */

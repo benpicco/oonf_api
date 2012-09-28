@@ -39,7 +39,6 @@
  *
  */
 
-#include <ifaddrs.h>
 #include <netinet/in.h>
 
 #include "common/common_types.h"
@@ -77,8 +76,6 @@ static struct olsr_timer_info _change_timer_info = {
   .callback = _cb_change_handler,
 };
 
-static struct ifaddrs *_ifaddrs_buffer = NULL;
-
 /**
  * Initialize interface subsystem
  */
@@ -104,10 +101,6 @@ olsr_interface_cleanup(void) {
 
   if (olsr_subsystem_cleanup(&_interface_state))
     return;
-
-  if (_ifaddrs_buffer) {
-    freeifaddrs(_ifaddrs_buffer);
-  }
 
   list_for_each_element_safe(&_interface_listener, listener, _node, l_it) {
     olsr_interface_remove_listener(listener);
@@ -198,15 +191,6 @@ olsr_interface_get_data(const char *name) {
   return &interf->data;
 }
 
-const struct ifaddrs *
-olsr_interface_get_ifaddrs(void) {
-  if (!_ifaddrs_buffer) {
-    /* we might call this before the first interface trigger */
-    getifaddrs(&_ifaddrs_buffer);
-  }
-  return _ifaddrs_buffer;
-}
-
 /**
  * Find an IP address of an interface fitting to a specified prefix.
  * Destination will only be overwritten if address was found.
@@ -217,25 +201,12 @@ olsr_interface_get_ifaddrs(void) {
  */
 int
 olsr_interface_find_address(struct netaddr *dst,
-    struct netaddr *prefix, const char *if_name) {
-  union netaddr_socket *sock;
-  struct netaddr addr;
-  struct ifaddrs *ifa;
+    struct netaddr *prefix, struct olsr_interface_data *ifdata) {
+  size_t i;
 
-  for (ifa = _ifaddrs_buffer; ifa != NULL; ifa = ifa->ifa_next) {
-    if (strcmp(if_name, ifa->ifa_name) != 0) {
-      /* skip other interfaces */
-      continue;
-    }
-    sock = (union netaddr_socket *)ifa->ifa_addr;
-
-    if (netaddr_from_socket(&addr, sock)) {
-      /* unknown type of address */
-      continue;
-    }
-
-    if (netaddr_is_in_subnet(prefix, &addr)) {
-      memcpy(dst, &addr, sizeof(*dst));
+  for (i=0; i<ifdata->addrcount; i++) {
+    if (netaddr_is_in_subnet(prefix, &ifdata->addresses[i])) {
+      memcpy(dst, &ifdata->addresses[i], sizeof(*dst));
       return 0;
     }
   }
@@ -325,55 +296,6 @@ _interface_remove(struct olsr_interface *interf, bool mesh) {
   free(interf);
 }
 
-static int
-_update_ifaddrs(struct olsr_interface_data *data) {
-  union netaddr_socket *sock;
-  struct netaddr addr;
-  struct ifaddrs *ifa;
-  const void *ptr;
-
-  if (_ifaddrs_buffer) {
-    freeifaddrs(_ifaddrs_buffer);
-  }
-  if (getifaddrs(&_ifaddrs_buffer) == -1) {
-    return -1;
-  }
-
-  for (ifa = _ifaddrs_buffer; ifa != NULL; ifa = ifa->ifa_next) {
-    if (strcmp(data->name, ifa->ifa_name) != 0) {
-      /* skip other interfaces */
-      continue;
-    }
-    sock = (union netaddr_socket *)ifa->ifa_addr;
-
-    if (netaddr_from_socket(&addr, sock)) {
-      /* unknown type of address */
-      continue;
-    }
-
-    ptr = netaddr_get_binptr(&addr);
-
-    if (netaddr_get_address_family(&addr) == AF_INET) {
-      memcpy(&data->if_v4, &addr, sizeof(data->if_v4));
-    }
-    else if (netaddr_get_address_family(&addr) == AF_INET6) {
-      if (IN6_IS_ADDR_LINKLOCAL(ptr)) {
-        memcpy(&data->linklocal_v6, &addr,
-            sizeof(data->linklocal_v6));
-      }
-      else if (!(IN6_IS_ADDR_LOOPBACK(ptr)
-          || IN6_IS_ADDR_MULTICAST(ptr)
-          || IN6_IS_ADDR_UNSPECIFIED(ptr)
-          || IN6_IS_ADDR_V4COMPAT(ptr)
-          || IN6_IS_ADDR_V4MAPPED(ptr))) {
-        memcpy(&data->if_v6, &addr,
-            sizeof(data->if_v6));
-      }
-    }
-  }
-  return 0;
-}
-
 /**
  * Timer callback to handle potential change of data of an interface
  * @param ptr pointer to interface object
@@ -390,12 +312,6 @@ _cb_change_handler(void *ptr) {
 
   /* read interface data */
   if (os_net_update_interface(&new_data, interf->data.name)) {
-    /* an error happened, try again */
-    _trigger_change_timer(interf);
-    return;
-  }
-
-  if (_update_ifaddrs(&new_data)) {
     /* an error happened, try again */
     _trigger_change_timer(interf);
     return;
