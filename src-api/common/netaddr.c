@@ -206,6 +206,12 @@ netaddr_to_socket(union netaddr_socket *dst, const struct netaddr *src) {
   return 0;
 }
 
+/**
+ * Append binary address to autobuf
+ * @param abuf pointer to target autobuf
+ * @param src pointer to source address
+ * @return -1 if an error happened, 0 otherwise
+ */
 int
 netaddr_to_autobuf(struct autobuf *abuf, const struct netaddr *src) {
   uint32_t addr_len;
@@ -216,8 +222,7 @@ netaddr_to_autobuf(struct autobuf *abuf, const struct netaddr *src) {
     return -1;
   }
 
-  abuf_memcpy(abuf, src->_addr, addr_len);
-  return 0;
+  return abuf_memcpy(abuf, src->_addr, addr_len);
 }
 
 /**

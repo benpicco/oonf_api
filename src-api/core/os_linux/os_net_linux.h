@@ -85,14 +85,4 @@ os_net_bindto_interface(int sock, struct olsr_interface_data *data) {
   return setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, data->name, strlen(data->name) + 1);
 }
 
-/**
- * Map to getifaddrs function
- * @param ifaddrsptr pointer to ifaddrs pointer
- * @return 0 if successful, negative if failed
- */
-static INLINE int
-os_getifaddrs (struct ifaddrs **ifaddrsptr) {
-  return getifaddrs(ifaddrsptr);
-}
-
 #endif /* OS_NET_LINUX_H_ */

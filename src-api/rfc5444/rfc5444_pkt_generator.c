@@ -268,7 +268,7 @@ void rfc5444_writer_set_pkt_header(
  *
  * @param writer pointer to writer context
  * @param interf pointer to interface to set packet sequence number
- * @param _seqno sequence number of packet
+ * @param seqno sequence number of packet
  */
 void
 rfc5444_writer_set_pkt_seqno(struct rfc5444_writer *writer __attribute__ ((unused)),

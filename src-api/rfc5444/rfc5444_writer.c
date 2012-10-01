@@ -212,6 +212,7 @@ rfc5444_writer_add_addrtlv(struct rfc5444_writer *writer, struct rfc5444_writer_
  * @param msg pointer to message object
  * @param addr_ptr pointer to binary address in network byte order
  * @param prefix prefix length
+ * @param mandatory true if address is mandatory for all fragments of message
  * @return pointer to address object, NULL if an error happened
  */
 struct rfc5444_writer_address *

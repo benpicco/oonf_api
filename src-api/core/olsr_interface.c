@@ -196,7 +196,7 @@ olsr_interface_get_data(const char *name) {
  * Destination will only be overwritten if address was found.
  * @param dst pointer to target address buffer
  * @param prefix specified prefix of address
- * @param if_name name of interface
+ * @param ifdata interface data
  * @return 0 if an address was found, -1 otherwise
  */
 int
