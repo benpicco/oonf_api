@@ -3,7 +3,7 @@
 #
 # > mkdir build-clang
 # > cd build-clang
-# > cmake -DCMAKE_TOOLCHAIN_FILE=../files/llvm-clang.cmake ..
+# > cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/cross/llvm-clang.cmake ..
 # > make
 
 # which compilers to use for C and C++

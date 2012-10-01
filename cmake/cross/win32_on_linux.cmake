@@ -3,7 +3,7 @@
 #
 # > mkdir build-win32
 # > cd build-win32
-# > cmake -DCMAKE_TOOLCHAIN_FILE=../files/win32_on_linux.cmake ..
+# > cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/cross/win32_on_linux.cmake ..
 # > make
 
 # the name of the target operating system

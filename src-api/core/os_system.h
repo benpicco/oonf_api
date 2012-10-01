@@ -52,6 +52,10 @@
 #define MSEC_PER_SEC 1000
 #define USEC_PER_MSEC 1000
 
+/* pre-decleare inlines */
+static INLINE int os_system_gettimeofday(struct timeval *tv);
+
+/* include os-specific headers */
 #if defined(__linux__)
 #include "core/os_linux/os_system_linux.h"
 #elif defined (BSD)
@@ -67,7 +71,5 @@ EXPORT int os_system_init(void);
 EXPORT void os_system_cleanup(void);
 
 EXPORT int os_system_set_interface_state(const char *dev, bool up);
-
-static INLINE int os_system_gettimeofday(struct timeval *tv);
 
 #endif /* OS_SYSTEM_H_ */

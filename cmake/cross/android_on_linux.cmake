@@ -3,7 +3,7 @@
 #
 # > mkdir build-android
 # > cd build-android
-# > cmake -DCMAKE_TOOLCHAIN_FILE=../files/android_on_linux.cmake ..
+# > cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/cross/android_on_linux.cmake ..
 # > make
 
 

@@ -52,6 +52,7 @@
 #include "core/olsr_timer.h"
 #include "core/os_system.h"
 
+/* include os-specific headers */
 #if defined(__linux__)
 #include "core/os_linux/os_routing_linux.h"
 #elif defined (BSD)
