@@ -81,7 +81,6 @@ abuf_init(struct autobuf *autobuf)
     return -1;
   }
   autobuf->_total = AUTOBUFCHUNK;
-  *autobuf->_buf = '\0';
   return 0;
 }
 
@@ -94,9 +93,7 @@ void
 abuf_free(struct autobuf *autobuf)
 {
   free(autobuf->_buf);
-  autobuf->_buf = NULL;
-  autobuf->_len = 0;
-  autobuf->_total = 0;
+  memset(autobuf, 0, sizeof(*autobuf));
 }
 
 /**
@@ -161,7 +158,9 @@ abuf_appendf(struct autobuf *autobuf, const char *fmt, ...)
  * Appends a null-terminated string to an autobuffer
  * @param autobuf pointer to autobuf object
  * @param s string to append to the buffer
- * @return -1 if an out-of-memory error happened, 0 otherwise
+ * @return -1 if an out-of-memory error happened,
+ *   otherwise it returns the number of written characters
+ *   (excluding the \0)
  */
 int
 abuf_puts(struct autobuf *autobuf, const char *s)
@@ -176,7 +175,7 @@ abuf_puts(struct autobuf *autobuf, const char *s)
   }
   strcpy(autobuf->_buf + autobuf->_len, s);
   autobuf->_len += len;
-  return 0;
+  return len;
 }
 
 /**
@@ -200,10 +199,23 @@ abuf_strftime(struct autobuf *autobuf, const char *format, const struct tm *tm)
       autobuf->_buf[autobuf->_len] = '\0';
       return -1;
     }
+
     rc = strftime(autobuf->_buf + autobuf->_len, autobuf->_total - autobuf->_len, format, tm);
+    if (rc == 0) {
+      /* make sure we are null-terminated */
+      autobuf->_buf[autobuf->_len + rc] = 0;
+
+      return -1;
+    }
   }
+
+  /* add data to length field */
   autobuf->_len += rc;
-  return rc == 0 ? -1 : 0;
+
+  if (rc == 0) {
+    return -1;
+  }
+  return rc;
 }
 
 /**
@@ -274,11 +286,11 @@ abuf_pull(struct autobuf * autobuf, size_t len) {
   }
   autobuf->_len -= len;
 
-  newsize = ROUND_UP_TO_POWER_OF_2(autobuf->_len + 1, AUTOBUFCHUNK);
-  if (newsize + 2*AUTOBUFCHUNK >= autobuf->_total) {
-    /* only reduce buffer size if difference is larger than two chunks */
+  if (autobuf->_len + AUTOBUFCHUNK > autobuf->_total) {
+    /* only reduce buffer size if difference is larger than a chunk */
     return;
   }
+  newsize = autobuf->_total -= AUTOBUFCHUNK;
 
   /* generate smaller buffer */
   p = realloc(autobuf->_buf, newsize);
