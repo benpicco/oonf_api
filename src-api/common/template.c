@@ -47,7 +47,7 @@
 #include "common/string.h"
 #include "common/template.h"
 
-static struct abuf_template_data *abuf_find_template(
+static struct abuf_template_data *_find_template(
     struct abuf_template_data *data, size_t tmplLength, const char *txt, size_t txtLength);
 static int _json_printvalue(struct autobuf *out, const char *txt, bool string);
 
@@ -86,7 +86,7 @@ abuf_template_init (
         continue;
       }
       if (pos - start > 1) {
-        d = abuf_find_template(data, data_count, &format[start+1], pos-start-1);
+        d = _find_template(data, data_count, &format[start+1], pos-start-1);
         if (d) {
           new_storage = realloc(storage, sizeof(struct abuf_template_storage)
               + sizeof(storage->indices[0]) * (storage->count+1));
@@ -227,7 +227,7 @@ abuf_add_json(struct autobuf *out, const char *prefix,
  * @return pointer to corresponding template data, NULL if not found
  */
 static struct abuf_template_data *
-abuf_find_template(struct abuf_template_data *data, size_t tmplLength, const char *txt, size_t txtLength) {
+_find_template(struct abuf_template_data *data, size_t tmplLength, const char *txt, size_t txtLength) {
   size_t i;
 
   for (i=0; i<tmplLength; i++) {
