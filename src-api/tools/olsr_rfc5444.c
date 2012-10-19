@@ -542,7 +542,9 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
   struct olsr_rfc5444_target *target, *old;
   uint16_t port;
 
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
+#endif
 
   old = NULL;
 
@@ -732,13 +734,15 @@ _destroy_target(struct olsr_rfc5444_target *target) {
 }
 
 static void
-_print_packet_to_buffer(union netaddr_socket *sock,
+_print_packet_to_buffer(union netaddr_socket *sock __attribute__((unused)),
     struct olsr_rfc5444_interface *interf __attribute__((unused)),
     uint8_t *ptr, size_t len,
     const char *success __attribute__((unused)),
     const char *error __attribute__((unused))) {
   enum rfc5444_result result;
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
+#endif
 
   if (olsr_log_mask_test(log_global_mask, LOG_RFC5444, LOG_SEVERITY_DEBUG)) {
     abuf_clear(&_printer_buffer);
@@ -770,7 +774,9 @@ _cb_receive_data(struct olsr_packet_socket *sock,
   struct olsr_rfc5444_protocol *protocol;
   struct olsr_rfc5444_interface *interf;
   enum rfc5444_result result;
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
+#endif
 
   interf = sock->config.user;
   protocol = interf->protocol;
