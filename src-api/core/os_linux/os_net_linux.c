@@ -121,7 +121,7 @@ os_recvfrom(int fd, void *buf, size_t length, union netaddr_socket *source,
  * @return -1 if an error happened, 0 otherwise
  */
 int
-os_net_update_interface(struct olsr_interface_data *interf,
+os_net_update_interface(struct olsr_interface_data *ifdata,
     const char *name) {
   struct ifreq ifr;
   struct ifaddrs *ifaddrs;
@@ -132,45 +132,45 @@ os_net_update_interface(struct olsr_interface_data *interf,
   const void *ptr;
 
   /* cleanup data structure */
-  if (interf->addresses) {
-    free(interf->addresses);
+  if (ifdata->addresses) {
+    free(ifdata->addresses);
   }
 
-  memset(interf, 0, sizeof(*interf));
-  strscpy(interf->name, name, sizeof(interf->name));
+  memset(ifdata, 0, sizeof(*ifdata));
+  strscpy(ifdata->name, name, sizeof(ifdata->name));
 
   /* get interface index */
-  interf->index = if_nametoindex(name);
-  if (interf->index == 0) {
+  ifdata->index = if_nametoindex(name);
+  if (ifdata->index == 0) {
     /* interface is not there at the moment */
     return 0;
   }
 
   memset(&ifr, 0, sizeof(ifr));
-  strscpy(ifr.ifr_name, interf->name, IF_NAMESIZE);
+  strscpy(ifr.ifr_name, ifdata->name, IF_NAMESIZE);
 
   if (ioctl(_ioctl_v4, SIOCGIFFLAGS, &ifr) < 0) {
     OLSR_WARN(LOG_OS_NET,
         "ioctl SIOCGIFFLAGS (get flags) error on device %s: %s (%d)\n",
-        interf->name, strerror(errno), errno);
+        ifdata->name, strerror(errno), errno);
     return -1;
   }
 
   if ((ifr.ifr_flags & (IFF_UP | IFF_RUNNING)) == (IFF_UP|IFF_RUNNING)) {
-    interf->up = true;
+    ifdata->up = true;
   }
 
   memset(&ifr, 0, sizeof(ifr));
-  strscpy(ifr.ifr_name, interf->name, IF_NAMESIZE);
+  strscpy(ifr.ifr_name, ifdata->name, IF_NAMESIZE);
 
   if (ioctl(_ioctl_v4, SIOCGIFHWADDR, &ifr) < 0) {
     OLSR_WARN(LOG_OS_NET,
         "ioctl SIOCGIFHWADDR (get flags) error on device %s: %s (%d)\n",
-        interf->name, strerror(errno), errno);
+        ifdata->name, strerror(errno), errno);
     return -1;
   }
 
-  netaddr_from_binary(&interf->mac, ifr.ifr_hwaddr.sa_data, 6, AF_MAC48);
+  netaddr_from_binary(&ifdata->mac, ifr.ifr_hwaddr.sa_data, 6, AF_MAC48);
 
   /* get ip addresses */
   ifaddrs = NULL;
@@ -183,47 +183,50 @@ os_net_update_interface(struct olsr_interface_data *interf,
   }
 
   for (ifa = ifaddrs; ifa != NULL; ifa = ifa->ifa_next) {
-    if (strcmp(interf->name, ifa->ifa_name) == 0 &&
+    if (strcmp(ifdata->name, ifa->ifa_name) == 0 &&
         (ifa->ifa_addr->sa_family == AF_INET || ifa->ifa_addr->sa_family == AF_INET6)) {
       addrcount++;
     }
   }
 
-  interf->addresses = calloc(addrcount, sizeof(struct netaddr));
-  if (interf->addresses == NULL) {
+  ifdata->addresses = calloc(addrcount, sizeof(struct netaddr));
+  if (ifdata->addresses == NULL) {
     OLSR_WARN(LOG_OS_NET,
         "Cannot allocate memory for interface %s with %"PRINTF_SIZE_T_SPECIFIER" prefixes",
-        interf->name, addrcount);
+        ifdata->name, addrcount);
+    freeifaddrs(ifaddrs);
     return -1;
   }
 
   for (ifa = ifaddrs; ifa != NULL; ifa = ifa->ifa_next) {
-    if (strcmp(interf->name, ifa->ifa_name) == 0 &&
+    if (strcmp(ifdata->name, ifa->ifa_name) == 0 &&
         (ifa->ifa_addr->sa_family == AF_INET || ifa->ifa_addr->sa_family == AF_INET6)) {
       sock = (union netaddr_socket *)ifa->ifa_addr;
-      addr = &interf->addresses[interf->addrcount];
+      addr = &ifdata->addresses[ifdata->addrcount];
 
-      if (netaddr_from_socket(&interf->addresses[interf->addrcount], sock) == 0) {
-        interf->addrcount++;
+      if (netaddr_from_socket(&ifdata->addresses[ifdata->addrcount], sock) == 0) {
+        ifdata->addrcount++;
         ptr = netaddr_get_binptr(addr);
 
         if (netaddr_get_address_family(addr) == AF_INET) {
-          memcpy(&interf->if_v4, addr, sizeof(*addr));
+          ifdata->if_v4 = addr;
         }
         else if (netaddr_get_address_family(addr) == AF_INET6) {
           if (IN6_IS_ADDR_LINKLOCAL(ptr)) {
-            memcpy(&interf->linklocal_v6_ptr, addr, sizeof(*addr));
+            ifdata->linklocal_v6_ptr = addr;
           }
           else if (!(IN6_IS_ADDR_LOOPBACK(ptr)
               || IN6_IS_ADDR_MULTICAST(ptr)
               || IN6_IS_ADDR_UNSPECIFIED(ptr)
               || IN6_IS_ADDR_V4COMPAT(ptr)
               || IN6_IS_ADDR_V4MAPPED(ptr))) {
-            memcpy(&interf->if_v6, addr, sizeof(*addr));
+            ifdata->if_v6 = addr;
           }
         }
       }
     }
   }
+
+  freeifaddrs(ifaddrs);
   return 0;
 }

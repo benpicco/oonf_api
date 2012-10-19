@@ -81,15 +81,13 @@ static struct olsr_timer_info _change_timer_info = {
  */
 void
 olsr_interface_init(void) {
-  if (olsr_subsystem_is_initialized(&_interface_state))
+  if (olsr_subsystem_init(&_interface_state))
     return;
 
   olsr_timer_add(&_change_timer_info);
 
   avl_init(&olsr_interface_tree, avl_comp_strcasecmp, false, NULL);
   list_init_head(&_interface_listener);
-
-  olsr_subsystem_init(&_interface_state);
 }
 
 /**
@@ -290,6 +288,9 @@ _interface_remove(struct olsr_interface *interf, bool mesh) {
     return;
   }
 
+  if (interf->data.addresses) {
+    free(interf->data.addresses);
+  }
   avl_remove(&olsr_interface_tree, &interf->_node);
 
   olsr_timer_stop(&interf->_change_timer);
@@ -308,9 +309,10 @@ _cb_change_handler(void *ptr) {
 
   interf = ptr;
 
-  OLSR_DEBUG(LOG_INTERFACE, "CHange of interface %s in progress", interf->data.name);
+  OLSR_DEBUG(LOG_INTERFACE, "Change of interface %s in progress", interf->data.name);
 
   /* read interface data */
+  memset(&new_data, 0, sizeof(new_data));
   if (os_net_update_interface(&new_data, interf->data.name)) {
     /* an error happened, try again */
     _trigger_change_timer(interf);
@@ -334,6 +336,10 @@ _cb_change_handler(void *ptr) {
       listener->process(listener, &old_data);
       listener->interface = NULL;
     }
+  }
+
+  if (old_data.addresses) {
+    free (old_data.addresses);
   }
 }
 

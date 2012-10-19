@@ -53,7 +53,7 @@
 
 #include "common/autobuf.h"
 
-#define AUTOBUFCHUNK getpagesize()
+static size_t AUTOBUFCHUNK = 0;
 
 /**
  * @param val original size
@@ -75,6 +75,10 @@ static int _autobuf_enlarge(struct autobuf *autobuf, size_t new_size);
 int
 abuf_init(struct autobuf *autobuf)
 {
+  if (AUTOBUFCHUNK == 0) {
+    AUTOBUFCHUNK = getpagesize();
+  }
+
   autobuf->_len = 0;
   autobuf->_buf = calloc(1, AUTOBUFCHUNK);
   if (autobuf->_buf == NULL) {
@@ -291,6 +295,9 @@ abuf_pull(struct autobuf * autobuf, size_t len) {
     return;
   }
   newsize = autobuf->_total -= AUTOBUFCHUNK;
+  if (newsize < AUTOBUFCHUNK) {
+    newsize = AUTOBUFCHUNK;
+  }
 
   /* generate smaller buffer */
   p = realloc(autobuf->_buf, newsize);

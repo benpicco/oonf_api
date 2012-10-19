@@ -237,18 +237,20 @@ str_is_printable(const char *value) {
 int
 strarray_copy(struct strarray *dst, const struct strarray *src) {
   char *ptr;
-
+  size_t block;
   if (src->value == NULL || src->length == 0) {
     memset(dst, 0, sizeof(*dst));
     return 0;
   }
 
-  ptr = realloc(dst->value, STRARRAY_MEMSIZE(src->length));
+  block = STRARRAY_MEMSIZE(src->length);
+  ptr = realloc(dst->value, block);
   if (!ptr) {
     return -1;
   }
 
   memcpy(ptr, src->value, src->length);
+  memset(ptr + src->length, 0, block - src->length);
   dst->length = src->length;
   dst->value = ptr;
   return 0;
