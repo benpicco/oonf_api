@@ -499,7 +499,7 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
     struct olsr_interface_data *data) {
   union netaddr_socket sock;
   struct netaddr _bind_to;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
 #endif
 
@@ -691,12 +691,18 @@ static void
 _cb_interface_listener(struct olsr_interface_listener *l,
     struct olsr_interface_data *old __attribute__((unused))) {
   struct olsr_packet_managed *managed;
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   int result;
+#endif
 
   /* calculate managed socket for this event */
   managed = container_of(l, struct olsr_packet_managed, _if_listener);
 
-  result = _apply_managed(managed);
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+  result =
+#endif
+      _apply_managed(managed);
+
   OLSR_DEBUG(LOG_SOCKET_PACKET,
       "Result from interface triggered socket reconfiguration: %d", result);
 }

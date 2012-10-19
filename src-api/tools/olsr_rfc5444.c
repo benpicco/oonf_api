@@ -343,7 +343,7 @@ olsr_rfc5444_cleanup(void) {
 enum rfc5444_result olsr_rfc5444_send(
     struct olsr_rfc5444_target *target, uint8_t msgid) {
   struct olsr_rfc5444_interface *interf;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_INFO
   struct netaddr_str buf;
 #endif
 
@@ -733,8 +733,10 @@ _destroy_target(struct olsr_rfc5444_target *target) {
 
 static void
 _print_packet_to_buffer(union netaddr_socket *sock,
-    struct olsr_rfc5444_interface *interf, uint8_t *ptr, size_t len,
-    const char *success, const char *error) {
+    struct olsr_rfc5444_interface *interf __attribute__((unused)),
+    uint8_t *ptr, size_t len,
+    const char *success __attribute__((unused)),
+    const char *error __attribute__((unused))) {
   enum rfc5444_result result;
   struct netaddr_str buf;
 
