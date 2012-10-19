@@ -1,8 +1,16 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=oonf-api
-PKG_VERSION:=2012-06-14
+PKG_VERSION:=2012-10-19
 PKG_RELEASE=$(PKG_SOURCE_VERSION)
+#PKG_REV:=ec2bca8f28b4d14df049fc81e177160ca0e3c3a3
+#PKG_RELEASE:=$(PKG_REV)
+
+#PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.bz2
+#PKG_SOURCE_URL:=http://olsr.org/git/oonf_api.git
+#PKG_SOURCE_PROTO:=git
+#PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
+#PKG_SOURCE_VERSION:=$(PKG_REV)
 
 CMAKE_INSTALL:=1
 
@@ -46,7 +54,7 @@ endef
 define Package/oonf-core-api
 	$(call Package/oonf-api/template) 
 	TITLE:=Core-API (basic infrastructure/scheduler code)
-	DEPENDS:=+oonf-common-api +oonf-config-api +oonf-rfc5444-api
+	DEPENDS:=+oonf-common-api +oonf-config-api +oonf-rfc5444-api +librt
 endef
 
 define Package/oonf-tools-api
