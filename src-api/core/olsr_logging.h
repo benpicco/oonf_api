@@ -207,7 +207,6 @@ EXPORT size_t olsr_log_get_sourcecount(void);
 EXPORT void olsr_log_addhandler(struct log_handler_entry *);
 EXPORT void olsr_log_removehandler(struct log_handler_entry *);
 EXPORT int olsr_log_register_source(const char *name);
-EXPORT void olsr_log_unregister_source(int index);
 
 EXPORT void olsr_log_updatemask(void);
 
