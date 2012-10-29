@@ -680,10 +680,9 @@ _avl_remove_worker(struct avl_tree *tree, struct avl_node *node)
       _avl_rotate_right(tree, parent->right);
       _avl_rotate_left(tree, parent);
       _avl_post_remove(tree, parent->parent);
-      return;
     }
 
-    if (parent->right == node) {
+    else {
       parent->right = NULL;
       parent->balance--;
 
@@ -709,8 +708,8 @@ _avl_remove_worker(struct avl_tree *tree, struct avl_node *node)
       _avl_rotate_left(tree, parent->left);
       _avl_rotate_right(tree, parent);
       _avl_post_remove(tree, parent->parent);
-      return;
     }
+    return;
   }
 
   if (node->left == NULL) {
