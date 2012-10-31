@@ -61,7 +61,7 @@ struct olsr_config_global {
 
 EXPORT extern struct olsr_config_global config_global;
 
-EXPORT int olsr_cfg_init(void) __attribute__((warn_unused_result));
+EXPORT int olsr_cfg_init(int argc, char **argv) __attribute__((warn_unused_result));
 EXPORT void olsr_cfg_cleanup(void);
 EXPORT int olsr_cfg_loadplugins(void) __attribute__((warn_unused_result));
 EXPORT int olsr_cfg_apply(void) __attribute__((warn_unused_result));
@@ -82,5 +82,8 @@ EXPORT struct cfg_instance *olsr_cfg_get_instance(void);
 EXPORT struct cfg_db *olsr_cfg_get_db(void);
 EXPORT struct cfg_db *olsr_cfg_get_rawdb(void);
 EXPORT struct cfg_schema *olsr_cfg_get_schema(void);
+
+EXPORT int olsr_cfg_get_argc(void);
+EXPORT const char **olsr_cfg_get_argv(void);
 
 #endif /* OLSR_CFG_H_ */

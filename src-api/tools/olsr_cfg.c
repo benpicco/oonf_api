@@ -70,6 +70,10 @@ static bool _first_apply;
 static bool _trigger_reload, _trigger_commit;
 static bool _running = true;
 
+/* remember command line arguments */
+static char **_argv;
+static int _argc;
+
 /* remember if initialized or not */
 OLSR_SUBSYSTEM_STATE(_cfg_state);
 
@@ -94,7 +98,7 @@ static struct cfg_schema_entry global_entries[] = {
  * @return -1 if an error happened, 0 otherwise
  */
 int
-olsr_cfg_init(void) {
+olsr_cfg_init(int argc, char **argv) {
   if (olsr_subsystem_is_initialized(&_cfg_state))
     return 0;
 
@@ -127,6 +131,9 @@ olsr_cfg_init(void) {
   _first_apply = true;
   _trigger_reload = false;
   _trigger_commit = false;
+
+  _argc = argc;
+  _argv = argv;
 
   olsr_subsystem_init(&_cfg_state);
   return 0;
@@ -447,6 +454,22 @@ olsr_cfg_get_rawdb(void) {
 struct cfg_schema *
 olsr_cfg_get_schema(void) {
   return &_olsr_schema;
+}
+
+/**
+ * @return argument counter of original main() function
+ */
+int
+olsr_cfg_get_argc(void) {
+  return _argc;
+}
+
+/**
+ * @return argument vector of original main() function
+ */
+const char **
+olsr_cfg_get_argv(void) {
+  return (const char **) _argv;
 }
 
 /**
