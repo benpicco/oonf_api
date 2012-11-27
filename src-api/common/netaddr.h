@@ -95,6 +95,21 @@ union netaddr_socket {
 };
 
 /**
+ * Maximum text length of netaddr_to_string
+ *
+ * INET_ADDRSTRLEN and INET6_ADDRSTRLEN have been defined
+ * in netinet/in.h, which has been included by this file
+ */
+enum {
+  MAC48_ADDRSTRLEN = 18,
+  MAC48_PREFIXSTRLEN = MAC48_ADDRSTRLEN + 3,
+  EUI64_ADDRSTRLEN = 24,
+  EUI64_PREFIXSTRLEN = EUI64_ADDRSTRLEN + 3,
+  INET_PREFIXSTRLEN = INET_ADDRSTRLEN + 3,
+  INET6_PREFIXSTRLEN = INET6_ADDRSTRLEN + 4,
+};
+
+/**
  * Buffer for writing string representation of netaddr
  * and netaddr_socket objects
  */
