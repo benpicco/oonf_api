@@ -778,6 +778,8 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
       }
     }
     if (cons_order < tlv_order) {
+      constraints_failed |= cons_entry->mandatory && !match;
+
       /* advance consumer pointer */
       if (list_is_last(&consumer->_consumer_list, &cons_entry->_node)) {
         cons_entry = NULL;
