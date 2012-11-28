@@ -94,6 +94,6 @@ cunit_named_check(bool cond, const char *name, const char *format, ...) {
 
   printf("\t%s fail: ", name);
   vprintf(format, ap);
-
+  puts("\n");
   va_end(ap);
 }
