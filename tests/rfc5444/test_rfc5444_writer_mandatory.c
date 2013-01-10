@@ -117,7 +117,7 @@ static void addAddresses(struct rfc5444_writer *wr,
       tlv_value[tlv_value_size-1] = (uint8_t)(i & 255);
     }
 
-    addr = rfc5444_writer_add_address(wr, provider->_creator, ip, 32, i == 0);
+    addr = rfc5444_writer_add_address(wr, provider->creator, ip, 32, i == 0);
     rfc5444_writer_add_addrtlv(wr, addr, addrtlvs[0]._tlvtype, tlv_value, tlv_value_size, false);
 
     if (tlv_value) {

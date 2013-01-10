@@ -137,6 +137,7 @@ EXPORT void olsr_interface_remove_listener(struct olsr_interface_listener *);
 
 EXPORT struct olsr_interface_data *olsr_interface_get_data(const char *name);
 EXPORT void olsr_interface_trigger_change(const char *name, bool down);
+EXPORT void olsr_interface_trigger_handler(struct olsr_interface *interf);
 
 EXPORT int olsr_interface_find_address(struct netaddr *dst,
     struct netaddr *prefix, struct olsr_interface_data *);

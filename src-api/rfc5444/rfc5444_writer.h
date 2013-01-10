@@ -160,7 +160,7 @@ struct rfc5444_writer_tlvtype {
   /* _if_node of tlvtype list in rfc5444_writer_message */
   struct list_entity _tlvtype_node;
 
-  /* back pointer to message _creator */
+  /* back pointer to message creator */
   struct rfc5444_writer_message *_creator;
 
   /* number of users of this tlvtype */
@@ -211,8 +211,8 @@ struct rfc5444_writer_content_provider {
   /* node for tree of content providers for a message creator */
   struct avl_node _provider_node;
 
-  /* back pointer to message _creator */
-  struct rfc5444_writer_message *_creator;
+  /* back pointer to message creator */
+  struct rfc5444_writer_message *creator;
 };
 
 /**

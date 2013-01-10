@@ -214,7 +214,7 @@ void
 olsr_timer_start(struct olsr_timer_entry *timer, uint64_t rel_time)
 {
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
-  struct timeval_buf timebuf1;
+  struct timeval_str timebuf1;
 #endif
   int new_slot;
 

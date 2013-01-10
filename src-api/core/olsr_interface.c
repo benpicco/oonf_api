@@ -169,6 +169,11 @@ olsr_interface_trigger_change(const char *name, bool down) {
     interf->data.up = false;
   }
 
+  olsr_interface_trigger_handler(interf);
+}
+
+void
+olsr_interface_trigger_handler(struct olsr_interface *interf) {
   /* trigger interface reload in 100 ms */
   _trigger_change_timer(interf);
 }

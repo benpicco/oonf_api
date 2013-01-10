@@ -63,7 +63,7 @@
 #define CFG_MAP_CLOCK_MINMAX(p_reference, p_field, p_name, p_def, p_help, p_min, p_max, args...) CFG_VALIDATE_CLOCK_MINMAX(p_name, p_def, p_help, p_min, p_max, .cb_to_binary = olsr_clock_tobin, .bin_offset = offsetof(struct p_reference, p_field), ##args)
 
 /* buffer for displaying absolute timestamps */
-struct timeval_buf {
+struct timeval_str {
   char buf[20];
 };
 
@@ -73,8 +73,8 @@ EXPORT int olsr_clock_update(void) __attribute__((warn_unused_result));
 
 EXPORT uint64_t olsr_clock_getNow(void);
 
-EXPORT const char *olsr_clock_toClockString(struct timeval_buf *, uint64_t);
-EXPORT const char *olsr_clock_toIntervalString(struct timeval_buf *, uint64_t);
+EXPORT const char *olsr_clock_toClockString(struct timeval_str *, uint64_t);
+EXPORT const char *olsr_clock_toIntervalString(struct timeval_str *, uint64_t);
 EXPORT int olsr_clock_fromIntervalString(uint64_t *result, const char *string);
 
 EXPORT int olsr_clock_validate(const struct cfg_schema_entry *entry,

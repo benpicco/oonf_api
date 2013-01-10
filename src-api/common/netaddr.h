@@ -124,6 +124,7 @@ EXPORT extern const struct netaddr NETADDR_IPV6_MULTICAST;
 EXPORT extern const struct netaddr NETADDR_IPV4_LINKLOCAL;
 EXPORT extern const struct netaddr NETADDR_IPV6_LINKLOCAL;
 EXPORT extern const struct netaddr NETADDR_IPV6_ULA;
+EXPORT extern const struct netaddr NETADDR_IPV6_IPV4EMBEDDED;
 
 EXPORT int netaddr_from_binary_prefix(struct netaddr *dst,
     const void *binary, size_t len, uint8_t addr_type, uint8_t prefix_len);
@@ -203,6 +204,32 @@ netaddr_create_host(struct netaddr *host, const struct netaddr *netmask,
     const struct netaddr *host_number) {
   return netaddr_create_host_bin(host, netmask, host_number->_addr,
       netaddr_get_maxprefix(host_number));
+}
+
+/**
+ * Embed an IPv4 address into an IPv6 address
+ * @param dst target IPv6 address
+ * @param src source IPv4 address
+ */
+static INLINE void
+netaddr_embed_ipv4(struct netaddr *dst, const struct netaddr *src) {
+  memcpy(&dst->_addr[0], &NETADDR_IPV6_IPV4EMBEDDED._addr[0], 12);
+  memcpy(&dst->_addr[12], &src->_addr[0], 4);
+  dst->_type = AF_INET6;
+  dst->_prefix_len = 128;
+}
+
+/**
+ *
+ * @param dst
+ * @param src
+ */
+static INLINE void
+netaddr_extract_ipv4(struct netaddr *dst, const struct netaddr *src) {
+  memcpy(&dst->_addr[0], &src->_addr[12], 4);
+  memset(&dst->_addr[4], 0, 12);
+  dst->_type = AF_INET;
+  dst->_prefix_len = 32;
 }
 
 /**

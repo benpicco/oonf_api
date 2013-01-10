@@ -126,7 +126,7 @@ olsr_clock_getNow(void) {
  * @return buffer to a formatted system time string.
  */
 const char *
-olsr_clock_toClockString(struct timeval_buf *buf, uint64_t clk)
+olsr_clock_toClockString(struct timeval_str *buf, uint64_t clk)
 {
   uint64_t msec = clk % MSEC_PER_SEC;
   uint64_t sec = clk / MSEC_PER_SEC;
@@ -147,7 +147,7 @@ olsr_clock_toClockString(struct timeval_buf *buf, uint64_t clk)
  * @return buffer to a formatted system time string.
  */
 const char *
-olsr_clock_toIntervalString(struct timeval_buf *buf, uint64_t clk)
+olsr_clock_toIntervalString(struct timeval_str *buf, uint64_t clk)
 {
   snprintf(buf->buf, sizeof(*buf),
       "%"PRIu64".%03"PRIu64"", clk / MSEC_PER_SEC, clk % MSEC_PER_SEC);
@@ -271,7 +271,7 @@ olsr_clock_tobin(
 void
 olsr_clock_help(
     const struct cfg_schema_entry *entry, struct autobuf *out) {
-  struct timeval_buf buf;
+  struct timeval_str buf;
 
   cfg_append_printable_line(out,
       "    Parameter must be an timestamp with a maximum of 3 fractional digits");

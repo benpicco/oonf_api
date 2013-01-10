@@ -171,7 +171,7 @@ olsr_rfc5444_get_target_from_message(struct rfc5444_writer_message *msg) {
 
 static INLINE struct olsr_rfc5444_target *
 olsr_rfc5444_get_target_from_provider(struct rfc5444_writer_content_provider *prv) {
-  return olsr_rfc5444_get_target_from_message(prv->_creator);
+  return olsr_rfc5444_get_target_from_message(prv->creator);
 }
 
 static INLINE struct olsr_interface *

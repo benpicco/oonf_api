@@ -376,7 +376,7 @@ rfc5444_writer_register_msgcontentprovider(struct rfc5444_writer *writer,
     return -1;
   }
 
-  cpr->_creator = msg;
+  cpr->creator = msg;
   cpr->_provider_node.key = &cpr->priority;
 
   avl_insert(&msg->_provider_tree, &cpr->_provider_node);
@@ -410,8 +410,8 @@ rfc5444_writer_unregister_content_provider(
       addrtlvs[i]._tlvtype = NULL;
     }
   }
-  avl_remove(&cpr->_creator->_provider_tree, &cpr->_provider_node);
-  _lazy_free_message(writer, cpr->_creator);
+  avl_remove(&cpr->creator->_provider_tree, &cpr->_provider_node);
+  _lazy_free_message(writer, cpr->creator);
 }
 
 /**
@@ -636,7 +636,7 @@ _register_addrtlvtype(struct rfc5444_writer_message *msg,
 
   avl_init(&tlvtype->_tlv_tree, avl_comp_uint32, true, false);
 
-  /* add to message _creator list */
+  /* add to message creator list */
   list_add_tail(&msg->_tlvtype_head, &tlvtype->_tlvtype_node);
   return tlvtype;
 }

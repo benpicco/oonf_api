@@ -69,6 +69,8 @@ const struct netaddr NETADDR_IPV6_LINKLOCAL = { { 0xfe,0x80,0,0,0,0,0,0,0,0,0,0,
 
 const struct netaddr NETADDR_IPV6_ULA = { { 0xfc,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET6, 7 };
 
+const struct netaddr NETADDR_IPV6_IPV4EMBEDDED = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET6, 96 };
+
 /**
  * Read the binary representation of an address into a netaddr object
  * @param dst pointer to netaddr object
