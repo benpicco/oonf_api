@@ -423,7 +423,12 @@ _cb_telnet_receive_data(struct olsr_stream_session *session) {
 
         telnet_session->data.command = cmd;
         telnet_session->data.parameter = para;
+
         cmd_result = _telnet_handle_command(&telnet_session->data);
+        if (abuf_has_failed(telnet_session->data.out)) {
+          cmd_result = TELNET_RESULT_INTERNAL_ERROR;
+        }
+
         switch (cmd_result) {
           case TELNET_RESULT_ACTIVE:
             break;
@@ -438,6 +443,7 @@ _cb_telnet_receive_data(struct olsr_stream_session *session) {
             return STREAM_SESSION_SEND_AND_QUIT;
           case TELNET_RESULT_INTERNAL_ERROR:
           default:
+            /* reset stream */
             abuf_setlen(&session->out, len);
             abuf_appendf(&session->out,
                 "Error in autobuffer during command '%s'.\n", cmd);

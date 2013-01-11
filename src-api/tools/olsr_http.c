@@ -342,7 +342,6 @@ _cb_receive_data(struct olsr_stream_session *session) {
   }
   else {
     enum olsr_http_result result;
-
     /* check acl */
     if (!olsr_acl_check_accept(&handler->acl, &session->remote_address)) {
       _create_http_error(session, HTTP_403_FORBIDDEN);
@@ -357,7 +356,13 @@ _cb_receive_data(struct olsr_stream_session *session) {
       }
     }
 
+    len = abuf_getlen(&session->out);
     result = handler->content_handler(&session->out, &header);
+    if (abuf_has_failed(&session->out)) {
+      abuf_setlen(&session->out, len);
+      result = HTTP_500_INTERNAL_SERVER_ERROR;
+    }
+
     if (result != HTTP_200_OK) {
       /* create error message */
       _create_http_error(session, result);
@@ -484,6 +489,8 @@ _get_headertype_string(enum olsr_http_result type) {
       return HTTP_RESPONSE_404;
     case HTTP_413_REQUEST_TOO_LARGE:
       return HTTP_RESPONSE_413;
+    case HTTP_500_INTERNAL_SERVER_ERROR:
+      return HTTP_RESPONSE_500;
     case HTTP_501_NOT_IMPLEMENTED:
       return HTTP_RESPONSE_501;
     case HTTP_503_SERVICE_UNAVAILABLE:

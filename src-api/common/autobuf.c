@@ -82,6 +82,7 @@ abuf_init(struct autobuf *autobuf)
   autobuf->_len = 0;
   autobuf->_buf = calloc(1, AUTOBUFCHUNK);
   if (autobuf->_buf == NULL) {
+    autobuf->_error = true;
     return -1;
   }
   autobuf->_total = AUTOBUFCHUNK;
@@ -121,6 +122,10 @@ abuf_vappendf(struct autobuf *autobuf,
 
   va_copy(ap2, ap);
   rc = vsnprintf(autobuf->_buf + autobuf->_len, autobuf->_total - autobuf->_len, format, ap);
+  if (rc < 0) {
+    autobuf->_error = true;
+    return rc;
+  }
   va_end(ap);
   min_size = autobuf->_len + (size_t)rc;
   if (min_size >= autobuf->_total) {
@@ -128,7 +133,11 @@ abuf_vappendf(struct autobuf *autobuf,
       autobuf->_buf[autobuf->_len] = '\0';
       return -1;
     }
-    vsnprintf(autobuf->_buf + autobuf->_len, autobuf->_total - autobuf->_len, format, ap2);
+    rc = vsnprintf(autobuf->_buf + autobuf->_len, autobuf->_total - autobuf->_len, format, ap2);
+    if (rc < 0) {
+      autobuf->_error = true;
+      return rc;
+    }
   }
   va_end(ap2);
   autobuf->_len = min_size;
@@ -147,15 +156,15 @@ abuf_vappendf(struct autobuf *autobuf,
 int
 abuf_appendf(struct autobuf *autobuf, const char *fmt, ...)
 {
-  int rv;
+  int rc;
   va_list ap;
 
   if (autobuf == NULL) return 0;
 
   va_start(ap, fmt);
-  rv = abuf_vappendf(autobuf, fmt, ap);
+  rc = abuf_vappendf(autobuf, fmt, ap);
   va_end(ap);
-  return rv;
+  return rc;
 }
 
 /**
@@ -333,6 +342,7 @@ _autobuf_enlarge(struct autobuf *autobuf, size_t new_size)
 #else
       errno = ENOMEM;
 #endif
+      autobuf->_error = true;
       return -1;
     }
     autobuf->_buf = p;

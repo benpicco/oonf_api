@@ -90,8 +90,8 @@ static enum olsr_telnet_result _cb_handle_config(struct olsr_telnet_data *data);
 static enum olsr_telnet_result _update_logfilter(struct olsr_telnet_data *data,
     uint8_t *mask, const char *current, bool value);
 
-static int _print_memory(struct autobuf *buf);
-static int _print_timer(struct autobuf *buf);
+static void _print_memory(struct autobuf *buf);
+static void _print_timer(struct autobuf *buf);
 
 static enum olsr_telnet_result _start_logging(struct olsr_telnet_data *data,
     struct _remotecontrol_session *rc_session);
@@ -254,42 +254,34 @@ _cb_plugin_disable(void)
 /**
  * Print current resources known to memory manager
  * @param buf output buffer
- * @return -1 if an error happened, 0 otherwise
  */
-static int
+static void
 _print_memory(struct autobuf *buf) {
   struct olsr_memcookie_info *c, *iterator;
 
   OLSR_FOR_ALL_COOKIES(c, iterator) {
-    if (abuf_appendf(buf, "%-25s (MEMORY) size: %"PRINTF_SIZE_T_SPECIFIER
+    abuf_appendf(buf, "%-25s (MEMORY) size: %"PRINTF_SIZE_T_SPECIFIER
         " usage: %u freelist: %u allocations: %u/%u\n",
         c->name, c->size,
         olsr_memcookie_get_usage(c),
         olsr_memcookie_get_free(c),
         olsr_memcookie_get_allocations(c),
-        olsr_memcookie_get_recycled(c)) < 0) {
-      return -1;
-    }
+        olsr_memcookie_get_recycled(c));
   }
-  return 0;
 }
 
 /**
  * Print current resources known to timer scheduler
  * @param buf output buffer
- * @return -1 if an error happened, 0 otherwise
  */
-static int
+static void
 _print_timer(struct autobuf *buf) {
   struct olsr_timer_info *t, *iterator;
 
   OLSR_FOR_ALL_TIMERS(t, iterator) {
-    if (abuf_appendf(buf, "%-25s (TIMER) usage: %u changes: %u\n",
-        t->name, t->usage, t->changes) < 0) {
-      return -1;
-    }
+    abuf_appendf(buf, "%-25s (TIMER) usage: %u changes: %u\n",
+        t->name, t->usage, t->changes);
   }
-  return 0;
 }
 
 /**
@@ -300,23 +292,13 @@ _print_timer(struct autobuf *buf) {
 static enum olsr_telnet_result
 _cb_handle_resource(struct olsr_telnet_data *data) {
   if (data->parameter == NULL || strcasecmp(data->parameter, "memory") == 0) {
-    if (abuf_puts(data->out, "Memory cookies:\n") < 0) {
-      return TELNET_RESULT_INTERNAL_ERROR;
-    }
-
-    if (_print_memory(data->out)) {
-      return TELNET_RESULT_INTERNAL_ERROR;
-    }
+    abuf_puts(data->out, "Memory cookies:\n");
+    _print_memory(data->out);
   }
 
   if (data->parameter == NULL || strcasecmp(data->parameter, "timer") == 0) {
-    if (abuf_puts(data->out, "\nTimer cookies:\n") < 0) {
-      return TELNET_RESULT_INTERNAL_ERROR;
-    }
-
-    if (_print_timer(data->out)) {
-      return TELNET_RESULT_INTERNAL_ERROR;
-    }
+    abuf_puts(data->out, "\nTimer cookies:\n");
+    _print_timer(data->out);
   }
   return TELNET_RESULT_ACTIVE;
 }

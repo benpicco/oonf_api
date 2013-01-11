@@ -61,6 +61,9 @@ struct autobuf {
 
   /* pointer to allocated memory */
   char *_buf;
+
+  /* an error happened since the last stream cleanup */
+  bool _error;
 };
 
 EXPORT int abuf_init(struct autobuf *autobuf);
@@ -85,6 +88,7 @@ EXPORT void abuf_pull(struct autobuf * autobuf, size_t len);
 static INLINE void
 abuf_clear(struct autobuf *autobuf) {
   autobuf->_len = 0;
+  autobuf->_error = false;
   memset(autobuf->_buf, 0, autobuf->_total);
 }
 
@@ -126,6 +130,7 @@ abuf_setlen(struct autobuf * autobuf, size_t len) {
     autobuf->_len = len;
   }
   autobuf->_buf[len] = 0;
+  autobuf->_error = false;
 }
 
 /**
@@ -161,4 +166,13 @@ abuf_append_uint32(struct autobuf *autobuf, const uint32_t l) {
   return abuf_memcpy(autobuf, &l, 4);
 }
 
+/**
+ * @param autobuf
+ * @return true if an autobuf function failed
+ *  since the last cleanup of the stream
+ */
+static INLINE bool
+abuf_has_failed(struct autobuf *autobuf) {
+  return autobuf->_error;
+}
 #endif
