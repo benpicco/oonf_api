@@ -981,8 +981,14 @@ _free_addrtlv_entry(void *addrtlv) {
  */
 static void
 _cb_add_seqno(struct rfc5444_writer *writer, struct rfc5444_writer_interface *interf) {
-  rfc5444_writer_set_pkt_header(writer, interf, true);
-  rfc5444_writer_set_pkt_seqno(writer, interf, interf->last_seqno + 1);
+  struct olsr_rfc5444_target *target;
+
+  target = container_of(interf, struct olsr_rfc5444_target, rfc5444_if);
+
+  rfc5444_writer_set_pkt_header(writer, interf, target->_pktseqno_refcount > 0);
+  if (target->_pktseqno_refcount > 0) {
+    rfc5444_writer_set_pkt_seqno(writer, interf, interf->last_seqno + 1);
+  }
 }
 
 /**

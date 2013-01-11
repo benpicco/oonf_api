@@ -133,6 +133,7 @@ struct olsr_rfc5444_target {
   struct olsr_timer_entry _aggregation;
 
   int _refcount;
+  int _pktseqno_refcount;
 
   uint8_t _packet_buffer[RFC5444_MAX_PACKET_SIZE];
 };
@@ -156,8 +157,8 @@ EXPORT void olsr_rfc5444_reconfigure_interface(
 EXPORT struct olsr_rfc5444_target *olsr_rfc5444_add_target(
     struct olsr_rfc5444_interface *interface, struct netaddr *dst);
 EXPORT void olsr_rfc5444_remove_target(struct olsr_rfc5444_target *target);
-EXPORT uint16_t olsr_rfc5444_next_target_seqno(struct olsr_rfc5444_target *);
 
+EXPORT uint16_t olsr_rfc5444_next_target_seqno(struct olsr_rfc5444_target *);
 
 EXPORT enum rfc5444_result olsr_rfc5444_send(
     struct olsr_rfc5444_target *, uint8_t msgid);
@@ -177,5 +178,17 @@ olsr_rfc5444_get_target_from_provider(struct rfc5444_writer_content_provider *pr
 static INLINE struct olsr_interface *
 olsr_rfc5444_get_core_interface(struct olsr_rfc5444_interface *interf) {
   return interf->_socket._if_listener.interface;
+}
+
+static INLINE void
+olsr_rfc5444_add_target_seqno(struct olsr_rfc5444_target *target) {
+  target->_pktseqno_refcount++;
+}
+
+static INLINE void
+olsr_rfc5444_remove_target_seqno(struct olsr_rfc5444_target *target) {
+  if (target->_pktseqno_refcount > 0) {
+    target->_pktseqno_refcount--;
+  }
 }
 #endif /* OLSR_RFC5444_H_ */
