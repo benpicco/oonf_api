@@ -149,8 +149,13 @@ olsr_clock_toClockString(struct timeval_str *buf, uint64_t clk)
 const char *
 olsr_clock_toIntervalString(struct timeval_str *buf, int64_t clk)
 {
+  int64_t abs = clk;
+
+  if (abs < 0) {
+    abs = -clk;
+  }
   snprintf(buf->buf, sizeof(*buf),
-      "%"PRId64".%03"PRId64"", clk / MSEC_PER_SEC, clk % MSEC_PER_SEC);
+      "%"PRId64".%03"PRId64"", clk / MSEC_PER_SEC, abs % MSEC_PER_SEC);
   return buf->buf;
 }
 
