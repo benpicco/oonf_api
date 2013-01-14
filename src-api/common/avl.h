@@ -255,7 +255,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    (automatically converted to type 'element')
  */
 #define avl_first_element(tree, element, node_member) \
-  container_of((tree)->list_head.next, typeof(*(element)), node_member)
+  container_of((tree)->list_head.next, typeof(*(element)), node_member.list)
 
 /**
  * @param tree pointer to avl-tree
@@ -282,7 +282,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    (automatically converted to type 'element')
  */
 #define avl_last_element(tree, element, node_member) \
-  container_of((tree)->list_head.prev, typeof(*(element)), node_member)
+  container_of((tree)->list_head.prev, typeof(*(element)), node_member.list)
 
 /**
  * @param tree pointer to tree
@@ -308,7 +308,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    (automatically converted to type 'element')
  */
 #define avl_next_element(element, node_member) \
-  container_of((&(element)->node_member.list)->next, typeof(*(element)), node_member)
+  container_of((&(element)->node_member.list)->next, typeof(*(element)), node_member.list)
 
 /**
  * @param tree pointer to avl-tree
@@ -334,7 +334,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    (automatically converted to type 'element')
  */
 #define avl_prev_element(element, node_member) \
-  container_of((&(element)->node_member.list)->prev, typeof(*(element)), node_member)
+  container_of((&(element)->node_member.list)->prev, typeof(*(element)), node_member.list)
 
 /**
  * @param tree pointer to avl-tree
@@ -515,7 +515,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    the next node during the loop
  */
 #define avl_for_element_range_safe(first_element, last_element, element, node_member, ptr) \
-  for (element = (first_element), ptr = avl_next_element(first_element, node_member); \
+  for (element = (first_element), ptr = avl_next_element(element, node_member); \
        element->node_member.list.prev != &(last_element)->node_member.list; \
        element = ptr, ptr = avl_next_element(ptr, node_member))
 
@@ -533,7 +533,7 @@ avl_delete(struct avl_tree *tree, struct avl_node *node) {
  *    the previous node during the loop
  */
 #define avl_for_element_range_reverse_safe(first_element, last_element, element, node_member, ptr) \
-  for (element = (last_element), ptr = avl_prev_element(last_element, node_member); \
+  for (element = (last_element), ptr = avl_prev_element(element, node_member); \
        element->node_member.list.next != &(first_element)->node_member.list; \
        element = ptr, ptr = avl_prev_element(ptr, node_member))
 

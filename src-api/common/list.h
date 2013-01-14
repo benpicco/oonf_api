@@ -411,7 +411,7 @@ list_merge(struct list_entity *add_to, struct list_entity *remove_from) {
  *    the next node during the loop
  */
 #define list_for_element_range_safe(first_element, last_element, element, list_member, ptr) \
-  for (element = (first_element), ptr = list_next_element(first_element, list_member); \
+  for (element = (first_element), ptr = list_next_element(element, list_member); \
        element->list_member.prev != &(last_element)->list_member; \
        element = ptr, ptr = list_next_element(ptr, list_member))
 
@@ -429,7 +429,7 @@ list_merge(struct list_entity *add_to, struct list_entity *remove_from) {
  *    the previous node during the loop
  */
 #define list_for_element_range_reverse_safe(first_element, last_element, element, list_member, ptr) \
-  for (element = (last_element), ptr = list_prev_element(last_element, list_member); \
+  for (element = (last_element), ptr = list_prev_element(element, list_member); \
        element->list_member.next != &(first_element)->list_member; \
        element = ptr, ptr = list_prev_element(ptr, list_member))
 

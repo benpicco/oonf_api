@@ -201,20 +201,20 @@ static void check_tree(const char *name) {
   }
 
   /* check next-iterator */
-  t = container_of(head.list_head.next, struct tree_element, node);
+  t = container_of(head.list_head.next, struct tree_element, node.list);
   value = t->value;
   for (ptr = head.list_head.next; ptr != NULL && ptr != &head.list_head; ptr = ptr->next) {
-    t = container_of(ptr, struct tree_element, node);
+    t = container_of(ptr, struct tree_element, node.list);
     CHECK_NAMED_TRUE(t->value >= value, name, "next-iterator (%d < %d)", t->value, value);
     value = t->value;
   }
   CHECK_NAMED_TRUE(ptr == &head.list_head, name, "next-iterator contained NULL ptr");
 
   /* check next-iterator */
-  t = container_of(head.list_head.prev, struct tree_element, node);
+  t = container_of(head.list_head.prev, struct tree_element, node.list);
   value = t->value;
   for (ptr = head.list_head.prev; ptr != NULL && ptr != &head.list_head; ptr = ptr->prev) {
-    t = container_of(ptr, struct tree_element, node);
+    t = container_of(ptr, struct tree_element, node.list);
     CHECK_NAMED_TRUE(t->value <= value, name, "prev-iterator (%d > %d)", t->value, value);
     value = t->value;
   }
