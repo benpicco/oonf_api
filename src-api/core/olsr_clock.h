@@ -74,7 +74,7 @@ EXPORT int olsr_clock_update(void) __attribute__((warn_unused_result));
 EXPORT uint64_t olsr_clock_getNow(void);
 
 EXPORT const char *olsr_clock_toClockString(struct timeval_str *, uint64_t);
-EXPORT const char *olsr_clock_toIntervalString(struct timeval_str *, uint64_t);
+EXPORT const char *olsr_clock_toIntervalString(struct timeval_str *, int64_t);
 EXPORT int olsr_clock_fromIntervalString(uint64_t *result, const char *string);
 
 EXPORT int olsr_clock_validate(const struct cfg_schema_entry *entry,

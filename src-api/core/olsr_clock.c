@@ -147,13 +147,19 @@ olsr_clock_toClockString(struct timeval_str *buf, uint64_t clk)
  * @return buffer to a formatted system time string.
  */
 const char *
-olsr_clock_toIntervalString(struct timeval_str *buf, uint64_t clk)
+olsr_clock_toIntervalString(struct timeval_str *buf, int64_t clk)
 {
   snprintf(buf->buf, sizeof(*buf),
-      "%"PRIu64".%03"PRIu64"", clk / MSEC_PER_SEC, clk % MSEC_PER_SEC);
+      "%"PRId64".%03"PRId64"", clk / MSEC_PER_SEC, clk % MSEC_PER_SEC);
   return buf->buf;
 }
 
+/**
+ * Converts a string into an unsigned binary time
+ * @param result pointer to binary time variable
+ * @param string string to convert into time
+ * @return -1 if an error happened, 0 otherwise
+ */
 int
 olsr_clock_fromIntervalString(uint64_t *result, const char *string) {
   bool period;
