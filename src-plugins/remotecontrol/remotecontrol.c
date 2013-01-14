@@ -239,13 +239,13 @@ _cb_plugin_disable(void)
   struct _remotecontrol_session *session, *it;
   size_t i;
 
-  for (i=0; i<ARRAYSIZE(_telnet_cmds); i++) {
-    olsr_telnet_remove(&_telnet_cmds[i]);
-  }
-
   /* shutdown all running logging streams */
   list_for_each_element_safe(&_remote_sessions, session, node, it) {
     olsr_telnet_stop(session->cleanup.data);
+  }
+
+  for (i=0; i<ARRAYSIZE(_telnet_cmds); i++) {
+    olsr_telnet_remove(&_telnet_cmds[i]);
   }
 
   return 0;
