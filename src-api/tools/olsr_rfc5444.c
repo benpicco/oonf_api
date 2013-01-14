@@ -441,7 +441,7 @@ olsr_rfc5444_reconfigure_protocol(
     olsr_packet_add_managed(&interf->_socket);
 
     if (port) {
-      olsr_rfc5444_reconfigure_interface(interf, &interf->_socket_config);
+      olsr_rfc5444_reconfigure_interface(interf, NULL);
     }
   }
 }
@@ -534,7 +534,8 @@ olsr_rfc5444_remove_interface(struct olsr_rfc5444_interface *interf,
  * Reconfigure the parameters of an rfc5444 interface. You cannot reconfigure
  * the interface name with this command.
  * @param interf pointer to existing rfc5444 interface
- * @param config new socket configuration
+ * @param config new socket configuration, NULL to just reapply the current
+ *  configuration
  */
 void
 olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
@@ -548,12 +549,17 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
 
   old = NULL;
 
-  /* copy socket configuration */
-  memcpy(&interf->_socket_config, config, sizeof(interf->_socket_config));
+  if (config != NULL) {
+    /* copy socket configuration */
+    memcpy(&interf->_socket_config, config, sizeof(interf->_socket_config));
 
-  /* overwrite interface name */
-  strscpy(interf->_socket_config.interface, interf->name,
-      sizeof(interf->_socket_config.interface));
+    /* overwrite interface name */
+    strscpy(interf->_socket_config.interface, interf->name,
+        sizeof(interf->_socket_config.interface));
+  }
+  else {
+    config = &interf->_socket_config;
+  }
 
   /* get port */
   port = interf->protocol->port;
@@ -1092,7 +1098,7 @@ _cb_interface_changed(struct olsr_packet_managed *managed) {
 
   interf = container_of(managed, struct olsr_rfc5444_interface, _socket);
 
-  olsr_rfc5444_reconfigure_interface(interf, &interf->_socket_config);
+  olsr_rfc5444_reconfigure_interface(interf, NULL);
   list_for_each_element(&interf->_listener, l, _node) {
     l->cb_interface_changed(l);
   }
