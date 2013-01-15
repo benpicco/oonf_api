@@ -130,51 +130,54 @@ static void print_tree(void) {
 }
 #endif
 
-static int check_tree_int(const char *name, struct tree_element *e) {
+static int check_tree_int(const char *name, int line, struct tree_element *e) {
   struct tree_element *t;
   int left = 0, right = 0;
 
   if (e->node.parent) {
     CHECK_NAMED_TRUE(e->node.parent->left == &e->node || e->node.parent->right == &e->node,
-        name, "parent backlink missing for element %d", e->value);
+        name, line, "parent backlink missing for element %d", e->value);
 
     if (e->node.parent->left == &e->node) {
       t = container_of(e->node.parent, struct tree_element, node);
 
-      CHECK_NAMED_TRUE(e->value < t->value, name, "Value of parent (%d) <= value of left child (%d)", t->value, e->value);
+      CHECK_NAMED_TRUE(e->value < t->value, name, line,
+          "Value of parent (%d) <= value of left child (%d)", t->value, e->value);
     }
     if (e->node.parent->right == &e->node) {
       t = container_of(e->node.parent, struct tree_element, node);
 
-      CHECK_NAMED_TRUE(e->value > t->value, name, "Value of parent (%d) <= value of right child (%d)", t->value, e->value);
+      CHECK_NAMED_TRUE(e->value > t->value, name, line,
+          "Value of parent (%d) <= value of right child (%d)", t->value, e->value);
     }
   }
 
   if (e->node.left) {
     t = container_of(e->node.left, struct tree_element, node);
-    left = check_tree_int(name, t);
+    left = check_tree_int(name, line, t);
   }
   if (e->node.right) {
     t = container_of(e->node.right, struct tree_element, node);
-    right = check_tree_int(name, t);
+    right = check_tree_int(name, line, t);
   }
 
-  CHECK_NAMED_TRUE(left - right >= -1 && left - right <= 1, name, "Subtree (%d) unbalanced: left %d, right %d", e->value, left, right);
+  CHECK_NAMED_TRUE(left - right >= -1 && left - right <= 1, name, line,
+      "Subtree (%d) unbalanced: left %d, right %d", e->value, left, right);
 
   if (e->node.balance == 0) {
-    CHECK_NAMED_TRUE(left == right, name, "Subtree (%d) balance cache wrong (%d): left %d, right %d",
+    CHECK_NAMED_TRUE(left == right, name, line, "Subtree (%d) balance cache wrong (%d): left %d, right %d",
         e->value, e->node.balance, left, right);
   }
   else if (e->node.balance == -1) {
-    CHECK_NAMED_TRUE(left - 1== right, name, "Subtree (%d) balance cache wrong (%d): left %d, right %d",
+    CHECK_NAMED_TRUE(left - 1== right, name, line, "Subtree (%d) balance cache wrong (%d): left %d, right %d",
         e->value, e->node.balance, left, right);
   }
   else if (e->node.balance == 1) {
-    CHECK_NAMED_TRUE(left == right - 1, name, "Subtree (%d) balance cache wrong (%d): left %d, right %d",
+    CHECK_NAMED_TRUE(left == right - 1, name, line, "Subtree (%d) balance cache wrong (%d): left %d, right %d",
         e->value, e->node.balance, left, right);
   }
   else {
-    CHECK_NAMED_TRUE(false, name, "Subtree (%d) with bad balance cache (%d)", e->value, e->node.balance);
+    CHECK_NAMED_TRUE(false, name, line, "Subtree (%d) with bad balance cache (%d)", e->value, e->node.balance);
   }
 
   if (left > right) {
@@ -185,16 +188,16 @@ static int check_tree_int(const char *name, struct tree_element *e) {
   }
 }
 
-static void check_tree(const char *name) {
+static void check_tree(const char *name, int line) {
   uint32_t value;
   struct list_entity *ptr;
   struct tree_element *t;
 
   /* check tree head */
-  CHECK_NAMED_TRUE((head.root != NULL) == (head.count > 0), name, "No root pointer, but tree not empty");
-  CHECK_NAMED_TRUE(head.list_head.next != NULL, name, "bad next-iterator");
-  CHECK_NAMED_TRUE(head.list_head.prev != NULL, name, "bad prev-iterator");
-  CHECK_NAMED_TRUE((head.root == NULL) == list_is_empty(&head.list_head), name, "iterator list empty, but tree not empty");
+  CHECK_NAMED_TRUE((head.root != NULL) == (head.count > 0), name, line, "No root pointer, but tree not empty");
+  CHECK_NAMED_TRUE(head.list_head.next != NULL, name, line, "bad next-iterator");
+  CHECK_NAMED_TRUE(head.list_head.prev != NULL, name, line, "bad prev-iterator");
+  CHECK_NAMED_TRUE((head.root == NULL) == list_is_empty(&head.list_head), name, line, "iterator list empty, but tree not empty");
   if (head.count == 0 || head.root == NULL
       || head.list_head.next == NULL || head.list_head.prev == NULL || list_is_empty(&head.list_head)) {
     return;
@@ -205,23 +208,23 @@ static void check_tree(const char *name) {
   value = t->value;
   for (ptr = head.list_head.next; ptr != NULL && ptr != &head.list_head; ptr = ptr->next) {
     t = container_of(ptr, struct tree_element, node.list);
-    CHECK_NAMED_TRUE(t->value >= value, name, "next-iterator (%d < %d)", t->value, value);
+    CHECK_NAMED_TRUE(t->value >= value, name, line, "next-iterator (%d < %d)", t->value, value);
     value = t->value;
   }
-  CHECK_NAMED_TRUE(ptr == &head.list_head, name, "next-iterator contained NULL ptr");
+  CHECK_NAMED_TRUE(ptr == &head.list_head, name, line, "next-iterator contained NULL ptr");
 
   /* check next-iterator */
   t = container_of(head.list_head.prev, struct tree_element, node.list);
   value = t->value;
   for (ptr = head.list_head.prev; ptr != NULL && ptr != &head.list_head; ptr = ptr->prev) {
     t = container_of(ptr, struct tree_element, node.list);
-    CHECK_NAMED_TRUE(t->value <= value, name, "prev-iterator (%d > %d)", t->value, value);
+    CHECK_NAMED_TRUE(t->value <= value, name, line, "prev-iterator (%d > %d)", t->value, value);
     value = t->value;
   }
-  CHECK_NAMED_TRUE(ptr == &head.list_head, name, "prev-iterator contained NULL ptr");
+  CHECK_NAMED_TRUE(ptr == &head.list_head, name, line, "prev-iterator contained NULL ptr");
 
   /* check tree structure */
-  check_tree_int(name, container_of(head.root, struct tree_element, node));
+  check_tree_int(name, line, container_of(head.root, struct tree_element, node));
 }
 
 static void test_insert_nondup(bool do_random) {
@@ -230,7 +233,7 @@ static void test_insert_nondup(bool do_random) {
   add_elements(nodes, do_random);
 
   CHECK_TRUE(head.count == COUNT, "tree not completely filled");
-  check_tree(__func__);
+  check_tree(__func__, __LINE__);
   // print_tree();
 
   /* try to add duplicate */
@@ -239,7 +242,7 @@ static void test_insert_nondup(bool do_random) {
   CHECK_TRUE(avl_insert(&head, &additional_node1.node) != 0, "insert duplicate (in non-dup tree) was successful");
 
   CHECK_TRUE(head.count == COUNT, "tree not completely filled after insert");
-  check_tree(__func__);
+  check_tree(__func__, __LINE__);
 
   END_TEST();
 }
@@ -250,7 +253,7 @@ static void test_insert_dup(bool do_random) {
   add_elements(nodes, do_random);
 
   CHECK_TRUE(head.count == COUNT, "tree not completely filled");
-  check_tree(__func__);
+  check_tree(__func__, __LINE__);
   // print_tree();
 
   /* add duplicate */
@@ -260,7 +263,7 @@ static void test_insert_dup(bool do_random) {
 
   /* prepare array for check */
   CHECK_TRUE(head.count == COUNT+1, "tree not completely filled after insert");
-  check_tree(__func__);
+  check_tree(__func__, __LINE__);
   // print_tree();
 
   END_TEST();
@@ -304,7 +307,7 @@ static void test_delete_nondup(bool do_random) {
 
   avl_remove(&head, &nodes[2].node);
   CHECK_TRUE(head.count == COUNT-1, "tree has wrong count after delete");
-  check_tree(__func__);
+  check_tree(__func__, __LINE__);
 
   END_TEST();
 }
@@ -322,7 +325,7 @@ static void test_delete_dup(bool do_random) {
 
   avl_remove(&head, &nodes[3].node);
   CHECK_TRUE(head.count == COUNT, "tree has wrong count after delete of one duplicate");
-  check_tree(__func__);
+  check_tree(__func__, __LINE__);
 
   END_TEST();
 }
@@ -615,7 +618,7 @@ static void test_remove_all_macro(bool do_random) {
   CHECK_TRUE(i == COUNT, "remove_all only had %d of %d iterations", i, COUNT);
   CHECK_TRUE(avl_is_empty(&head), "remove_all tree not empty after loop with delete");
 
-  check_tree(__func__);
+  check_tree(__func__, __LINE__);
 
   END_TEST();
 }
@@ -774,7 +777,7 @@ static void random_insert(uint32_t *array, int count) {
     e->node.key = &e->value;
     avl_insert(&head, &e->node);
 
-    check_tree(__func__);
+    check_tree(__func__, __LINE__);
 
     j = 0;
     avl_for_each_element(&head, e, node) {
@@ -801,7 +804,7 @@ static void random_delete(uint32_t *array, int count) {
       avl_remove(&head, &e->node);
       free(e);
 
-      check_tree(__func__);
+      check_tree(__func__, __LINE__);
 
       j = 0;
       avl_for_each_element(&head, e, node) {

@@ -50,13 +50,13 @@ EXPORT int FINISH_TESTING(void);
 EXPORT void cunit_start_test(const char *);
 EXPORT void cunit_end_test(const char *);
 
-EXPORT void cunit_named_check(bool cond, const char *name, const char *format, ...)
-    __attribute__ ((format(printf, 3, 4)));
+EXPORT void cunit_named_check(bool cond, const char *name, int line, const char *format, ...)
+    __attribute__ ((format(printf, 4, 5)));
 
 #define START_TEST() cunit_start_test(__func__)
 #define END_TEST() cunit_end_test(__func__)
 
-#define CHECK_NAMED_TRUE(cond, name, format, args...) cunit_named_check(cond, name, format, ##args);
-#define CHECK_TRUE(cond, format, args...) cunit_named_check(cond, __func__, format, ##args);
+#define CHECK_NAMED_TRUE(cond, name, line, format, args...) cunit_named_check(cond, name, line, format, ##args);
+#define CHECK_TRUE(cond, format, args...) cunit_named_check(cond, __func__, __LINE__, format, ##args);
 
 #endif /* CUNIT_H_ */
