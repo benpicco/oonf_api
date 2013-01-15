@@ -50,6 +50,14 @@
 #include "core/olsr_packet_socket.h"
 #include "core/olsr_timer.h"
 
+/* suggested priorities for RFC5444 readers */
+
+enum {
+  RFC5444_VALIDATOR_PRIORITY = -256,
+  RFC5444_MAIN_PARSER_PRIORITY = 0,
+  RFC5444_PLUGIN_PARSER_PRIORITY = 256,
+};
+
 /* Configuration section for global rfc5444 settings */
 #define CFG_RFC5444_SECTION "rfc5444"
 

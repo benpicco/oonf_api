@@ -237,7 +237,8 @@ netaddr_extract_ipv4(struct netaddr *dst, const struct netaddr *src) {
  * @param dst pointer to netaddr object
  * @param binary source pointer
  * @param len length of source buffer
- * @param addr_type address type of source
+ * @param addr_type address type of source,
+ *   0 for autodetection based on length
  * @return 0 if successful read binary data, -1 otherwise
  */
 static INLINE int
