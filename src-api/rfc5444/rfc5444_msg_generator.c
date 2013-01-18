@@ -1047,7 +1047,11 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
         tlv_end = tlv_start;
 
         avl_for_element_to_last(&tlvtype->_tlv_tree, tlv_start, tlv, tlv_node) {
-          if (tlv != tlv_start && tlv->address->index <= addr_end->index && tlv->same_length) {
+          if (tlv != tlv_start && tlv->address->index <= addr_end->index) {
+            if (!tlv->same_length) {
+              /* sequence of TLVs got interrupted */
+              break;
+            }
             tlv_end = tlv;
             same_value &= tlv->same_value;
           }

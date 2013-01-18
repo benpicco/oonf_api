@@ -18,17 +18,10 @@ function(compile_rfc5444_test executable source)
     ENDIF(WIN32)
 endfunction(compile_rfc5444_test)
 
-set(TESTS test_rfc5444_reader_blockcb
-          test_rfc5444_reader_dropcontext
-          test_rfc5444_writer_fragmentation
-          test_rfc5444_writer_ifspecific
-          test_rfc5444_writer_mandatory
-          test_rfc5444_conversion)
+set(TESTS test_nhdp_1
+)
 
 foreach(TEST ${TESTS})
     compile_rfc5444_test(${TEST} ${TEST}.c)
     ADD_TEST(NAME ${TEST} COMMAND ${TEST})
 endforeach(TEST)
-
-add_subdirectory(interop2010)
-add_subdirectory(special)
