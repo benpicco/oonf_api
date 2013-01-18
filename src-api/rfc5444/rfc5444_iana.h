@@ -101,6 +101,10 @@ enum rfc5444_msgtlvs_iana {
   /* RFC 6622 (rfc5444-sec) */
   RFC5444_MSGTLV_ICV           = 5,
   RFC5444_MSGTLV_TIMESTAMP     = 6,
+
+  /* OLSRv2 draft-17 */
+  RFC5444_MSGTLV_MPR_WILLING   = 224,
+  RFC5444_MSGTLV_CONT_SEQ_NUM  = 225,
 };
 
 /*
@@ -121,6 +125,12 @@ enum rfc5444_addrtlv_iana {
   /* RFC 6622 (rfc5444-sec) */
   RFC5444_ADDRTLV_ICV           = 5,
   RFC5444_ADDRTLV_TIMESTAMP     = 6,
+
+  /* OLSRv2 draft-17 */
+  RFC5444_ADDRTLV_LINK_METRIC   = 224,
+  RFC5444_ADDRTLV_MPR           = 225,
+  RFC5444_ADDRTLV_NBR_ADDR_TYPE = 226,
+  RFC5444_ADDRTLV_GATEWAY       = 227,
 };
 
 /* values for LOCAL_IF address TLV */
@@ -140,6 +150,20 @@ enum rfc5444_linkstatus_values {
 enum rfc5444_otherneigh_values {
   RFC5444_OTHERNEIGHB_LOST      = 0,
   RFC5444_OTHERNEIGHB_SYMMETRIC = 1,
+};
+
+/* values for MPR address TLV */
+enum rfc5444_mpr_values {
+  RFC5444_MPR_FLOODING = 1,
+  RFC5444_MPR_ROUTING = 2,
+  RFC5444_MPR_FLOOD_ROUTE = 3,
+};
+
+/* values for NBR_ADDR_TYPE address TLV */
+enum rfc5444_nbr_addr_type_values {
+  RFC5444_NBR_ADDR_TYPE_ORIGINATOR = 1,
+  RFC5444_NBR_ADDR_TYPE_ROUTABLE = 2,
+  RFC5444_NBR_ADDR_TYPE_ROUTABLE_ORIG = 3,
 };
 
 #endif /* RFC5444_IANA_H_ */
