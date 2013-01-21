@@ -381,8 +381,8 @@ _apply_managed(struct olsr_packet_managed *managed) {
     result = -1;
   }
 
-  if (changed && managed->cb_settings_change) {
-    managed->cb_settings_change(managed);
+  if (managed->cb_settings_change) {
+    managed->cb_settings_change(managed, changed);
   }
   return result;
 }

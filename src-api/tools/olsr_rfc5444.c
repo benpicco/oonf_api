@@ -96,7 +96,7 @@ static void _cb_aggregation_event (void *);
 
 static void _cb_cfg_rfc5444_changed(void);
 static void _cb_cfg_interface_changed(void);
-static void _cb_interface_changed(struct olsr_packet_managed *managed);
+static void _cb_interface_changed(struct olsr_packet_managed *managed, bool);
 
 /* memory block for rfc5444 targets plus MTU sized packet buffer */
 static struct olsr_memcookie_info _protocol_memcookie = {
@@ -1088,9 +1088,10 @@ _cb_cfg_interface_changed(void) {
 /**
  * Interface settings of a rfc5444 interface changed
  * @param managed
+ * @param changed true if socket addresses changed
  */
 static void
-_cb_interface_changed(struct olsr_packet_managed *managed) {
+_cb_interface_changed(struct olsr_packet_managed *managed, bool changed) {
   struct olsr_rfc5444_interface *interf;
   struct olsr_rfc5444_interface_listener *l;
 
@@ -1098,8 +1099,11 @@ _cb_interface_changed(struct olsr_packet_managed *managed) {
 
   interf = container_of(managed, struct olsr_rfc5444_interface, _socket);
 
-  olsr_rfc5444_reconfigure_interface(interf, NULL);
+  if (changed) {
+    olsr_rfc5444_reconfigure_interface(interf, NULL);
+  }
+
   list_for_each_element(&interf->_listener, l, _node) {
-    l->cb_interface_changed(l);
+    l->cb_interface_changed(l, changed);
   }
 }

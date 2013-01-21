@@ -94,7 +94,7 @@ struct olsr_packet_managed {
   struct olsr_packet_socket socket_v6, multicast_v6;
 
   struct olsr_packet_config config;
-  void (*cb_settings_change)(struct olsr_packet_managed *);
+  void (*cb_settings_change)(struct olsr_packet_managed *, bool);
 
   struct olsr_packet_managed_config _managed_config;
   struct olsr_interface_listener _if_listener;

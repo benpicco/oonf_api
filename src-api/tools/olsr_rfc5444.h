@@ -122,7 +122,7 @@ struct olsr_rfc5444_interface {
 };
 
 struct olsr_rfc5444_interface_listener {
-  void (*cb_interface_changed)(struct olsr_rfc5444_interface_listener *);
+  void (*cb_interface_changed)(struct olsr_rfc5444_interface_listener *, bool);
 
   struct olsr_rfc5444_interface *interface;
   struct list_entity _node;
