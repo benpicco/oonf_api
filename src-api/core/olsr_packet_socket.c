@@ -421,14 +421,15 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
     return 0;
   }
 
-  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socketpair: %s,%s",
-      netaddr_to_string(&buf1, bind_ip), netaddr_to_string(&buf2, mc_ip));
-
   /* check if multicast IP is a real multicast (and not a broadcast) */
   real_multicast = netaddr_is_in_subnet(
       netaddr_get_address_family(mc_ip) == AF_INET
         ? &NETADDR_IPV4_MULTICAST : &NETADDR_IPV6_MULTICAST,
       mc_ip);
+
+  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socketpair: %s,%s%s",
+      netaddr_to_string(&buf1, bind_ip), netaddr_to_string(&buf2, mc_ip),
+      real_multicast ? " (real mc)" : "");
 
   sockstate = _apply_managed_socket(
       managed, sock, bind_ip, managed->_managed_config.port, data);
@@ -438,7 +439,7 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
 
     if (real_multicast && data != NULL && data->up) {
       os_net_join_mcast_send(sock->scheduler_entry.fd,
-          bind_ip, data, managed->_managed_config.loop_multicast, LOG_SOCKET_PACKET);
+          mc_ip, data, managed->_managed_config.loop_multicast, LOG_SOCKET_PACKET);
     }
   }
   else if (sockstate < 0) {
