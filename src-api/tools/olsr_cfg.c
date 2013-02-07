@@ -53,10 +53,6 @@
 
 #include "tools/olsr_cfg.h"
 
-/* static prototypes */
-static int _cb_validate_global(struct cfg_schema_section *, const char *section_name,
-    struct cfg_named_section *, struct autobuf *);
-
 /* global config */
 struct olsr_config_global config_global;
 
@@ -80,7 +76,6 @@ OLSR_SUBSYSTEM_STATE(_cfg_state);
 /* define global configuration template */
 static struct cfg_schema_section global_section = {
   .type = CFG_SECTION_GLOBAL,
-  .cb_validate = _cb_validate_global,
 };
 
 static struct cfg_schema_entry global_entries[] = {
@@ -470,31 +465,4 @@ olsr_cfg_get_argc(void) {
 const char **
 olsr_cfg_get_argv(void) {
   return (const char **) _argv;
-}
-
-/**
- * Validates if the settings of the global section are
- * consistent.
- * @param schema pointer to section schema
- * @param section_name name of section
- * @param section pointer to named section of database
- * @param log pointer to logging output buffer
- * @return -1 if section is not valid, 0 otherwise
- */
-static int
-_cb_validate_global(struct cfg_schema_section *schema __attribute__((unused)),
-    const char *section_name __attribute__((unused)),
-    struct cfg_named_section *section, struct autobuf *log) {
-  struct olsr_config_global config;
-
-  memset(&config, 0, sizeof(config));
-
-  if (cfg_schema_tobin(&config,
-        section, global_entries, ARRAYSIZE(global_entries))) {
-    cfg_append_printable_line(log, "Could not generate binary template of global section");
-    return -1;
-  }
-
-  free(config.plugin.value);
-  return 0;
 }

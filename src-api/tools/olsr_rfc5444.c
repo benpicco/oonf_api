@@ -561,6 +561,9 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
     config = &interf->_socket_config;
   }
 
+  /* always mesh socket */
+  interf->_socket_config.mesh = true;
+
   /* get port */
   port = interf->protocol->port;
 

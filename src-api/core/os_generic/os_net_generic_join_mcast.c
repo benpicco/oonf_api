@@ -79,12 +79,8 @@ os_net_join_mcast_recv(int sock, struct netaddr *multicast,
         netaddr_to_string(&buf2, multicast),
         netaddr_to_string(&buf1, src));
 
-    if (netaddr_to_binary(&v4_mreq.imr_multiaddr, multicast, 4)) {
-      OLSR_WARN(log_src, "1");
-    }
-    if (netaddr_to_binary(&v4_mreq.imr_interface, src, 4)) {
-      OLSR_WARN(log_src, "2");
-    }
+    netaddr_to_binary(&v4_mreq.imr_multiaddr, multicast, 4);
+    netaddr_to_binary(&v4_mreq.imr_interface, src, 4);
 
     if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
         &v4_mreq, sizeof(v4_mreq)) < 0) {

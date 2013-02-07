@@ -81,6 +81,7 @@ os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
   }
 
 #if defined(SO_BINDTODEVICE)
+  /* this is no multicast */
   if (interf != NULL && setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE,
       interf->name, strlen(interf->name) + 1) < 0) {
     OLSR_WARN(log_src, "Cannot bind socket to interface %s: %s (%d)\n",

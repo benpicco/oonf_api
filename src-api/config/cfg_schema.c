@@ -274,7 +274,7 @@ cfg_schema_validate(struct cfg_db *db,
         }
 
         if (schema_section->cb_validate) {
-          if (schema_section->cb_validate(schema_section, section_name, named, out)) {
+          if (schema_section->cb_validate(section_name, named, out)) {
             error = true;
           }
         }

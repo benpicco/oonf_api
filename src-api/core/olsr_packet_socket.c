@@ -181,6 +181,9 @@ olsr_packet_send(struct olsr_packet_socket *pktsocket, union netaddr_socket *rem
     result = os_sendto(pktsocket->scheduler_entry.fd, data, length, remote);
     if (result > 0) {
       /* successful */
+      OLSR_DEBUG(LOG_SOCKET_PACKET, "Sent %d bytes to %s %s",
+          result, netaddr_socket_to_string(&buf, remote),
+          pktsocket->interface != NULL ? pktsocket->interface->name : "");
       return 0;
     }
 
@@ -218,6 +221,7 @@ olsr_packet_add_managed(struct olsr_packet_managed *managed) {
 
   managed->_if_listener.process = _cb_interface_listener;
   managed->_if_listener.name = managed->_managed_config.interface;
+  managed->_if_listener.mesh = managed->_managed_config.mesh;
 }
 
 /**
@@ -269,7 +273,9 @@ olsr_packet_apply_managed(struct olsr_packet_managed *managed,
   }
 
 
-  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socket (if %s)", config->interface);
+  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply changes for managed socket (if %s) with port %d/%d",
+      config->interface == NULL || config->interface[0] == 0 ? "any" : config->interface,
+      config->port, config->multicast_port);
   return _apply_managed(managed);
 }
 
@@ -405,9 +411,6 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
   int sockstate = 0, result = 0;
   uint16_t mc_port;
   bool real_multicast;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
-  struct netaddr_str buf1, buf2;
-#endif
 
   /* copy unicast port if necessary */
   mc_port = managed->_managed_config.multicast_port;
@@ -426,10 +429,6 @@ _apply_managed_socketpair(struct olsr_packet_managed *managed,
       netaddr_get_address_family(mc_ip) == AF_INET
         ? &NETADDR_IPV4_MULTICAST : &NETADDR_IPV6_MULTICAST,
       mc_ip);
-
-  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socketpair: %s,%s%s",
-      netaddr_to_string(&buf1, bind_ip), netaddr_to_string(&buf2, mc_ip),
-      real_multicast ? " (real mc)" : "");
 
   sockstate = _apply_managed_socket(
       managed, sock, bind_ip, managed->_managed_config.port, data);
@@ -504,9 +503,6 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
   struct netaddr_str buf;
 #endif
 
-  OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply managed socket: %s",
-      netaddr_to_string(&buf, bindto));
-
   /* Handle prefix based address selection */
   if (netaddr_get_prefix_length(bindto) != netaddr_get_maxprefix(bindto)) {
     if (data == NULL) {
@@ -543,14 +539,12 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
     if (data == packet->interface
         && memcmp(&sock, &packet->local_socket, sizeof(sock)) == 0) {
       /* nothing changed */
-      OLSR_DEBUG(LOG_SOCKET_PACKET, "Nothing changed for socket");
       return 1;
     }
   }
   else {
     if (data != NULL && !data->up) {
       /* nothing changed */
-      OLSR_DEBUG(LOG_SOCKET_PACKET, "Nothing changed for socket");
       return 1;
     }
   }
@@ -559,7 +553,8 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
   olsr_packet_remove(packet, true);
 
   if (data != NULL && !data->up) {
-    OLSR_DEBUG(LOG_SOCKET_PACKET, "Interface of socket went down");
+    OLSR_DEBUG(LOG_SOCKET_PACKET, "Interface %s of socket is down",
+        data->name);
     return 0;
   }
 
@@ -574,8 +569,11 @@ _apply_managed_socket(struct olsr_packet_managed *managed,
     return -1;
   }
 
-  OLSR_DEBUG(LOG_SOCKET_PACKET, "Opened new socket and bound it to %s",
-      netaddr_to_string(&buf, bindto));
+  packet->interface = data;
+
+  OLSR_DEBUG(LOG_SOCKET_PACKET, "Opened new socket and bound it to %s (if %s)",
+      netaddr_to_string(&buf, bindto),
+      data != NULL ? data->name : "any");
   return 0;
 }
 
@@ -621,8 +619,14 @@ _cb_packet_event(int fd, void *data, bool event_read, bool event_write,
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str netbuf;
 #endif
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+  const char *interf = "";
 
-  OLSR_DEBUG(LOG_SOCKET_PACKET, "UDP event (%s).", multicast ? "multicast" : "unicast");
+  if (pktsocket->interface) {
+    interf = pktsocket->interface->name;
+  }
+#endif
+
   if (event_read) {
     uint8_t *buf;
 
@@ -639,6 +643,9 @@ _cb_packet_event(int fd, void *data, bool event_read, bool event_write,
       buf[result] = 0;
 
       /* received valid packet */
+      OLSR_DEBUG(LOG_SOCKET_PACKET, "Received %d bytes from %s %s (%s)",
+          result, netaddr_socket_to_string(&netbuf, &sock),
+          interf, multicast ? "multicast" : "unicast");
       pktsocket->config.receive_data(pktsocket, &sock, result);
     }
     else if (result < 0 && (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)) {
@@ -664,6 +671,8 @@ _cb_packet_event(int fd, void *data, bool event_read, bool event_write,
     result = os_sendto(fd, data, length, skt);
     if (result < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) {
       /* try again later */
+      OLSR_DEBUG(LOG_SOCKET_PACKET, "Sending to %s %s could block, try again later",
+          netaddr_socket_to_string(&netbuf, skt), interf);
       return;
     }
 
@@ -672,7 +681,10 @@ _cb_packet_event(int fd, void *data, bool event_read, bool event_write,
       OLSR_WARN(LOG_SOCKET_PACKET, "Cannot send UDP packet to %s: %s (%d)",
           netaddr_socket_to_string(&netbuf, skt), strerror(errno), errno);
     }
-
+    else {
+      OLSR_DEBUG(LOG_SOCKET_PACKET, "Sent %d bytes to %s %s",
+          result, netaddr_socket_to_string(&netbuf, skt), interf);
+    }
     /* remove data from outgoing buffer (both for success and for final error */
     abuf_pull(&pktsocket->out, sizeof(*skt) + 2 + length);
   }

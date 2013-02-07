@@ -208,7 +208,7 @@ struct cfg_schema_section {
   const char *help;
 
   /* callback for checking configuration of section */
-  int (*cb_validate)(struct cfg_schema_section *, const char *section_name,
+  int (*cb_validate)(const char *section_name,
       struct cfg_named_section *, struct autobuf *);
 
   /* node for global delta handler tree, initialized by delta_add() */

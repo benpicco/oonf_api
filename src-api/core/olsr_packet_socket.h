@@ -87,6 +87,7 @@ struct olsr_packet_managed_config {
   struct netaddr bindto_v6, multicast_v6;
   int port, multicast_port;
   bool loop_multicast;
+  bool mesh;
 };
 
 struct olsr_packet_managed {
