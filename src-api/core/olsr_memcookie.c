@@ -144,6 +144,7 @@ olsr_memcookie_malloc(struct olsr_memcookie_info *ci)
      */
     ptr = calloc(1, ci->size);
     if (ptr == NULL) {
+      OLSR_WARN(LOG_MEMCOOKIE, "Out of memory for: %s", ci->name);
       return NULL;
     }
     ci->_allocated++;
