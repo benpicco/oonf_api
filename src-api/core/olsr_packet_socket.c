@@ -256,6 +256,7 @@ olsr_packet_apply_managed(struct olsr_packet_managed *managed,
 
   /* copy config */
   memcpy(&managed->_managed_config, config, sizeof(*config));
+  managed->_if_listener.mesh = config->mesh;
 
   /* copy acl */
   memset(&managed->_managed_config.acl, 0, sizeof(managed->_managed_config.acl));
@@ -271,7 +272,6 @@ olsr_packet_apply_managed(struct olsr_packet_managed *managed,
       olsr_interface_add_listener(&managed->_if_listener);
     }
   }
-
 
   OLSR_DEBUG(LOG_SOCKET_PACKET, "Apply changes for managed socket (if %s) with port %d/%d",
       config->interface == NULL || config->interface[0] == 0 ? "any" : config->interface,
