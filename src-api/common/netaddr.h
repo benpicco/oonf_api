@@ -118,13 +118,14 @@ struct netaddr_str {
 };
 
 EXPORT extern const struct netaddr NETADDR_IPV4_ANY;
-EXPORT extern const struct netaddr NETADDR_IPV6_ANY;
 EXPORT extern const struct netaddr NETADDR_IPV4_MULTICAST;
-EXPORT extern const struct netaddr NETADDR_IPV6_MULTICAST;
 EXPORT extern const struct netaddr NETADDR_IPV4_LINKLOCAL;
+
+EXPORT extern const struct netaddr NETADDR_IPV6_ANY;
+EXPORT extern const struct netaddr NETADDR_IPV6_MULTICAST;
 EXPORT extern const struct netaddr NETADDR_IPV6_LINKLOCAL;
 EXPORT extern const struct netaddr NETADDR_IPV6_ULA;
-EXPORT extern const struct netaddr NETADDR_IPV6_IPV4EMBEDDED;
+EXPORT extern const struct netaddr NETADDR_IPV6_IPV4COMPATIBLE;
 
 EXPORT int netaddr_from_binary_prefix(struct netaddr *dst,
     const void *binary, size_t len, uint8_t addr_type, uint8_t prefix_len);
@@ -207,29 +208,29 @@ netaddr_create_host(struct netaddr *host, const struct netaddr *netmask,
 }
 
 /**
- * Embed an IPv4 address into an IPv6 address
+ * Embed an IPv4 address into an IPv6 IPv4-compatible address
  * @param dst target IPv6 address
  * @param src source IPv4 address
  */
 static INLINE void
-netaddr_embed_ipv4(struct netaddr *dst, const struct netaddr *src) {
-  memcpy(&dst->_addr[0], &NETADDR_IPV6_IPV4EMBEDDED._addr[0], 12);
+netaddr_embed_ipv4_compatible(struct netaddr *dst, const struct netaddr *src) {
+  memcpy(&dst->_addr[0], &NETADDR_IPV6_IPV4COMPATIBLE._addr[0], 12);
   memcpy(&dst->_addr[12], &src->_addr[0], 4);
   dst->_type = AF_INET6;
-  dst->_prefix_len = 128;
+  dst->_prefix_len = src->_prefix_len + 96;
 }
 
 /**
- *
- * @param dst
- * @param src
+ * Extract an IPv4 address from an IPv6 IPv4-compatible address
+ * @param dst target IPv4 address
+ * @param src source IPv6 address
  */
 static INLINE void
-netaddr_extract_ipv4(struct netaddr *dst, const struct netaddr *src) {
+netaddr_extract_ipv4_compatible(struct netaddr *dst, const struct netaddr *src) {
   memcpy(&dst->_addr[0], &src->_addr[12], 4);
   memset(&dst->_addr[4], 0, 12);
   dst->_type = AF_INET;
-  dst->_prefix_len = 32;
+  dst->_prefix_len = src->_prefix_len - 96;
 }
 
 /**
