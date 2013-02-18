@@ -107,6 +107,18 @@ enum rfc5444_msgtlvs_iana {
   RFC5444_MSGTLV_CONT_SEQ_NUM  = 225,
 };
 
+/* values for MPR_WILLING message TLV */
+#define RFC5444_WILLINGNESS_DEFAULT_STRING  "7"
+
+enum rfc5444_willingness_values {
+  RFC5444_WILLINGNESS_UNDEFINED = -1,
+  RFC5444_WILLINGNESS_MIN = 0,
+  RFC5444_WILLINGNESS_NEVER = 0,
+  RFC5444_WILLINGNESS_DEFAULT = 7,
+  RFC5444_WILLINGNESS_ALWAYS = 15,
+  RFC5444_WILLINGNESS_MAX = 15,
+};
+
 /*
  * this is a list of all globally defined IANA
  * address TLVs and their allocated values
@@ -164,14 +176,6 @@ enum rfc5444_nbr_addr_type_values {
   RFC5444_NBR_ADDR_TYPE_ORIGINATOR = 1,
   RFC5444_NBR_ADDR_TYPE_ROUTABLE = 2,
   RFC5444_NBR_ADDR_TYPE_ROUTABLE_ORIG = 3,
-};
-
-enum rfc5444_willingness_values {
-  RFC5444_WILLINGNESS_MIN = 0,
-  RFC5444_WILLINGNESS_NEVER = 0,
-  RFC5444_WILLINGNESS_DEFAULT = 7,
-  RFC5444_WILLINGNESS_ALWAYS = 15,
-  RFC5444_WILLINGNESS_MAX = 15,
 };
 
 #endif /* RFC5444_IANA_H_ */
