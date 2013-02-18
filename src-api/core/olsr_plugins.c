@@ -105,6 +105,7 @@ static struct abuf_template_data _dlopen_data[] = {
 
 static void _init_plugin_tree(void);
 static int _unload_plugin(struct olsr_plugin *plugin, bool cleanup);
+static int _disable_plugin(struct olsr_plugin *plugin, bool cleanup);
 static void *_open_plugin(const char *filename);
 
 /* remember if initialized or not */
@@ -313,39 +314,18 @@ olsr_plugins_enable(struct olsr_plugin *plugin) {
 /**
  * Disable (but not unload) an active plugin
  * @param plugin pointer to plugin db object
- * @return 0 if plugin was disabled, 1 otherwise
+ * @return 0 if plugin was disabled, -1 otherwise
  */
 int
 olsr_plugins_disable(struct olsr_plugin *plugin) {
-  if (!plugin->_enabled) {
-    OLSR_DEBUG(LOG_PLUGINLOADER, "Plugin %s is not active.\n", plugin->name);
-    return 0;
-  }
-
-  if (!plugin->deactivate) {
-    OLSR_DEBUG(LOG_PLUGINLOADER, "Plugin %s does not support disabling\n", plugin->name);
-    return 1;
-  }
-
-  OLSR_INFO(LOG_PLUGINLOADER, "Deactivating plugin %s\n", plugin->name);
-
-  if (plugin->disable != NULL) {
-    if (plugin->disable()) {
-      OLSR_DEBUG(LOG_PLUGINLOADER, "Plugin %s cannot be deactivated, error in pre cleanup\n", plugin->name);
-      return 1;
-    }
-    OLSR_DEBUG(LOG_PLUGINLOADER, "Pre cleanup of plugin %s successful\n", plugin->name);
-  }
-
-  plugin->_enabled = false;
-  return 0;
+  return _disable_plugin(plugin, false);
 }
 
 /**
  * Unloads an active plugin. Static plugins cannot be removed until
  * final cleanup.
  * @param plugin pointer to plugin db object
- * @return 0 if plugin was removed, 1 otherwise
+ * @return 0 if plugin was removed, -1 otherwise
  */
 int
 olsr_plugins_unload(struct olsr_plugin *plugin) {
@@ -365,6 +345,38 @@ _init_plugin_tree(void) {
 }
 
 /**
+ * Disable (but not unload) an active plugin
+ * @param plugin pointer to plugin db object
+ * @return 0 if plugin was disabled, -1 otherwise
+ */
+static int
+_disable_plugin(struct olsr_plugin *plugin, bool cleanup) {
+  if (!plugin->_enabled) {
+    OLSR_DEBUG(LOG_PLUGINLOADER, "Plugin %s is not active.\n", plugin->name);
+    return 0;
+  }
+
+  if (!plugin->can_disable && !cleanup) {
+    OLSR_WARN(LOG_PLUGINLOADER, "Plugin %s does not support disabling",
+        plugin->name);
+    return -1;
+  }
+
+  OLSR_INFO(LOG_PLUGINLOADER, "Deactivating plugin %s\n", plugin->name);
+
+  if (plugin->disable != NULL) {
+    if (plugin->disable()) {
+      OLSR_WARN(LOG_PLUGINLOADER, "Plugin %s cannot be deactivated, error in pre cleanup\n", plugin->name);
+      return -1;
+    }
+    OLSR_DEBUG(LOG_PLUGINLOADER, "Pre cleanup of plugin %s successful\n", plugin->name);
+  }
+
+  plugin->_enabled = false;
+  return 0;
+}
+
+/**
  * Internal helper function to unload a plugin using the old API
  * @param plugin pointer to plugin db object
  * @param cleanup true if this is the final cleanup
@@ -373,9 +385,17 @@ _init_plugin_tree(void) {
  */
 static int
 _unload_plugin(struct olsr_plugin *plugin, bool cleanup) {
+  if (!plugin->can_unload && !cleanup) {
+    OLSR_WARN(LOG_PLUGINLOADER, "Plugin %s does not support unloading",
+        plugin->name);
+    return -1;
+  }
+
   if (plugin->_enabled) {
     /* deactivate first if necessary */
-    olsr_plugins_disable(plugin);
+    if (_disable_plugin(plugin, cleanup)) {
+      return -1;
+    }
   }
 
   if (plugin->_dlhandle == NULL && !cleanup) {
@@ -400,7 +420,7 @@ _unload_plugin(struct olsr_plugin *plugin, bool cleanup) {
     dlclose(plugin->_dlhandle);
   }
 
-  return false;
+  return 0;
 }
 
 /**

@@ -74,8 +74,11 @@ struct olsr_plugin {
   const char *descr;
   const char *author;
 
+  /* true if the plugin can be disables/enabled during runtime */
+  bool can_disable;
+
   /* true if the plugin can be (de)activated during runtime */
-  bool deactivate;
+  bool can_unload;
 
   /* plugin callbacks for (de)initialization */
   int (*load) (void);

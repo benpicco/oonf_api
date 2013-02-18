@@ -83,7 +83,8 @@ OLSR_PLUGIN7 {
   .enable = _cb_plugin_enable,
   .disable = _cb_plugin_disable,
 
-  .deactivate = true,
+  .can_disable = true,
+  .can_unload = true,
 };
 
 /* configuration */
