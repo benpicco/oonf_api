@@ -82,12 +82,18 @@ struct olsr_memcookie_info {
   uint32_t _allocated, _recycled;
 };
 
+struct olsr_memcookie_extension {
+  size_t size;
+
+  size_t _offset;
+};
+
 #define OLSR_FOR_ALL_COOKIES(ci, iterator) list_for_each_element_safe(&olsr_cookies, ci, _node, iterator)
 
 /* percentage of blocks kept in the free list compared to allocated blocks */
 #define COOKIE_FREE_LIST_THRESHOLD 10   /* Blocks / Percent  */
 
-extern struct list_entity EXPORT(olsr_cookies);
+EXPORT extern struct list_entity olsr_cookies;
 
 /* Externals. */
 EXPORT void olsr_memcookie_init(void);
@@ -99,6 +105,9 @@ EXPORT void olsr_memcookie_remove(struct olsr_memcookie_info *);
 EXPORT void *olsr_memcookie_malloc(struct olsr_memcookie_info *)
     __attribute__((warn_unused_result));
 EXPORT void olsr_memcookie_free(struct olsr_memcookie_info *, void *);
+
+EXPORT int olsr_memcookie_extend(
+    struct olsr_memcookie_info *, struct olsr_memcookie_extension *);
 
 /**
  * @param ci pointer to memcookie info
@@ -134,6 +143,16 @@ olsr_memcookie_get_allocations(struct olsr_memcookie_info *ci) {
 static INLINE uint32_t
 olsr_memcookie_get_recycled(struct olsr_memcookie_info *ci) {
   return ci->_recycled;
+}
+
+/**
+ * @param ptr pointer to base block
+ * @param ext extension data structure
+ * @return pointer to extensions memory block
+ */
+static INLINE void *
+olsr_memcookie_get_extension(void *ptr, struct olsr_memcookie_extension *ext) {
+  return ((char *)ptr) + ext->_offset;
 }
 
 #endif /* _OLSR_MEMCOOKIE_H */

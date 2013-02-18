@@ -47,6 +47,11 @@
 #include "core/olsr_logging.h"
 #include "core/olsr_subsystem.h"
 
+/* prototypes */
+static void _free_freelist(struct olsr_memcookie_info *);
+static size_t _roundup(size_t);
+
+/* list of memory cookies */
 struct list_entity olsr_cookies;
 
 /* remember if initialized or not */
@@ -90,7 +95,10 @@ void
 olsr_memcookie_add(struct olsr_memcookie_info *ci)
 {
   assert (ci->name);
-  assert (ci->size >= sizeof(struct list_entity));
+
+  /* round up size to make block extendable */
+  ci->size = (ci->size + sizeof(struct list_entity) - 1)
+      & (sizeof(struct list_entity) - 1);
 
   /* Init the free list */
   list_init_head(&ci->_free_list);
@@ -105,18 +113,11 @@ olsr_memcookie_add(struct olsr_memcookie_info *ci)
 void
 olsr_memcookie_remove(struct olsr_memcookie_info *ci)
 {
-  struct list_entity *item;
-
   /* remove memcookie from tree */
   list_remove(&ci->_node);
 
   /* remove all free memory blocks */
-  while (!list_is_empty(&ci->_free_list)) {
-    item = ci->_free_list.next;
-
-    list_remove(item);
-    free(item);
-  }
+  _free_freelist(ci);
 }
 
 /**
@@ -213,4 +214,52 @@ olsr_memcookie_free(struct olsr_memcookie_info *ci, void *ptr)
 
   OLSR_DEBUG(LOG_MEMCOOKIE, "MEMORY: free %s, %"PRINTF_SIZE_T_SPECIFIER" bytes%s\n",
              ci->name, ci->size, reuse ? ", reuse" : "");
+}
+
+int
+olsr_memcookie_extend(struct olsr_memcookie_info *ci,
+    struct olsr_memcookie_extension *ext) {
+  if (ci->_allocated != 0) {
+    OLSR_WARN(LOG_MEMCOOKIE, "Memcookie %s is already in use and cannot be extended",
+        ci->name);
+    return -1;
+  }
+
+  /* make sure freelist is empty */
+  _free_freelist(ci);
+
+  /* old size is new offset */
+  ext->_offset = ci->size;
+
+  /* calculate new size */
+  ci->size = _roundup(ci->size + ext->size);
+  return 0;
+}
+
+/**
+ * @param size memory size in byte
+ * @return rounded up size to sizeof(struct list_entity)
+ */
+static size_t
+_roundup(size_t size) {
+  size = size + sizeof(struct list_entity) - 1;
+  size = size & (~(sizeof(struct list_entity) - 1));
+
+  return size;
+}
+
+/**
+ * Free all objects in the free_list of a memory cookie
+ * @param ci pointer to memory cookie
+ */
+static void
+_free_freelist(struct olsr_memcookie_info *ci) {
+  while (!list_is_empty(&ci->_free_list)) {
+    struct list_entity *item;
+    item = ci->_free_list.next;
+
+    list_remove(item);
+    free(item);
+  }
+  ci->_free_list_size = 0;
 }
