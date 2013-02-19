@@ -126,7 +126,7 @@ olsr_clock_getNow(void) {
  * @return buffer to a formatted system time string.
  */
 const char *
-olsr_clock_toClockString(struct timeval_str *buf, uint64_t clk)
+olsr_clock_toClockString(struct fraction_str *buf, uint64_t clk)
 {
   uint64_t msec = clk % MSEC_PER_SEC;
   uint64_t sec = clk / MSEC_PER_SEC;
@@ -138,86 +138,6 @@ olsr_clock_toClockString(struct timeval_str *buf, uint64_t clk)
   return buf->buf;
 }
 
-/**
- * Format an internal time value into a string.
- * Displays seconds.millisecond.
- *
- * @param buf string buffer for creating output
- * @param clk OLSR timestamp
- * @return buffer to a formatted system time string.
- */
-const char *
-olsr_clock_toIntervalString(struct timeval_str *buf, int64_t clk)
-{
-  int64_t abs = clk;
-
-  if (abs < 0) {
-    abs = -clk;
-  }
-  snprintf(buf->buf, sizeof(*buf),
-      "%"PRId64".%03"PRId64, clk / MSEC_PER_SEC, abs % MSEC_PER_SEC);
-  return buf->buf;
-}
-
-/**
- * Converts a string into an unsigned binary time
- * @param result pointer to binary time variable
- * @param string string to convert into time
- * @return -1 if an error happened, 0 otherwise
- */
-int
-olsr_clock_fromIntervalString(uint64_t *result, const char *string) {
-  bool period;
-  uint64_t t;
-  int post_period;
-  char c;
-
-  if (*string == 0) {
-    return -1;
-  }
-
-  /* initialize variables */
-  post_period = 0;
-  period = false;
-  t = 0;
-
-  /* parse string */
-  while ((c = *string) != 0 && post_period < 3) {
-    if (c == '.') {
-      if (period) {
-        /* error, no two '.' allowed */
-        return -1;
-      }
-      period = true;
-    }
-    else {
-      if (c < '0' || c > '9') {
-        /* error, no-digit character found */
-        return -1;
-      }
-
-      t = t * 10ull + (c - '0');
-
-      if (period) {
-        post_period++;
-      }
-    }
-    string++;
-  }
-
-  if (*string) {
-    /* string too long */
-    return -1;
-  }
-
-  /* shift number to factor 1000 */
-  while (post_period++ < 3) {
-    t *= 10;
-  }
-
-  *result = t;
-  return 0;
-}
 
 /**
  * Checks a value of a CLOCK field for validity.
@@ -282,7 +202,7 @@ olsr_clock_tobin(
 void
 olsr_clock_help(
     const struct cfg_schema_entry *entry, struct autobuf *out) {
-  struct timeval_str buf;
+  struct fraction_str buf;
 
   cfg_append_printable_line(out,
       "    Parameter must be an timestamp with a maximum of 3 fractional digits");
