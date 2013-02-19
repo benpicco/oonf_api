@@ -45,6 +45,7 @@
 #include "common/autobuf.h"
 #include "common/netaddr.h"
 #include "common/string.h"
+#include "config/cfg.h"
 #include "config/cfg_db.h"
 #include "config/cfg_schema.h"
 
@@ -65,6 +66,7 @@ struct bin_data {
   char string_array[10];
   int choice;
   int integer;
+  int fractional;
   struct netaddr address;
   bool boolean;
 };
@@ -85,6 +87,7 @@ static struct cfg_schema_entry entries[] = {
   CFG_MAP_STRING_ARRAY(bin_data, string_array, "string_array", "test", "help string array", 5),
   CFG_MAP_CHOICE(bin_data, choice, "choice", "choice1", "help choice", choices),
   CFG_MAP_INT(bin_data, integer, "integer", "3", "help int"),
+  CFG_MAP_FRACTIONAL(bin_data, fractional, "fractional", "2.718", "help frac", 4),
   CFG_MAP_NETADDR(bin_data, address, "address", "10.0.0.1", "help ip", false, false),
   CFG_MAP_BOOL(bin_data, boolean, "boolean", "0", "help bool")
 };
@@ -113,6 +116,7 @@ clear_elements(void) {
   cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "string_array", "pm");
   cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "choice", "choice2");
   cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "integer", "42");
+  cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "fractional", "-3.1415");
   cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "address", "10::1");
   cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "boolean", "true");
 
@@ -124,6 +128,7 @@ test_binary_mapping(void) {
   int result;
   struct bin_data data;
   struct cfg_named_section *named;
+  struct fractional_str fbuf;
 
   START_TEST();
 
@@ -146,6 +151,8 @@ test_binary_mapping(void) {
           "String-Array is not 'pm' but '%s'", data.string_array);
       CHECK_TRUE(data.choice == 1, "Choice is not '1' but '%d'", data.choice);
       CHECK_TRUE(data.integer == 42, "Integer is not '42' but '%d'", data.integer);
+      CHECK_TRUE(data.fractional == -31415, "Integer is not '-3.1415' but '%s'",
+          cfg_fraction_to_string(&fbuf, data.fractional, 4));
       CHECK_TRUE(memcmp(netaddr_get_binptr(&data.address), IP_10_coloncolon_1, 16) == 0,
           "Netaddr Address part is not consistent");
       CHECK_TRUE(netaddr_get_prefix_length(&data.address) == 128,

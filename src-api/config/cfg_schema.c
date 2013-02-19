@@ -535,6 +535,37 @@ cfg_schema_validate_int(const struct cfg_schema_entry *entry,
 }
 
 /**
+ * Schema entry validator for fractional integers.
+ * See CFG_VALIDATE_FRACTIONAL() and CFG_VALIDATE_FRACTIONAL_MINMAX() macro in cfg_schema.h
+ * @param entry pointer to schema entry
+ * @param section_name name of section type and name
+ * @param value value of schema entry
+ * @param out pointer to autobuffer for validator output
+ * @return 0 if validation found no problems, -1 otherwise
+ */
+int
+cfg_schema_validate_fractional(const struct cfg_schema_entry *entry,
+    const char *section_name, const char *value, struct autobuf *out) {
+  int64_t i;
+
+  if (cfg_fractional_from_string(&i, value, entry->validate_param[1].i32[0])) {
+    cfg_append_printable_line(out, "Value '%s' for entry '%s'"
+        " in section %s is not a fractional integer"
+        " with a maximum of %d fractional digits",
+        value, entry->key.entry, section_name, entry->validate_param[1].i32[0]);
+    return 1;
+  }
+  if (i < entry->validate_param[0].i32[0] || i > entry->validate_param[0].i32[1]) {
+    cfg_append_printable_line(out, "Value '%s' for entry '%s' in section %s is "
+        "not between %d and %d",
+        value, entry->key.entry, section_name,
+        entry->validate_param[0].i32[0], entry->validate_param[0].i32[1]);
+    return 1;
+  }
+  return 0;
+}
+
+/**
  * Schema entry validator for network addresses and prefixes.
  * See CFG_VALIDATE_NETADDR_*() macros in cfg_schema.h
  * @param entry pointer to schema entry
@@ -674,6 +705,43 @@ cfg_schema_help_int(
 }
 
 /**
+ * Help generator for integer validator.
+ * See CFG_VALIDATE_INT() and CFG_VALIDATE_INT_MINMAX() macro in cfg_schema.h
+ * @param entry pointer to schema entry
+ * @param out pointer to autobuffer for validator output
+ */
+void
+cfg_schema_help_fractional(
+    const struct cfg_schema_entry *entry, struct autobuf *out) {
+  struct fractional_str buf1, buf2;
+
+  if (entry->validate_param[0].i32[0] > INT32_MIN) {
+    if (entry->validate_param[0].i32[1] < INT32_MAX) {
+      cfg_append_printable_line(out, "    Parameter must be an number between %s and %s",
+          cfg_fraction_to_string(&buf1,
+              entry->validate_param[0].i32[0], entry->validate_param[1].i32[0]),
+          cfg_fraction_to_string(&buf2,
+              entry->validate_param[0].i32[1], entry->validate_param[1].i32[0]));
+    }
+    else {
+      cfg_append_printable_line(out, "    Parameter must be an number larger or equal than %s",
+          cfg_fraction_to_string(&buf1,
+              entry->validate_param[0].i32[0], entry->validate_param[1].i32[0]));
+    }
+  }
+  else {
+    if (entry->validate_param[0].i32[1] < INT32_MAX) {
+      cfg_append_printable_line(out, "    Parameter must be an number less or equal than %s",
+          cfg_fraction_to_string(&buf2,
+              entry->validate_param[0].i32[1], entry->validate_param[1].i32[0]));
+    }
+    else {
+      cfg_append_printable_line(out, "    Parameter must be a signed integer");
+    }
+  }
+}
+
+/**
  * Help generator for network addresses and prefixes validator.
  * See CFG_VALIDATE_NETADDR_*() macros in cfg_schema.h
  * @param entry pointer to schema entry
@@ -805,6 +873,30 @@ cfg_schema_tobin_int(const struct cfg_schema_entry *s_entry __attribute__((unuse
 
   *ptr = strtol(strarray_get_first_c(value), NULL, 10);
   return 0;
+}
+
+/**
+ * Binary converter for integers.
+ * See CFG_MAP_INT() macro in cfg_schema.h
+ * @param s_entry pointer to configuration entry schema.
+ * @param value pointer to value of configuration entry.
+ * @param reference pointer to binary output buffer.
+ * @return 0 if conversion succeeded, -1 otherwise.
+ */
+int
+cfg_schema_tobin_fractional(const struct cfg_schema_entry *s_entry,
+    const struct const_strarray *value, void *reference) {
+  int *ptr;
+  int64_t i, result;
+
+  ptr = (int *)reference;
+
+  result = cfg_fractional_from_string(&i, strarray_get_first_c(value),
+      s_entry->validate_param[1].i32[0]);
+  if (result == 0) {
+    *ptr = i;
+  }
+  return result;
 }
 
 /**

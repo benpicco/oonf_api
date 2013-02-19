@@ -70,6 +70,8 @@ static struct cfg_schema_entry entries[] = {
   CFG_VALIDATE_CHOICE("choice", "choice1", "help", choices),
   CFG_VALIDATE_INT("int", "1", "help"),
   CFG_VALIDATE_INT_MINMAX("int_minmax", "1", "help", -10, 10),
+  CFG_VALIDATE_FRACTIONAL("fractional", "1", "help", 4),
+  CFG_VALIDATE_FRACTIONAL_MINMAX("fractional_minmax", "1", "help", 4, -100000, 100000),
   CFG_VALIDATE_NETADDR("netaddr", "10.0.0.1", "help", false, false),
   CFG_VALIDATE_NETADDR_HWADDR("mac", "10:aa:00:bb:00:cc", "help", false, false),
   CFG_VALIDATE_NETADDR_MAC48("mac48", "11:bb:cc:dd:ee:ff", "help", false, false),
@@ -108,6 +110,8 @@ clear_elements(void) {
   cfg_db_overwrite_entry(db, CFG_SEC, CFG_SECNAME, "choice", "choice2");
   cfg_db_overwrite_entry(db, CFG_SEC, CFG_SECNAME, "int", "42");
   cfg_db_overwrite_entry(db, CFG_SEC, CFG_SECNAME, "int_minmax", "-5");
+  cfg_db_overwrite_entry(db, CFG_SEC, CFG_SECNAME, "fractional", "3.1415");
+  cfg_db_overwrite_entry(db, CFG_SEC, CFG_SECNAME, "fractional_minmax", "-3.1415");
   cfg_db_overwrite_entry(db, CFG_SEC, CFG_SECNAME, "netaddr", "10::1");
   cfg_db_overwrite_entry(db, CFG_SEC, CFG_SECNAME, "mac", "00:11:22:33:4:5");
   cfg_db_overwrite_entry(db, CFG_SEC, CFG_SECNAME, "mac48", "a:b:c:d:e:f");
@@ -247,6 +251,66 @@ test_validate_int_minmax_miss(void) {
       "validation had false positive (border case)");
 
   cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "int_minmax", "-9");
+  CHECK_TRUE(0 == cfg_schema_validate(db, false, false, &out),
+      "validation had false positive inside valid interval");
+
+  END_TEST();
+}
+
+static void
+test_validate_fractional_miss(void) {
+  START_TEST();
+
+  CHECK_TRUE(0 == cfg_schema_validate(db, false, false, &out),
+      "%s", abuf_getptr(&out));
+
+  cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "fractional", "a");
+  CHECK_TRUE(0 != cfg_schema_validate(db, false, false, NULL),
+      "validation missed bad integer");
+
+  cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "fractional", "3..4");
+  CHECK_TRUE(0 != cfg_schema_validate(db, false, false, NULL),
+      "validation missed bad integer");
+
+  cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "fractional", "3.4.5");
+  CHECK_TRUE(0 != cfg_schema_validate(db, false, false, NULL),
+      "validation missed bad integer");
+
+  cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "fractional", "0");
+  CHECK_TRUE(0 == cfg_schema_validate(db, false, false, NULL),
+      "validation had a false positive");
+
+  END_TEST();
+}
+
+static void
+test_validate_fractional_minmax_miss(void) {
+  START_TEST();
+
+  CHECK_TRUE(0 == cfg_schema_validate(db, false, false, &out),
+      "%s", abuf_getptr(&out));
+
+  cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "fractional_minmax", "10.0001");
+  CHECK_TRUE(0 != cfg_schema_validate(db, false, false, &out),
+      "validation missed int out of range");
+
+  cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "fractional_minmax", "10.0000");
+  CHECK_TRUE(0 == cfg_schema_validate(db, false, false, &out),
+      "validation had false positive (border case)");
+
+  cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "fractional_minmax", "9.9999");
+  CHECK_TRUE(0 == cfg_schema_validate(db, false, false, &out),
+      "validation had false positive inside valid interval");
+
+  cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "fractional_minmax", "-10.0001");
+  CHECK_TRUE(0 != cfg_schema_validate(db, false, false, &out),
+      "validation missed int out of range");
+
+  cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "fractional_minmax", "-10.0000");
+  CHECK_TRUE(0 == cfg_schema_validate(db, false, false, &out),
+      "validation had false positive (border case)");
+
+  cfg_db_add_entry(db, CFG_SEC, CFG_SECNAME, "fractional_minmax", "-9.9999");
   CHECK_TRUE(0 == cfg_schema_validate(db, false, false, &out),
       "validation had false positive inside valid interval");
 
@@ -948,6 +1012,8 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   test_validate_choice_miss();
   test_validate_int_miss();
   test_validate_int_minmax_miss();
+  test_validate_fractional_miss();
+  test_validate_fractional_minmax_miss();
   test_validate_netaddr_miss();
   test_validate_netaddr_mac_miss();
   test_validate_netaddr_mac48_miss();
