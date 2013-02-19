@@ -75,7 +75,7 @@ struct cfg_instance {
 };
 
 /* buffer for displaying fractional numbers */
-struct fractional_str {
+struct fraction_str {
   char buf[24];
 };
 
@@ -89,8 +89,8 @@ EXPORT int cfg_get_choice_index(const char *value, const char **array, size_t ar
 
 EXPORT int cfg_avlcmp_keys(const void *p1, const void *p2, void *unused);
 
-EXPORT int cfg_fractional_from_string(int64_t *result, const char *string, int fractions);
-EXPORT const char *cfg_fraction_to_string(struct fractional_str *buf, int64_t num, int fractions);
+EXPORT int cfg_fraction_from_string(int64_t *result, const char *string, int fractions);
+EXPORT const char *cfg_fraction_to_string(struct fraction_str *buf, int64_t num, int fractions);
 
 /**
  * Compares to keys/names of two section types/names or entry names.

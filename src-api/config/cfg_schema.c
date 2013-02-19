@@ -548,7 +548,7 @@ cfg_schema_validate_fractional(const struct cfg_schema_entry *entry,
     const char *section_name, const char *value, struct autobuf *out) {
   int64_t i;
 
-  if (cfg_fractional_from_string(&i, value, entry->validate_param[1].i32[0])) {
+  if (cfg_fraction_from_string(&i, value, entry->validate_param[1].i32[0])) {
     cfg_append_printable_line(out, "Value '%s' for entry '%s'"
         " in section %s is not a fractional integer"
         " with a maximum of %d fractional digits",
@@ -713,7 +713,7 @@ cfg_schema_help_int(
 void
 cfg_schema_help_fractional(
     const struct cfg_schema_entry *entry, struct autobuf *out) {
-  struct fractional_str buf1, buf2;
+  struct fraction_str buf1, buf2;
 
   if (entry->validate_param[0].i32[0] > INT32_MIN) {
     if (entry->validate_param[0].i32[1] < INT32_MAX) {
@@ -891,7 +891,7 @@ cfg_schema_tobin_fractional(const struct cfg_schema_entry *s_entry,
 
   ptr = (int *)reference;
 
-  result = cfg_fractional_from_string(&i, strarray_get_first_c(value),
+  result = cfg_fraction_from_string(&i, strarray_get_first_c(value),
       s_entry->validate_param[1].i32[0]);
   if (result == 0) {
     *ptr = i;

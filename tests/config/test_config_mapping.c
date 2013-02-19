@@ -128,7 +128,7 @@ test_binary_mapping(void) {
   int result;
   struct bin_data data;
   struct cfg_named_section *named;
-  struct fractional_str fbuf;
+  struct fraction_str fbuf;
 
   START_TEST();
 

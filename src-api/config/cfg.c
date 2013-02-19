@@ -190,7 +190,7 @@ cfg_get_choice_index(const char *key, const char **array, size_t array_size) {
  * @return -1 if an error happened, 0 otherwise
  */
 int
-cfg_fractional_from_string(int64_t *result, const char *string, int fractions) {
+cfg_fraction_from_string(int64_t *result, const char *string, int fractions) {
   bool period, negative;
   int64_t num;
   int post_period;
@@ -260,7 +260,7 @@ cfg_fractional_from_string(int64_t *result, const char *string, int fractions) {
  * @return pointer to target string
  */
 const char *
-cfg_fraction_to_string(struct fractional_str *buf, int64_t num, int fractions) {
+cfg_fraction_to_string(struct fraction_str *buf, int64_t num, int fractions) {
   int64_t frac10 = 1;
   int i;
 
