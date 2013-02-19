@@ -54,7 +54,7 @@
 #include "config/cfg_schema.h"
 
 #include "core/olsr_logging.h"
-#include "core/olsr_memcookie.h"
+#include "core/olsr_object.h"
 #include "core/olsr_plugins.h"
 #include "core/olsr_timer.h"
 #include "core/olsr_subsystem.h"

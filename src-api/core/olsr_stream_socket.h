@@ -47,7 +47,7 @@
 #include "common/list.h"
 #include "common/netaddr.h"
 
-#include "core/olsr_memcookie.h"
+#include "core/olsr_object.h"
 #include "core/olsr_netaddr_acl.h"
 #include "core/olsr_socket.h"
 #include "core/olsr_timer.h"
