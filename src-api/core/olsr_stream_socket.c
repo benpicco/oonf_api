@@ -51,7 +51,7 @@
 #include "common/avl.h"
 #include "common/list.h"
 #include "core/olsr_logging.h"
-#include "core/olsr_object.h"
+#include "core/olsr_class.h"
 #include "core/olsr_socket.h"
 #include "core/olsr_timer.h"
 #include "core/os_net.h"

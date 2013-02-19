@@ -49,7 +49,7 @@
 #include "rfc5444/rfc5444_reader.h"
 #include "rfc5444/rfc5444_writer.h"
 #include "core/olsr_logging.h"
-#include "core/olsr_object.h"
+#include "core/olsr_class.h"
 #include "core/olsr_subsystem.h"
 #include "core/olsr_timer.h"
 #include "tools/olsr_cfg.h"

@@ -43,7 +43,7 @@
 #include <stdlib.h>
 
 #include "common/list.h"
-#include "core/olsr_object.h"
+#include "core/olsr_class.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_subsystem.h"
 

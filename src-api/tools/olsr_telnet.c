@@ -46,7 +46,7 @@
 #include "config/cfg_schema.h"
 
 #include "core/olsr_logging.h"
-#include "core/olsr_object.h"
+#include "core/olsr_class.h"
 #include "core/olsr_netaddr_acl.h"
 #include "core/olsr_plugins.h"
 #include "core/olsr_stream_socket.h"
