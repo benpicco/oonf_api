@@ -121,7 +121,7 @@ static struct olsr_telnet_command _builtin[] = {
 OLSR_SUBSYSTEM_STATE(_telnet_state);
 
 /* telnet session handling */
-static struct olsr_memcookie_info _telnet_memcookie = {
+static struct olsr_class _telnet_memcookie = {
   .name = "telnet session",
   .size = sizeof(struct olsr_telnet_session),
 };
@@ -156,7 +156,7 @@ olsr_telnet_init(void) {
   if (olsr_subsystem_init(&_telnet_state))
     return;
 
-  olsr_memcookie_add(&_telnet_memcookie);
+  olsr_class_add(&_telnet_memcookie);
   olsr_timer_add(&_telnet_repeat_timerinfo );
 
   cfg_schema_add_section(olsr_cfg_get_schema(), &telnet_section,
@@ -181,7 +181,7 @@ olsr_telnet_cleanup(void) {
 
   olsr_stream_remove_managed(&_telnet_managed, true);
   cfg_schema_remove_section(olsr_cfg_get_schema(), &telnet_section);
-  olsr_memcookie_remove(&_telnet_memcookie);
+  olsr_class_remove(&_telnet_memcookie);
 }
 
 /**

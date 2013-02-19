@@ -99,40 +99,40 @@ static void _cb_cfg_interface_changed(void);
 static void _cb_interface_changed(struct olsr_packet_managed *managed, bool);
 
 /* memory block for rfc5444 targets plus MTU sized packet buffer */
-static struct olsr_memcookie_info _protocol_memcookie = {
+static struct olsr_class _protocol_memcookie = {
   .name = "RFC5444 Protocol",
   .size = sizeof(struct olsr_rfc5444_protocol),
 };
 
-static struct olsr_memcookie_info _interface_memcookie = {
+static struct olsr_class _interface_memcookie = {
   .name = "RFC5444 Interface",
   .size = sizeof(struct olsr_rfc5444_interface),
 };
 
-static struct olsr_memcookie_info _target_memcookie = {
+static struct olsr_class _target_memcookie = {
   .name = "RFC5444 Target",
   .size = sizeof(struct olsr_rfc5444_target),
 };
 
-static struct olsr_memcookie_info _tlvblock_memcookie = {
+static struct olsr_class _tlvblock_memcookie = {
   .name = "RFC5444 TLVblock",
   .size = sizeof(struct rfc5444_reader_tlvblock_entry),
   .min_free_count = 32,
 };
 
-static struct olsr_memcookie_info _addrblock_memcookie = {
+static struct olsr_class _addrblock_memcookie = {
   .name = "RFC5444 Addrblock",
   .size = sizeof(struct rfc5444_reader_addrblock_entry),
   .min_free_count = 32,
 };
 
-static struct olsr_memcookie_info _address_memcookie = {
+static struct olsr_class _address_memcookie = {
   .name = "RFC5444 Address",
   .size = sizeof(struct rfc5444_writer_address),
   .min_free_count = 32,
 };
 
-static struct olsr_memcookie_info _addrtlv_memcookie = {
+static struct olsr_class _addrtlv_memcookie = {
   .name = "RFC5444 AddrTLV",
   .size = sizeof(struct rfc5444_writer_addrtlv),
   .min_free_count = 32,
@@ -247,12 +247,12 @@ olsr_rfc5444_init(void) {
 
   avl_init(&_protocol_tree, avl_comp_strcasecmp, false, NULL);
 
-  olsr_memcookie_add(&_protocol_memcookie);
-  olsr_memcookie_add(&_target_memcookie);
-  olsr_memcookie_add(&_addrblock_memcookie);
-  olsr_memcookie_add(&_tlvblock_memcookie);
-  olsr_memcookie_add(&_address_memcookie);
-  olsr_memcookie_add(&_addrtlv_memcookie);
+  olsr_class_add(&_protocol_memcookie);
+  olsr_class_add(&_target_memcookie);
+  olsr_class_add(&_addrblock_memcookie);
+  olsr_class_add(&_tlvblock_memcookie);
+  olsr_class_add(&_address_memcookie);
+  olsr_class_add(&_addrtlv_memcookie);
 
   olsr_timer_add(&_aggregation_timer);
 
@@ -268,7 +268,7 @@ olsr_rfc5444_init(void) {
     return -1;
   }
 
-  olsr_memcookie_add(&_interface_memcookie);
+  olsr_class_add(&_interface_memcookie);
   _rfc5444_unicast = olsr_rfc5444_add_interface(
       _rfc5444_protocol, NULL, RFC5444_UNICAST_TARGET);
   if (_rfc5444_unicast == NULL) {
@@ -324,13 +324,13 @@ olsr_rfc5444_cleanup(void) {
   }
   abuf_free(&_printer_buffer);
 
-  olsr_memcookie_remove(&_protocol_memcookie);
-  olsr_memcookie_remove(&_interface_memcookie);
-  olsr_memcookie_remove(&_target_memcookie);
-  olsr_memcookie_remove(&_tlvblock_memcookie);
-  olsr_memcookie_remove(&_addrblock_memcookie);
-  olsr_memcookie_remove(&_address_memcookie);
-  olsr_memcookie_remove(&_addrtlv_memcookie);
+  olsr_class_remove(&_protocol_memcookie);
+  olsr_class_remove(&_interface_memcookie);
+  olsr_class_remove(&_target_memcookie);
+  olsr_class_remove(&_tlvblock_memcookie);
+  olsr_class_remove(&_addrblock_memcookie);
+  olsr_class_remove(&_address_memcookie);
+  olsr_class_remove(&_addrtlv_memcookie);
   return;
 }
 
@@ -379,7 +379,7 @@ olsr_rfc5444_add_protocol(const char *name, bool fixed_local_port) {
     return protocol;
   }
 
-  protocol = olsr_memcookie_malloc(&_protocol_memcookie);
+  protocol = olsr_class_malloc(&_protocol_memcookie);
   if (protocol == NULL) {
     return NULL;
   }
@@ -418,7 +418,7 @@ olsr_rfc5444_remove_protocol(struct olsr_rfc5444_protocol *protocol) {
 
   rfc5444_reader_cleanup(&protocol->reader);
   rfc5444_writer_cleanup(&protocol->writer);
-  olsr_memcookie_free(&_protocol_memcookie, protocol);
+  olsr_class_free(&_protocol_memcookie, protocol);
 }
 
 void
@@ -454,7 +454,7 @@ olsr_rfc5444_add_interface(struct olsr_rfc5444_protocol *protocol,
   interf = avl_find_element(&protocol->_interface_tree,
       name, interf, _node);
   if (interf == NULL) {
-    interf = olsr_memcookie_malloc(&_interface_memcookie);
+    interf = olsr_class_malloc(&_interface_memcookie);
     if (interf == NULL) {
       return NULL;
     }
@@ -527,7 +527,7 @@ olsr_rfc5444_remove_interface(struct olsr_rfc5444_interface *interf,
   olsr_packet_remove_managed(&interf->_socket, false);
 
   /* free memory */
-  olsr_memcookie_free(&_interface_memcookie, interf);
+  olsr_class_free(&_interface_memcookie, interf);
 }
 
 /**
@@ -692,7 +692,7 @@ _create_target(struct olsr_rfc5444_interface *interf,
     struct netaddr *dst, bool unicast) {
   static struct olsr_rfc5444_target *target;
 
-  target = olsr_memcookie_malloc(&_target_memcookie);
+  target = olsr_class_malloc(&_target_memcookie);
   if (target == NULL) {
     return NULL;
   }
@@ -739,7 +739,7 @@ _destroy_target(struct olsr_rfc5444_target *target) {
   olsr_timer_stop(&target->_aggregation);
 
   /* free memory */
-  olsr_memcookie_free(&_target_memcookie, target);
+  olsr_class_free(&_target_memcookie, target);
 }
 
 static void
@@ -917,7 +917,7 @@ _cb_forward_ifselector(struct rfc5444_writer *writer __attribute__((unused)),
  */
 static struct rfc5444_reader_addrblock_entry *
 _alloc_addrblock_entry(void) {
-  return olsr_memcookie_malloc(&_addrblock_memcookie);
+  return olsr_class_malloc(&_addrblock_memcookie);
 }
 
 /**
@@ -926,7 +926,7 @@ _alloc_addrblock_entry(void) {
  */
 static struct rfc5444_reader_tlvblock_entry *
 _alloc_tlvblock_entry(void) {
-  return olsr_memcookie_malloc(&_tlvblock_memcookie);
+  return olsr_class_malloc(&_tlvblock_memcookie);
 }
 
 /**
@@ -935,7 +935,7 @@ _alloc_tlvblock_entry(void) {
  */
 static struct rfc5444_writer_address *
 _alloc_address_entry(void) {
-  return olsr_memcookie_malloc(&_address_memcookie);
+  return olsr_class_malloc(&_address_memcookie);
 }
 
 /**
@@ -944,7 +944,7 @@ _alloc_address_entry(void) {
  */
 static struct rfc5444_writer_addrtlv *
 _alloc_addrtlv_entry(void) {
-  return olsr_memcookie_malloc(&_addrtlv_memcookie);
+  return olsr_class_malloc(&_addrtlv_memcookie);
 }
 
 /**
@@ -953,7 +953,7 @@ _alloc_addrtlv_entry(void) {
  */
 static void
 _free_addrblock_entry(void *addrblock) {
-  olsr_memcookie_free(&_addrblock_memcookie, addrblock);
+  olsr_class_free(&_addrblock_memcookie, addrblock);
 }
 
 /**
@@ -962,7 +962,7 @@ _free_addrblock_entry(void *addrblock) {
  */
 static void
 _free_tlvblock_entry(void *tlvblock) {
-  olsr_memcookie_free(&_tlvblock_memcookie, tlvblock);
+  olsr_class_free(&_tlvblock_memcookie, tlvblock);
 }
 
 /**
@@ -971,7 +971,7 @@ _free_tlvblock_entry(void *tlvblock) {
  */
 static void
 _free_address_entry(void *address) {
-  olsr_memcookie_free(&_address_memcookie, address);
+  olsr_class_free(&_address_memcookie, address);
 }
 
 /**
@@ -980,7 +980,7 @@ _free_address_entry(void *address) {
  */
 static void
 _free_addrtlv_entry(void *addrtlv) {
-  olsr_memcookie_free(&_addrtlv_memcookie, addrtlv);
+  olsr_class_free(&_addrtlv_memcookie, addrtlv);
 }
 
 /**

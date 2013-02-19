@@ -258,16 +258,16 @@ _cb_plugin_disable(void)
  */
 static void
 _print_memory(struct autobuf *buf) {
-  struct olsr_memcookie_info *c, *iterator;
+  struct olsr_class *c, *iterator;
 
-  OLSR_FOR_ALL_COOKIES(c, iterator) {
+  list_for_each_element_safe(&olsr_classes, c, _node, iterator) {
     abuf_appendf(buf, "%-25s (MEMORY) size: %"PRINTF_SIZE_T_SPECIFIER
         " usage: %u freelist: %u allocations: %u/%u\n",
         c->name, c->size,
-        olsr_memcookie_get_usage(c),
-        olsr_memcookie_get_free(c),
-        olsr_memcookie_get_allocations(c),
-        olsr_memcookie_get_recycled(c));
+        olsr_class_get_usage(c),
+        olsr_class_get_free(c),
+        olsr_class_get_allocations(c),
+        olsr_class_get_recycled(c));
   }
 }
 

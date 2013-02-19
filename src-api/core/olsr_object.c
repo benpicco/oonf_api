@@ -48,11 +48,11 @@
 #include "core/olsr_subsystem.h"
 
 /* prototypes */
-static void _free_freelist(struct olsr_memcookie_info *);
+static void _free_freelist(struct olsr_class *);
 static size_t _roundup(size_t);
 
 /* list of memory cookies */
-struct list_entity olsr_cookies;
+struct list_entity olsr_classes;
 
 /* remember if initialized or not */
 OLSR_SUBSYSTEM_STATE(_memcookie_state);
@@ -61,20 +61,20 @@ OLSR_SUBSYSTEM_STATE(_memcookie_state);
  * Initialize the memory cookie system
  */
 void
-olsr_memcookie_init(void) {
+olsr_class_init(void) {
   if (olsr_subsystem_init(&_memcookie_state))
     return;
 
-  list_init_head(&olsr_cookies);
+  list_init_head(&olsr_classes);
 }
 
 /**
  * Cleanup the memory cookie system
  */
 void
-olsr_memcookie_cleanup(void)
+olsr_class_cleanup(void)
 {
-  struct olsr_memcookie_info *info, *iterator;
+  struct olsr_class *info, *iterator;
 
   if (olsr_subsystem_cleanup(&_memcookie_state))
     return;
@@ -82,8 +82,8 @@ olsr_memcookie_cleanup(void)
   /*
    * Walk the full index range and kill 'em all.
    */
-  OLSR_FOR_ALL_COOKIES(info, iterator) {
-    olsr_memcookie_remove(info);
+  list_for_each_element_safe(&olsr_classes, info, _node, iterator) {
+    olsr_class_remove(info);
   }
 }
 
@@ -92,7 +92,7 @@ olsr_memcookie_cleanup(void)
  * @param ci initialized memcookie
  */
 void
-olsr_memcookie_add(struct olsr_memcookie_info *ci)
+olsr_class_add(struct olsr_class *ci)
 {
   assert (ci->name);
 
@@ -103,7 +103,7 @@ olsr_memcookie_add(struct olsr_memcookie_info *ci)
   /* Init the free list */
   list_init_head(&ci->_free_list);
 
-  list_add_tail(&olsr_cookies, &ci->_node);
+  list_add_tail(&olsr_classes, &ci->_node);
 }
 
 /**
@@ -111,7 +111,7 @@ olsr_memcookie_add(struct olsr_memcookie_info *ci)
  * @param ci pointer to memcookie
  */
 void
-olsr_memcookie_remove(struct olsr_memcookie_info *ci)
+olsr_class_remove(struct olsr_class *ci)
 {
   /* remove memcookie from tree */
   list_remove(&ci->_node);
@@ -126,7 +126,7 @@ olsr_memcookie_remove(struct olsr_memcookie_info *ci)
  * @return allocated memory
  */
 void *
-olsr_memcookie_malloc(struct olsr_memcookie_info *ci)
+olsr_class_malloc(struct olsr_class *ci)
 {
   struct list_entity *entity;
   void *ptr;
@@ -181,7 +181,7 @@ olsr_memcookie_malloc(struct olsr_memcookie_info *ci)
  * @param ptr pointer to memory block
  */
 void
-olsr_memcookie_free(struct olsr_memcookie_info *ci, void *ptr)
+olsr_class_free(struct olsr_class *ci, void *ptr)
 {
   struct list_entity *item;
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
@@ -194,7 +194,7 @@ olsr_memcookie_free(struct olsr_memcookie_info *ci, void *ptr)
    * ten blocks on the free list.
    */
   if (ci->_free_list_size < ci->min_free_count
-      || (ci->_free_list_size < ci->_current_usage / COOKIE_FREE_LIST_THRESHOLD)) {
+      || (ci->_free_list_size < ci->_current_usage / OLSR_CLASS_FREE_THRESHOLD)) {
     item = ptr;
 
     list_add_tail(&ci->_free_list, item);
@@ -217,8 +217,8 @@ olsr_memcookie_free(struct olsr_memcookie_info *ci, void *ptr)
 }
 
 int
-olsr_memcookie_extend(struct olsr_memcookie_info *ci,
-    struct olsr_memcookie_extension *ext) {
+olsr_class_extend(struct olsr_class *ci,
+    struct olsr_class_extension *ext) {
   if (ci->_allocated != 0) {
     OLSR_WARN(LOG_MEMCOOKIE, "Memcookie %s is already in use and cannot be extended",
         ci->name);
@@ -253,7 +253,7 @@ _roundup(size_t size) {
  * @param ci pointer to memory cookie
  */
 static void
-_free_freelist(struct olsr_memcookie_info *ci) {
+_free_freelist(struct olsr_class *ci) {
   while (!list_is_empty(&ci->_free_list)) {
     struct list_entity *item;
     item = ci->_free_list.next;

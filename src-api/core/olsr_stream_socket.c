@@ -71,7 +71,7 @@ static void _cb_timeout_handler(void *);
 struct list_entity olsr_stream_head;
 
 /* server socket */
-static struct olsr_memcookie_info connection_cookie = {
+static struct olsr_class connection_cookie = {
   .name = "stream socket connection",
   .size = sizeof(struct olsr_stream_session)
 };
@@ -92,7 +92,7 @@ olsr_stream_init(void) {
   if (olsr_subsystem_init(&_stream_state))
     return;
 
-  olsr_memcookie_add(&connection_cookie);
+  olsr_class_add(&connection_cookie);
   olsr_timer_add(&connection_timeout);
   list_init_head(&olsr_stream_head);
 }
@@ -113,7 +113,7 @@ olsr_stream_cleanup(void) {
     olsr_stream_remove(comport, true);
   }
 
-  olsr_memcookie_remove(&connection_cookie);
+  olsr_class_remove(&connection_cookie);
   olsr_timer_remove(&connection_timeout);
 }
 
@@ -321,7 +321,7 @@ olsr_stream_close(struct olsr_stream_session *session, bool force) {
   abuf_free(&session->in);
   abuf_free(&session->out);
 
-  olsr_memcookie_free(session->comport->config.memcookie, session);
+  olsr_class_free(session->comport->config.memcookie, session);
 }
 
 /**
@@ -493,7 +493,7 @@ _create_session(struct olsr_stream_socket *stream_socket,
     return NULL;
   }
 
-  session = olsr_memcookie_malloc(stream_socket->config.memcookie);
+  session = olsr_class_malloc(stream_socket->config.memcookie);
   if (session == NULL) {
     OLSR_WARN(LOG_SOCKET_STREAM, "Cannot allocate memory for comport session");
     goto parse_request_error;
@@ -552,7 +552,7 @@ _create_session(struct olsr_stream_socket *stream_socket,
 parse_request_error:
   abuf_free(&session->in);
   abuf_free(&session->out);
-  olsr_memcookie_free(stream_socket->config.memcookie, session);
+  olsr_class_free(stream_socket->config.memcookie, session);
 
   return NULL;
 }

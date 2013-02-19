@@ -117,7 +117,7 @@ struct olsr_stream_session {
 
 struct olsr_stream_config {
   /* memory cookie to allocate struct for tcp session */
-  struct olsr_memcookie_info *memcookie;
+  struct olsr_class *memcookie;
 
   /* number of simultaneous sessions (default 10) */
   int allowed_sessions;

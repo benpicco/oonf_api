@@ -47,12 +47,10 @@
 #include "common/avl.h"
 
 /*
- * This is a cookie. A cookie is a tool aimed for olsrd developers.
- * It is used for tracking resource usage in the system and also
- * for locating memory corruption.
+ * This structure represents a class of memory object, each with the same size.
  */
-struct olsr_memcookie_info {
-  /* Name of cookie */
+struct olsr_class {
+  /* Name of class */
   const char *name;
 
   /* Size of memory blocks */
@@ -66,7 +64,7 @@ struct olsr_memcookie_info {
 
   /* Statistics and internal bookkeeping */
 
-  /* List node for memcookies */
+  /* List node for classes */
   struct list_entity _node;
 
   /* List head for recyclable blocks */
@@ -82,39 +80,37 @@ struct olsr_memcookie_info {
   uint32_t _allocated, _recycled;
 };
 
-struct olsr_memcookie_extension {
+struct olsr_class_extension {
   size_t size;
 
   size_t _offset;
 };
 
-#define OLSR_FOR_ALL_COOKIES(ci, iterator) list_for_each_element_safe(&olsr_cookies, ci, _node, iterator)
-
 /* percentage of blocks kept in the free list compared to allocated blocks */
-#define COOKIE_FREE_LIST_THRESHOLD 10   /* Blocks / Percent  */
+#define OLSR_CLASS_FREE_THRESHOLD 10   /* Blocks / Percent  */
 
-EXPORT extern struct list_entity olsr_cookies;
+EXPORT extern struct list_entity olsr_classes;
 
 /* Externals. */
-EXPORT void olsr_memcookie_init(void);
-EXPORT void olsr_memcookie_cleanup(void);
+EXPORT void olsr_class_init(void);
+EXPORT void olsr_class_cleanup(void);
 
-EXPORT void olsr_memcookie_add(struct olsr_memcookie_info *);
-EXPORT void olsr_memcookie_remove(struct olsr_memcookie_info *);
+EXPORT void olsr_class_add(struct olsr_class *);
+EXPORT void olsr_class_remove(struct olsr_class *);
 
-EXPORT void *olsr_memcookie_malloc(struct olsr_memcookie_info *)
+EXPORT void *olsr_class_malloc(struct olsr_class *)
     __attribute__((warn_unused_result));
-EXPORT void olsr_memcookie_free(struct olsr_memcookie_info *, void *);
+EXPORT void olsr_class_free(struct olsr_class *, void *);
 
-EXPORT int olsr_memcookie_extend(
-    struct olsr_memcookie_info *, struct olsr_memcookie_extension *);
+EXPORT int olsr_class_extend(
+    struct olsr_class *, struct olsr_class_extension *);
 
 /**
  * @param ci pointer to memcookie info
  * @return number of blocks currently in use
  */
 static INLINE uint32_t
-olsr_memcookie_get_usage(struct olsr_memcookie_info *ci) {
+olsr_class_get_usage(struct olsr_class *ci) {
   return ci->_current_usage;
 }
 
@@ -123,7 +119,7 @@ olsr_memcookie_get_usage(struct olsr_memcookie_info *ci) {
  * @return number of blocks currently in free list
  */
 static INLINE uint32_t
-olsr_memcookie_get_free(struct olsr_memcookie_info *ci) {
+olsr_class_get_free(struct olsr_class *ci) {
   return ci->_free_list_size;
 }
 
@@ -132,7 +128,7 @@ olsr_memcookie_get_free(struct olsr_memcookie_info *ci) {
  * @return total number of allocations during runtime
  */
 static INLINE uint32_t
-olsr_memcookie_get_allocations(struct olsr_memcookie_info *ci) {
+olsr_class_get_allocations(struct olsr_class *ci) {
   return ci->_allocated;
 }
 
@@ -141,7 +137,7 @@ olsr_memcookie_get_allocations(struct olsr_memcookie_info *ci) {
  * @return total number of allocations during runtime
  */
 static INLINE uint32_t
-olsr_memcookie_get_recycled(struct olsr_memcookie_info *ci) {
+olsr_class_get_recycled(struct olsr_class *ci) {
   return ci->_recycled;
 }
 
@@ -151,7 +147,7 @@ olsr_memcookie_get_recycled(struct olsr_memcookie_info *ci) {
  * @return pointer to extensions memory block
  */
 static INLINE void *
-olsr_memcookie_get_extension(void *ptr, struct olsr_memcookie_extension *ext) {
+olsr_class_get_extension(void *ptr, struct olsr_class_extension *ext) {
   return ((char *)ptr) + ext->_offset;
 }
 
