@@ -1057,7 +1057,7 @@ schedule_end_message_cbs(struct rfc5444_reader_tlvblock_context *tlv_context,
   tlv_context->type = RFC5444_CONTEXT_MESSAGE;
 
   avl_for_element_range_reverse(first, last, consumer, node) {
-    if (consumer->end_callback
+    if (consumer->end_callback && !consumer->addrblock_consumer
         && (consumer->default_msg_consumer || consumer->msg_id == tlv_context->msg_type)) {
       r = consumer->end_callback(consumer, tlv_context, result != RFC5444_OKAY);
       if (r > result) {

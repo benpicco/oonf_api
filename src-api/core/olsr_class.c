@@ -42,7 +42,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "common/list.h"
+#include "common/avl.h"
+#include "common/avl_comp.h"
 #include "core/olsr_class.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_subsystem.h"
@@ -50,9 +51,18 @@
 /* prototypes */
 static void _free_freelist(struct olsr_class *);
 static size_t _roundup(size_t);
+static const char *_cb_to_keystring(struct olsr_objectkey_str *,
+    struct olsr_class *, void *);
 
 /* list of memory cookies */
-struct list_entity olsr_classes;
+struct avl_tree olsr_classes;
+
+/* name of event types */
+const char *OLSR_CLASS_EVENT_NAME[] = {
+  [OLSR_OBJECT_ADDED] = "added",
+  [OLSR_OBJECT_REMOVED] = "removed",
+  [OLSR_OBJECT_CHANGED] = "changed",
+};
 
 /* remember if initialized or not */
 OLSR_SUBSYSTEM_STATE(_memcookie_state);
@@ -65,7 +75,7 @@ olsr_class_init(void) {
   if (olsr_subsystem_init(&_memcookie_state))
     return;
 
-  list_init_head(&olsr_classes);
+  avl_init(&olsr_classes, avl_comp_strcasecmp, false, NULL);
 }
 
 /**
@@ -82,7 +92,7 @@ olsr_class_cleanup(void)
   /*
    * Walk the full index range and kill 'em all.
    */
-  list_for_each_element_safe(&olsr_classes, info, _node, iterator) {
+  avl_for_each_element_safe(&olsr_classes, info, _node, iterator) {
     olsr_class_remove(info);
   }
 }
@@ -97,13 +107,22 @@ olsr_class_add(struct olsr_class *ci)
   assert (ci->name);
 
   /* round up size to make block extendable */
-  ci->size = (ci->size + sizeof(struct list_entity) - 1)
-      & (sizeof(struct list_entity) - 1);
+  ci->size = _roundup(ci->size);
+
+  /* hook into tree */
+  ci->_node.key = ci->name;
+  avl_insert(&olsr_classes, &ci->_node);
+
+  /* add standard key generator if necessary */
+  if (ci->to_keystring == NULL) {
+    ci->to_keystring = _cb_to_keystring;
+  }
 
   /* Init the free list */
   list_init_head(&ci->_free_list);
 
-  list_add_tail(&olsr_classes, &ci->_node);
+  /* Init the list for listeners */
+  list_init_head(&ci->_listeners);
 }
 
 /**
@@ -113,11 +132,18 @@ olsr_class_add(struct olsr_class *ci)
 void
 olsr_class_remove(struct olsr_class *ci)
 {
+  struct olsr_class_listener *l, *iterator;
+
   /* remove memcookie from tree */
-  list_remove(&ci->_node);
+  avl_remove(&olsr_classes, &ci->_node);
 
   /* remove all free memory blocks */
   _free_freelist(ci);
+
+  /* remove all listeners */
+  list_for_each_element_safe(&ci->_listeners, l, _node, iterator) {
+    olsr_class_listener_remove(l);
+  }
 }
 
 /**
@@ -145,7 +171,7 @@ olsr_class_malloc(struct olsr_class *ci)
      */
     ptr = calloc(1, ci->size);
     if (ptr == NULL) {
-      OLSR_WARN(LOG_MEMCOOKIE, "Out of memory for: %s", ci->name);
+      OLSR_WARN(LOG_CLASS, "Out of memory for: %s", ci->name);
       return NULL;
     }
     ci->_allocated++;
@@ -170,7 +196,7 @@ olsr_class_malloc(struct olsr_class *ci)
   /* Stats keeping */
   ci->_current_usage++;
 
-  OLSR_DEBUG(LOG_MEMCOOKIE, "MEMORY: alloc %s, %" PRINTF_SIZE_T_SPECIFIER " bytes%s\n",
+  OLSR_DEBUG(LOG_CLASS, "MEMORY: alloc %s, %" PRINTF_SIZE_T_SPECIFIER " bytes%s\n",
              ci->name, ci->size, reuse ? ", reuse" : "");
   return ptr;
 }
@@ -212,28 +238,102 @@ olsr_class_free(struct olsr_class *ci, void *ptr)
   /* Stats keeping */
   ci->_current_usage--;
 
-  OLSR_DEBUG(LOG_MEMCOOKIE, "MEMORY: free %s, %"PRINTF_SIZE_T_SPECIFIER" bytes%s\n",
+  OLSR_DEBUG(LOG_CLASS, "MEMORY: free %s, %"PRINTF_SIZE_T_SPECIFIER" bytes%s\n",
              ci->name, ci->size, reuse ? ", reuse" : "");
 }
 
+/**
+ * Register an extension to an existing class without objects.
+ * Extensions can NOT be unregistered!
+ * @param ext pointer to class extension
+ * @return 0 if extension was registered, -1 if an error happened
+ */
 int
-olsr_class_extend(struct olsr_class *ci,
-    struct olsr_class_extension *ext) {
-  if (ci->_allocated != 0) {
-    OLSR_WARN(LOG_MEMCOOKIE, "Memcookie %s is already in use and cannot be extended",
-        ci->name);
+olsr_class_extend(struct olsr_class_extension *ext) {
+  struct olsr_class *c;
+
+  c = avl_find_element(&olsr_classes, ext->class_name, c, _node);
+  if (c == NULL) {
+    OLSR_WARN(LOG_CLASS, "Unknown class %s for extension %s",
+        ext->name, ext->class_name);
+    return -1;
+  }
+
+  if (c->_allocated != 0) {
+    OLSR_WARN(LOG_CLASS, "Class %s is already in use and cannot be extended",
+        c->name);
     return -1;
   }
 
   /* make sure freelist is empty */
-  _free_freelist(ci);
+  _free_freelist(c);
 
   /* old size is new offset */
-  ext->_offset = ci->size;
+  ext->_offset = c->size;
 
   /* calculate new size */
-  ci->size = _roundup(ci->size + ext->size);
+  c->size = _roundup(c->size + ext->size);
   return 0;
+}
+
+/**
+ * Add a listener to an OLSR class
+ * @param l pointer o listener
+ * @return 0 if successful, -1 otherwise
+ */
+int
+olsr_class_listener_add(struct olsr_class_listener *l) {
+  struct olsr_class *c;
+
+  c = avl_find_element(&olsr_classes, l->class_name, c, _node);
+  if (c == NULL) {
+    OLSR_WARN(LOG_CLASS, "Unknown class %s for listener %s",
+        l->name, l->class_name);
+    return -1;
+  }
+
+  /* hook listener into class */
+  list_add_tail(&c->_listeners, &l->_node);
+  return 0;
+}
+
+/**
+ * Remove listener from class
+ * @param l pointer to listener
+ */
+void
+olsr_class_listener_remove(struct olsr_class_listener *l) {
+  list_remove(&l->_node);
+}
+
+/**
+ * Fire an event for a class
+ * @param c pointer to class
+ * @param ptr pointer to object
+ * @param evt type of event
+ */
+void
+olsr_class_event(struct olsr_class *c, void *ptr, enum olsr_class_event evt) {
+  struct olsr_class_listener *l;
+  struct olsr_objectkey_str buf;
+
+  OLSR_DEBUG(LOG_CLASS, "Fire '%s' event for %s",
+      OLSR_CLASS_EVENT_NAME[evt], c->to_keystring(&buf, c, ptr));
+  list_for_each_element(&c->_listeners, l, _node) {
+    if (evt == OLSR_OBJECT_ADDED && l->cb_add != NULL) {
+      OLSR_DEBUG(LOG_CLASS, "Fire listener %s", l->name);
+      l->cb_add(ptr);
+    }
+    else if (evt == OLSR_OBJECT_REMOVED && l->cb_remove != NULL) {
+      OLSR_DEBUG(LOG_CLASS, "Fire listener %s", l->name);
+      l->cb_remove(ptr);
+    }
+    else if (evt == OLSR_OBJECT_CHANGED && l->cb_change != NULL) {
+      OLSR_DEBUG(LOG_CLASS, "Fire listener %s", l->name);
+      l->cb_change(ptr);
+    }
+  }
+  OLSR_DEBUG(LOG_CLASS, "Fire event finished");
 }
 
 /**
@@ -262,4 +362,20 @@ _free_freelist(struct olsr_class *ci) {
     free(item);
   }
   ci->_free_list_size = 0;
+}
+
+/**
+ * Default keystring creator
+ * @param buf pointer to target buffer
+ * @param class olsr class
+ * @param ptr pointer to object
+ * @return pointer to target buffer
+ */
+static const char *
+_cb_to_keystring(struct olsr_objectkey_str *buf,
+    struct olsr_class *class, void *ptr) {
+  snprintf(buf->buf, sizeof(*buf), "%s::0x%"PRINTF_SIZE_T_SPECIFIER"x",
+      class->name, (size_t)ptr);
+
+  return buf->buf;
 }

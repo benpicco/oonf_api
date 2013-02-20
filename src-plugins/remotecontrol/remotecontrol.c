@@ -258,9 +258,9 @@ _cb_plugin_disable(void)
  */
 static void
 _print_memory(struct autobuf *buf) {
-  struct olsr_class *c, *iterator;
+  struct olsr_class *c;
 
-  list_for_each_element_safe(&olsr_classes, c, _node, iterator) {
+  avl_for_each_element(&olsr_classes, c, _node) {
     abuf_appendf(buf, "%-25s (MEMORY) size: %"PRINTF_SIZE_T_SPECIFIER
         " usage: %u freelist: %u allocations: %u/%u\n",
         c->name, c->size,

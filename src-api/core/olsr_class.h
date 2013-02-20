@@ -39,12 +39,22 @@
  *
  */
 
-#ifndef _OLSR_MEMCOOKIE_H
-#define _OLSR_MEMCOOKIE_H
+#ifndef _OLSR_CLASS_H
+#define _OLSR_CLASS_H
 
 #include "common/common_types.h"
 #include "common/list.h"
 #include "common/avl.h"
+
+enum olsr_class_event {
+  OLSR_OBJECT_CHANGED,
+  OLSR_OBJECT_ADDED,
+  OLSR_OBJECT_REMOVED,
+};
+
+struct olsr_objectkey_str {
+  char buf[128];
+};
 
 /*
  * This structure represents a class of memory object, each with the same size.
@@ -62,13 +72,22 @@ struct olsr_class {
    */
   uint32_t min_free_count;
 
+  /*
+   * function pointer that converts a pointer to the object into a
+   * human readable key
+   */
+  const char *(*to_keystring)(struct olsr_objectkey_str *, struct olsr_class *, void *);
+
   /* Statistics and internal bookkeeping */
 
   /* List node for classes */
-  struct list_entity _node;
+  struct avl_node _node;
 
   /* List head for recyclable blocks */
   struct list_entity _free_list;
+
+  /* listeners of this class */
+  struct list_entity _listeners;
 
   /* Length of free list */
   uint32_t _free_list_size;
@@ -81,15 +100,38 @@ struct olsr_class {
 };
 
 struct olsr_class_extension {
+  const char *name;
+  const char *class_name;
   size_t size;
 
   size_t _offset;
 };
 
+struct olsr_class_listener {
+  /* name of the consumer */
+  const char *name;
+
+  /* name of the provider */
+  const char *class_name;
+
+  /* callback for 'cb_add object' event */
+  void (*cb_add)(void *);
+
+  /* callback for 'cb_change object' event */
+  void (*cb_change)(void *);
+
+  /* callback for 'cb_remove object' event */
+  void (*cb_remove)(void *);
+
+  /* node for hooking the consumer into the provider */
+  struct list_entity _node;
+};
+
 /* percentage of blocks kept in the free list compared to allocated blocks */
 #define OLSR_CLASS_FREE_THRESHOLD 10   /* Blocks / Percent  */
 
-EXPORT extern struct list_entity olsr_classes;
+EXPORT extern struct avl_tree olsr_classes;
+EXPORT extern const char *OLSR_CLASS_EVENT_NAME[];
 
 /* Externals. */
 EXPORT void olsr_class_init(void);
@@ -102,11 +144,15 @@ EXPORT void *olsr_class_malloc(struct olsr_class *)
     __attribute__((warn_unused_result));
 EXPORT void olsr_class_free(struct olsr_class *, void *);
 
-EXPORT int olsr_class_extend(
-    struct olsr_class *, struct olsr_class_extension *);
+EXPORT int olsr_class_extend(struct olsr_class_extension *);
+
+EXPORT int olsr_class_listener_add(struct olsr_class_listener *);
+EXPORT void olsr_class_listener_remove(struct olsr_class_listener *);
+
+EXPORT void olsr_class_event(struct olsr_class *, void *, enum olsr_class_event);
 
 /**
- * @param ci pointer to memcookie info
+ * @param ci pointer to class
  * @return number of blocks currently in use
  */
 static INLINE uint32_t
@@ -115,7 +161,7 @@ olsr_class_get_usage(struct olsr_class *ci) {
 }
 
 /**
- * @param ci pointer to memcookie info
+ * @param ci pointer to class
  * @return number of blocks currently in free list
  */
 static INLINE uint32_t
@@ -124,7 +170,7 @@ olsr_class_get_free(struct olsr_class *ci) {
 }
 
 /**
- * @param ci pointer to memcookie info
+ * @param ci pointer to class
  * @return total number of allocations during runtime
  */
 static INLINE uint32_t
@@ -133,7 +179,7 @@ olsr_class_get_allocations(struct olsr_class *ci) {
 }
 
 /**
- * @param ci pointer to memcookie info
+ * @param ci pointer to class
  * @return total number of allocations during runtime
  */
 static INLINE uint32_t
@@ -142,13 +188,22 @@ olsr_class_get_recycled(struct olsr_class *ci) {
 }
 
 /**
- * @param ptr pointer to base block
  * @param ext extension data structure
+ * @param ptr pointer to base block
  * @return pointer to extensions memory block
  */
 static INLINE void *
-olsr_class_get_extension(void *ptr, struct olsr_class_extension *ext) {
+olsr_class_get_extension(struct olsr_class_extension *ext, void *ptr) {
   return ((char *)ptr) + ext->_offset;
 }
 
-#endif /* _OLSR_MEMCOOKIE_H */
+/**
+ * @param ext pointer to class extension
+ * @return true if extension is registered
+ */
+static INLINE bool
+olsr_class_is_extension_registered(struct olsr_class_extension *ext) {
+  return ext->_offset > 0;
+}
+
+#endif /* _OLSR_CLASS_H */

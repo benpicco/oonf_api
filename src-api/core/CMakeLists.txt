@@ -22,8 +22,7 @@ ADD_CUSTOM_COMMAND (
     COMMENT "Create new library builddata"
 )
 
-SET(OONF_CORE_SRCS olsr_callbacks.c
-                   olsr_class.c
+SET(OONF_CORE_SRCS olsr_class.c
                    olsr_clock.c
                    olsr_interface.c
                    olsr_logging.c

@@ -261,15 +261,22 @@ cfg_fraction_from_string(int64_t *result, const char *string, int fractions) {
  */
 const char *
 cfg_fraction_to_string(struct fraction_str *buf, int64_t num, int fractions) {
+  bool negative;
   int64_t frac10 = 1;
   int i;
+
+  negative = num < 0;
+  if (negative) {
+    num = -num;
+  }
 
   for (i=0; i<fractions; i++) {
     frac10 *= 10;
   }
 
   /* print left part of the fractional including dot */
-  i = snprintf(buf->buf, sizeof(*buf), "%"PRId64".", num / frac10);
+  i = snprintf(buf->buf, sizeof(*buf), "%s%"PRId64".",
+      negative ? "-" : "", num / frac10);
 
   /* calculate rest of fractional */
   num = num % frac10;

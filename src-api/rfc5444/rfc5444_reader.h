@@ -248,7 +248,7 @@ struct rfc5444_reader_tlvblock_consumer {
   /* true if an address block consumer, false if message/packet consumer */
   bool addrblock_consumer;
 
-  /* Tree of sorted consumer entries */
+  /* List of sorted consumer entries */
   struct list_entity _consumer_list;
 
   /* consumer for TLVblock context start and end*/
