@@ -134,8 +134,8 @@ EXPORT extern struct avl_tree olsr_classes;
 EXPORT extern const char *OLSR_CLASS_EVENT_NAME[];
 
 /* Externals. */
-EXPORT void olsr_class_init(void);
-EXPORT void olsr_class_cleanup(void);
+void olsr_class_init(void);
+void olsr_class_cleanup(void);
 
 EXPORT void olsr_class_add(struct olsr_class *);
 EXPORT void olsr_class_remove(struct olsr_class *);
