@@ -85,13 +85,27 @@ enum {
 struct olsr_rfc5444_target;
 
 struct olsr_rfc5444_protocol {
+  /* name of the protocol */
   char name[32];
+
+  /* port number of the protocol */
   uint16_t port;
+
+  /*
+   * true if the local port must be the protocol port,
+   * false if it may be random
+   */
   bool fixed_local_port;
 
+  /*
+   * this variables are only valid during packet processing and contain
+   * additional information about the current packet
+   */
   union netaddr_socket *input_address;
   struct olsr_rfc5444_interface *input_interface;
+  bool input_is_multicast;
 
+  /* RFC5444 reader and writer for this protocol instance */
   struct rfc5444_reader reader;
   struct rfc5444_writer writer;
 

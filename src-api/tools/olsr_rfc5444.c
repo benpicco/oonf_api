@@ -792,6 +792,9 @@ _cb_receive_data(struct olsr_packet_socket *sock,
 
   protocol->input_address = from;
   protocol->input_interface = interf;
+  protocol->input_is_multicast =
+      sock == &interf->_socket.multicast_v4
+      || sock == &interf->_socket.multicast_v6;
 
   _print_packet_to_buffer(from, interf, sock->config.input_buffer, length,
       "Incoming RFC5444 packet from",
