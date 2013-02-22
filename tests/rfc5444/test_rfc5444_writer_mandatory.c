@@ -68,7 +68,7 @@ static struct rfc5444_writer_content_provider cpr = {
   .addAddresses = addAddresses,
 };
 
-static struct rfc5444_writer_addrtlv_block addrtlvs[] = {
+static struct rfc5444_writer_tlvtype addrtlvs[] = {
   { .type = 3 },
 };
 
@@ -118,7 +118,7 @@ static void addAddresses(struct rfc5444_writer *wr,
     }
 
     addr = rfc5444_writer_add_address(wr, provider->creator, ip, 32, i == 0);
-    rfc5444_writer_add_addrtlv(wr, addr, addrtlvs[0]._tlvtype, tlv_value, tlv_value_size, false);
+    rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[0], tlv_value, tlv_value_size, false);
 
     if (tlv_value) {
       tlv_value[tlv_value_size-1] = (tlv_value_size-1) & 255;

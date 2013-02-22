@@ -163,9 +163,6 @@ struct rfc5444_writer_tlvtype {
   /* back pointer to message creator */
   struct rfc5444_writer_message *_creator;
 
-  /* number of users of this tlvtype */
-  int _usage_counter;
-
   /* head of writer_addrtlv list */
   struct avl_tree _tlv_tree;
 
@@ -175,17 +172,6 @@ struct rfc5444_writer_tlvtype {
   /* internal data for address compression */
   int _tlvblock_count[RFC5444_MAX_ADDRLEN];
   bool _tlvblock_multi[RFC5444_MAX_ADDRLEN];
-};
-
-/**
- * Struct to define a list of address TLVs that should be preallocated
- * for a certain message type
- */
-struct rfc5444_writer_addrtlv_block {
-  struct rfc5444_writer_tlvtype *_tlvtype;
-
-  uint8_t type;
-  uint8_t exttype;
 };
 
 /**
@@ -421,17 +407,17 @@ EXPORT void rfc5444_writer_set_pkt_seqno(
     struct rfc5444_writer *writer, struct rfc5444_writer_interface *interf, uint16_t seqno);
 
 /* functions that can be called outside the callbacks */
-EXPORT struct rfc5444_writer_tlvtype *rfc5444_writer_register_addrtlvtype(
-    struct rfc5444_writer *writer, uint8_t msgtype, uint8_t tlv, uint8_t tlvext);
+EXPORT int rfc5444_writer_register_addrtlvtype(struct rfc5444_writer *writer,
+    struct rfc5444_writer_tlvtype *type, uint8_t msgtype);
 EXPORT void rfc5444_writer_unregister_addrtlvtype(struct rfc5444_writer *writer,
     struct rfc5444_writer_tlvtype *tlvtype);
 
 EXPORT int rfc5444_writer_register_msgcontentprovider(
     struct rfc5444_writer *writer, struct rfc5444_writer_content_provider *cpr,
-    struct rfc5444_writer_addrtlv_block *addrtlvs, size_t addrtlv_count);
+    struct rfc5444_writer_tlvtype *addrtlvs, size_t addrtlv_count);
 EXPORT void rfc5444_writer_unregister_content_provider(
     struct rfc5444_writer *writer, struct rfc5444_writer_content_provider *cpr,
-    struct rfc5444_writer_addrtlv_block *addrtlvs, size_t addrtlv_count);
+    struct rfc5444_writer_tlvtype *addrtlvs, size_t addrtlv_count);
 
 EXPORT struct rfc5444_writer_message *rfc5444_writer_register_message(
     struct rfc5444_writer *writer, uint8_t msgid, bool if_specific, uint8_t addr_len);

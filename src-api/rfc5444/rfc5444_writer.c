@@ -51,8 +51,8 @@
 #include "rfc5444/rfc5444_writer.h"
 #include "rfc5444/rfc5444_api_config.h"
 
-static struct rfc5444_writer_tlvtype *_register_addrtlvtype(
-    struct rfc5444_writer_message *msg, uint8_t tlv, uint8_t tlvext);
+static void _register_addrtlvtype(struct rfc5444_writer_message *msg,
+    struct rfc5444_writer_tlvtype *type);
 static int _msgaddr_avl_comp(const void *k1, const void *k2, void *ptr);
 static void *_copy_addrtlv_value(struct rfc5444_writer *writer, const void *value, size_t length);
 static void _free_tlvtype_tlvs(struct rfc5444_writer *writer, struct rfc5444_writer_tlvtype *tlvtype);
@@ -141,7 +141,6 @@ rfc5444_writer_cleanup(struct rfc5444_writer *writer) {
     /* remove all _registered address tlvs */
     list_for_each_element_safe(&msg->_tlvtype_head, tlvtype, _tlvtype_node, safe_tt) {
       /* reset usage counter */
-      tlvtype->_usage_counter = 1;
       rfc5444_writer_unregister_addrtlvtype(writer, tlvtype);
     }
 
@@ -282,13 +281,12 @@ rfc5444_writer_add_address(struct rfc5444_writer *writer __attribute__ ((unused)
  *
  * @param writer pointer to writer context
  * @param msgtype messagetype for this tlv
- * @param tlv tlvtype of this tlv
- * @param tlvext extended tlv type, 0 if no extended type necessary
- * @return pointer to tlvtype object, NULL if an error happened
+ * @param type pointer to tlvtype structure, type and exttype must be already initialized
+ * @return 0 if addresstlvtype was registered, -1 otherwise
  */
-struct rfc5444_writer_tlvtype *
-rfc5444_writer_register_addrtlvtype(struct rfc5444_writer *writer, uint8_t msgtype, uint8_t tlv, uint8_t tlvext) {
-  struct rfc5444_writer_tlvtype *tlvtype;
+int
+rfc5444_writer_register_addrtlvtype(struct rfc5444_writer *writer,
+    struct rfc5444_writer_tlvtype *type, uint8_t msgtype) {
   struct rfc5444_writer_message *msg;
 
 #if WRITER_STATE_MACHINE == true
@@ -296,14 +294,11 @@ rfc5444_writer_register_addrtlvtype(struct rfc5444_writer *writer, uint8_t msgty
 #endif
   if ((msg = _get_message(writer, msgtype)) == NULL) {
     /* out of memory error ? */
-    return NULL;
+    return -1;
   }
 
-  tlvtype = _register_addrtlvtype(msg, tlv, tlvext);
-  if (!tlvtype) {
-    _lazy_free_message(writer, msg);
-  }
-  return tlvtype;
+  _register_addrtlvtype(msg, type);
+  return 0;
 }
 
 /**
@@ -321,14 +316,10 @@ rfc5444_writer_unregister_addrtlvtype(struct rfc5444_writer *writer, struct rfc5
   if (!list_is_node_added(&tlvtype->_tlvtype_node)) {
     return;
   }
-  if (--tlvtype->_usage_counter) {
-    return;
-  }
 
   _free_tlvtype_tlvs(writer, tlvtype);
   list_remove(&tlvtype->_tlvtype_node);
   _lazy_free_message(writer, tlvtype->_creator);
-  free(tlvtype);
 }
 
 /**
@@ -337,14 +328,14 @@ rfc5444_writer_unregister_addrtlvtype(struct rfc5444_writer *writer, struct rfc5
  *
  * @param writer pointer to writer context
  * @param cpr pointer to message content provider object
- * @param addrtlvs pointer to array of addressblock tlv definitions
+ * @param addrtlvs pointer to array of tlvtype definitions
  * @param addrtlvs_count length of addressblock tlv array
  * @return -1 if an error happened, 0 otherwise
  */
 int
 rfc5444_writer_register_msgcontentprovider(struct rfc5444_writer *writer,
     struct rfc5444_writer_content_provider *cpr,
-    struct rfc5444_writer_addrtlv_block *addrtlvs, size_t addrtlvs_count) {
+    struct rfc5444_writer_tlvtype *addrtlvs, size_t addrtlvs_count) {
   struct rfc5444_writer_message *msg;
   size_t i;
 
@@ -357,23 +348,7 @@ rfc5444_writer_register_msgcontentprovider(struct rfc5444_writer *writer,
   }
 
   for (i=0; i<addrtlvs_count; i++) {
-    addrtlvs[i]._tlvtype = _register_addrtlvtype(msg, addrtlvs[i].type, addrtlvs[i].exttype);
-    if (addrtlvs[i]._tlvtype == NULL) {
-      break;
-    }
-  }
-
-  if (addrtlvs_count > 0 && i < addrtlvs_count) {
-    /* allocation failed */
-    while (i > 0) {
-      i--;
-
-      rfc5444_writer_unregister_addrtlvtype(writer, addrtlvs[i]._tlvtype);
-      addrtlvs[i]._tlvtype = NULL;
-    }
-
-    _lazy_free_message(writer, msg);
-    return -1;
+    _register_addrtlvtype(msg, &addrtlvs[i]);
   }
 
   cpr->creator = msg;
@@ -394,7 +369,7 @@ rfc5444_writer_register_msgcontentprovider(struct rfc5444_writer *writer,
 void
 rfc5444_writer_unregister_content_provider(
     struct rfc5444_writer *writer, struct rfc5444_writer_content_provider *cpr,
-    struct rfc5444_writer_addrtlv_block *addrtlvs, size_t addrtlvs_count) {
+    struct rfc5444_writer_tlvtype *addrtlvs, size_t addrtlvs_count) {
   size_t i;
 #if WRITER_STATE_MACHINE == true
   assert(writer->_state == RFC5444_WRITER_NONE);
@@ -405,10 +380,7 @@ rfc5444_writer_unregister_content_provider(
   }
 
   for (i=0; i<addrtlvs_count; i++) {
-    if (addrtlvs[i]._tlvtype) {
-      rfc5444_writer_unregister_addrtlvtype(writer, addrtlvs[i]._tlvtype);
-      addrtlvs[i]._tlvtype = NULL;
-    }
+    rfc5444_writer_unregister_addrtlvtype(writer, &addrtlvs[i]);
   }
   avl_remove(&cpr->creator->_provider_tree, &cpr->_provider_node);
   _lazy_free_message(writer, cpr->creator);
@@ -605,40 +577,20 @@ _get_message(struct rfc5444_writer *writer, uint8_t msgid) {
  *
  * @param writer pointer to writer context
  * @param msg pointer to allocated rfc5444_writer_message
- * @param tlv tlvtype of this tlv
- * @param tlvext extended tlv type, 0 if no extended type necessary
- * @return pointer to tlvtype object, NULL if an error happened
+ * @param tlvtype pointer to preallocated rfc5444_writer_tlvtype,
+ *    type and exttype must already be initialized
  */
-static struct rfc5444_writer_tlvtype *
+static void
 _register_addrtlvtype(struct rfc5444_writer_message *msg,
-    uint8_t tlv, uint8_t tlvext) {
-  struct rfc5444_writer_tlvtype *tlvtype;
-
-  /* Look for existing addrtlv */
-  list_for_each_element(&msg->_tlvtype_head, tlvtype, _tlvtype_node) {
-    if (tlvtype->type == tlv && tlvtype->exttype == tlvext) {
-      tlvtype->_usage_counter++;
-      return tlvtype;
-    }
-  }
-
-  /* create a new addrtlv entry */
-  if ((tlvtype = calloc(1, sizeof(*tlvtype))) == NULL) {
-    return NULL;
-  }
-
+    struct rfc5444_writer_tlvtype *tlvtype) {
   /* initialize addrtlv fields */
-  tlvtype->type = tlv;
-  tlvtype->exttype = tlvext;
   tlvtype->_creator = msg;
-  tlvtype->_usage_counter++;
-  tlvtype->_full_type = _get_fulltype(tlv, tlvext);
+  tlvtype->_full_type = _get_fulltype(tlvtype->type, tlvtype->exttype);
 
-  avl_init(&tlvtype->_tlv_tree, avl_comp_uint32, true, false);
+  avl_init(&tlvtype->_tlv_tree, avl_comp_uint32, true, NULL);
 
   /* add to message creator list */
   list_add_tail(&msg->_tlvtype_head, &tlvtype->_tlvtype_node);
-  return tlvtype;
 }
 
 /**

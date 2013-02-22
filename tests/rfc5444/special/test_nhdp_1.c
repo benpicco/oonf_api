@@ -130,7 +130,7 @@ static struct rfc5444_writer_content_provider cpr = {
   .addAddresses = addAddresses,
 };
 
-static struct rfc5444_writer_addrtlv_block addrtlvs[] = {
+static struct rfc5444_writer_tlvtype addrtlvs[] = {
     { .type = 2 },
     { .type = 3 },
 };
@@ -154,19 +154,19 @@ static void addAddresses(struct rfc5444_writer *wr,
 
   ip[0] = 10; ip[1] = 1; ip[2] = 0; ip[3] = 101;
   addr = rfc5444_writer_add_address(wr, provider->creator, ip, 32, false);
-  rfc5444_writer_add_addrtlv(wr, addr, addrtlvs[1]._tlvtype, &value1, 1, false);
+  rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[1], &value1, 1, false);
 
   ip[0] = 10; ip[1] = 1; ip[2] = 0; ip[3] = 102;
   addr = rfc5444_writer_add_address(wr, provider->creator, ip, 32, false);
-  rfc5444_writer_add_addrtlv(wr, addr, addrtlvs[0]._tlvtype, &value0, 1, false);
+  rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[0], &value0, 1, false);
 
   ip[0] = 10; ip[1] = 1; ip[2] = 0; ip[3] = 103;
   addr = rfc5444_writer_add_address(wr, provider->creator, ip, 32, false);
-  rfc5444_writer_add_addrtlv(wr, addr, addrtlvs[1]._tlvtype, &value1, 1, false);
+  rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[1], &value1, 1, false);
 
   ip[0] = 10; ip[1] = 11; ip[2] = 11; ip[3] = 11;
   addr = rfc5444_writer_add_address(wr, provider->creator, ip, 32, false);
-  rfc5444_writer_add_addrtlv(wr, addr, addrtlvs[1]._tlvtype, &value1, 1, false);
+  rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[1], &value1, 1, false);
 }
 
 static void write_packet(struct rfc5444_writer *w __attribute__ ((unused)),
