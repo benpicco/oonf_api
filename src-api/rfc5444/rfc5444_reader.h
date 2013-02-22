@@ -231,7 +231,7 @@ struct rfc5444_reader_tlvblock_consumer_entry {
 /* representation of a tlv block consumer */
 struct rfc5444_reader_tlvblock_consumer {
   /* sorted tree of consumers for a packet, message or address tlv block */
-  struct avl_node node;
+  struct avl_node _node;
 
   /* order of this consumer */
   int order;
@@ -246,7 +246,7 @@ struct rfc5444_reader_tlvblock_consumer {
   uint8_t msg_id;
 
   /* true if an address block consumer, false if message/packet consumer */
-  bool addrblock_consumer;
+  bool _addrblock_consumer;
 
   /* List of sorted consumer entries */
   struct list_entity _consumer_list;

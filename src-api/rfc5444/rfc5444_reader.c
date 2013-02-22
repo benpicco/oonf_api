@@ -190,7 +190,7 @@ rfc5444_reader_handle_packet(struct rfc5444_reader *parser, uint8_t *buffer, siz
   }
 
   /* handle packet consumers, call start callbacks */
-  avl_for_each_element(&parser->packet_consumer, consumer, node) {
+  avl_for_each_element(&parser->packet_consumer, consumer, _node) {
     last_started = consumer;
     /* this one can drop a packet */
     if (consumer->start_callback != NULL) {
@@ -230,7 +230,7 @@ cleanup_parse_packet:
 #endif
   /* call end-of-context callback */
   if (!avl_is_empty(&parser->packet_consumer)) {
-    avl_for_first_to_element_reverse(&parser->packet_consumer, last_started, consumer, node) {
+    avl_for_first_to_element_reverse(&parser->packet_consumer, last_started, consumer, _node) {
       if (consumer->end_callback) {
         consumer->end_callback(consumer, &context, result != RFC5444_OKAY);
       }
@@ -279,7 +279,7 @@ rfc5444_reader_add_message_consumer(struct rfc5444_reader *parser,
     struct rfc5444_reader_tlvblock_consumer_entry *entries, size_t entrycount,
     uint8_t msg_id, int order) {
   _add_consumer(consumer, &parser->message_consumer, entries, entrycount, order);
-  consumer->addrblock_consumer = false;
+  consumer->_addrblock_consumer = false;
   consumer->msg_id = msg_id;
 }
 
@@ -299,7 +299,7 @@ rfc5444_reader_add_defaultmsg_consumer(struct rfc5444_reader *parser,
     int order) {
   _add_consumer(consumer, &parser->message_consumer, entries, entrycount, order);
   consumer->default_msg_consumer = true;
-  consumer->addrblock_consumer = false;
+  consumer->_addrblock_consumer = false;
 }
 
 /**
@@ -318,7 +318,7 @@ rfc5444_reader_add_address_consumer(struct rfc5444_reader *parser,
     struct rfc5444_reader_tlvblock_consumer_entry *entries, size_t entrycount,
     uint8_t msg_id, int order) {
   _add_consumer(consumer, &parser->message_consumer, entries, entrycount, order);
-  consumer->addrblock_consumer = true;
+  consumer->_addrblock_consumer = true;
   consumer->msg_id = msg_id;
 }
 
@@ -338,7 +338,7 @@ rfc5444_reader_add_defaultaddress_consumer(struct rfc5444_reader *parser,
     int order) {
   _add_consumer(consumer, &parser->message_consumer, entries, entrycount, order);
   consumer->default_msg_consumer = true;
-  consumer->addrblock_consumer = true;
+  consumer->_addrblock_consumer = true;
 }
 
 /**
@@ -349,7 +349,7 @@ rfc5444_reader_add_defaultaddress_consumer(struct rfc5444_reader *parser,
 void
 rfc5444_reader_remove_packet_consumer(struct rfc5444_reader *parser,
     struct rfc5444_reader_tlvblock_consumer *consumer) {
-  assert (!consumer->addrblock_consumer && consumer->msg_id == 0);
+  assert (!consumer->_addrblock_consumer && consumer->msg_id == 0);
   _free_consumer(&parser->packet_consumer, consumer);
 }
 
@@ -365,7 +365,7 @@ rfc5444_reader_remove_message_consumer(struct rfc5444_reader *parser,
 }
 
 /**
- * Comparator for two tlvblock consumers. addrblock_consumer field is
+ * Comparator for two tlvblock consumers. _addrblock_consumer field is
  * used as a tie-breaker if order is the same.
  */
 static int
@@ -380,10 +380,10 @@ _consumer_avl_comp(const void *k1, const void *k2,
   if (c1->order < c2->order) {
     return -1;
   }
-  if (c1->addrblock_consumer && !c2->addrblock_consumer) {
+  if (c1->_addrblock_consumer && !c2->_addrblock_consumer) {
     return 1;
   }
-  if (!c1->addrblock_consumer && c2->addrblock_consumer) {
+  if (!c1->_addrblock_consumer && c2->_addrblock_consumer) {
     return -1;
   }
   return 0;
@@ -1056,8 +1056,8 @@ schedule_end_message_cbs(struct rfc5444_reader_tlvblock_context *tlv_context,
 
   tlv_context->type = RFC5444_CONTEXT_MESSAGE;
 
-  avl_for_element_range_reverse(first, last, consumer, node) {
-    if (consumer->end_callback && !consumer->addrblock_consumer
+  avl_for_element_range_reverse(first, last, consumer, _node) {
+    if (consumer->end_callback && !consumer->_addrblock_consumer
         && (consumer->default_msg_consumer || consumer->msg_id == tlv_context->msg_type)) {
       r = consumer->end_callback(consumer, tlv_context, result != RFC5444_OKAY);
       if (r > result) {
@@ -1184,7 +1184,7 @@ _handle_message(struct rfc5444_reader *parser,
   }
 
   /* loop through list of message consumers */
-  avl_for_each_element(&parser->message_consumer, consumer, node) {
+  avl_for_each_element(&parser->message_consumer, consumer, _node) {
     if (!consumer->default_msg_consumer && consumer->msg_id != tlv_context->msg_type) {
       /* wrong type of message, continue... */
       continue;
@@ -1205,7 +1205,7 @@ _handle_message(struct rfc5444_reader *parser,
       same_order[0] = NULL;
     }
 
-    if (consumer->addrblock_consumer) {
+    if (consumer->_addrblock_consumer) {
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
       result =
 #endif
@@ -1328,8 +1328,8 @@ _add_consumer(struct rfc5444_reader_tlvblock_consumer *consumer, struct avl_tree
   consumer->order = order;
 
   /* insert into global list of consumers */
-  consumer->node.key = consumer;
-  avl_insert(consumer_tree, &consumer->node);
+  consumer->_node.key = consumer;
+  avl_insert(consumer_tree, &consumer->_node);
   return consumer;
 }
 
@@ -1343,8 +1343,8 @@ static void
 _free_consumer(struct avl_tree *consumer_tree,
     struct rfc5444_reader_tlvblock_consumer *consumer) {
   /* remove consumer from tree */
-  if (avl_is_node_added(&consumer->node)) {
-    avl_remove(consumer_tree, &consumer->node);
+  if (avl_is_node_added(&consumer->_node)) {
+    avl_remove(consumer_tree, &consumer->_node);
   }
 }
 
