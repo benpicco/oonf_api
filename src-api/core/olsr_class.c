@@ -252,6 +252,11 @@ int
 olsr_class_extend(struct olsr_class_extension *ext) {
   struct olsr_class *c;
 
+  if (ext->_offset != 0) {
+    /* already registered */
+    return 0;
+  }
+
   c = avl_find_element(&olsr_classes, ext->class_name, c, _node);
   if (c == NULL) {
     OLSR_WARN(LOG_CLASS, "Unknown class %s for extension %s",

@@ -55,6 +55,7 @@
 enum {
   RFC5444_VALIDATOR_PRIORITY = -256,
   RFC5444_MAIN_PARSER_PRIORITY = 0,
+  RFC5444_LQ_PARSER_PRIORITY = 64,
   RFC5444_PLUGIN_PARSER_PRIORITY = 256,
 };
 
@@ -101,7 +102,8 @@ struct olsr_rfc5444_protocol {
    * this variables are only valid during packet processing and contain
    * additional information about the current packet
    */
-  union netaddr_socket *input_address;
+  struct netaddr *input_address;
+  union netaddr_socket *input_socket;
   struct olsr_rfc5444_interface *input_interface;
   bool input_is_multicast;
 
@@ -113,6 +115,7 @@ struct olsr_rfc5444_protocol {
   struct avl_tree _interface_tree;
 
   int _refcount;
+  int _pktseqno_refcount;
 
   uint8_t _msg_buffer[RFC5444_MAX_MESSAGE_SIZE];
   uint8_t _addrtlv_buffer[RFC5444_ADDRTLV_BUFFER];
@@ -211,6 +214,18 @@ static INLINE void
 olsr_rfc5444_remove_target_seqno(struct olsr_rfc5444_target *target) {
   if (target->_pktseqno_refcount > 0) {
     target->_pktseqno_refcount--;
+  }
+}
+
+static INLINE void
+olsr_rfc5444_add_protocol_seqno(struct olsr_rfc5444_protocol *protocol) {
+  protocol->_pktseqno_refcount++;
+}
+
+static INLINE void
+olsr_rfc5444_remove_protocol_seqno(struct olsr_rfc5444_protocol *protocol) {
+  if (protocol->_pktseqno_refcount > 0) {
+    protocol->_pktseqno_refcount--;
   }
 }
 #endif /* OLSR_RFC5444_H_ */

@@ -783,6 +783,7 @@ _cb_receive_data(struct olsr_packet_socket *sock,
   struct olsr_rfc5444_protocol *protocol;
   struct olsr_rfc5444_interface *interf;
   enum rfc5444_result result;
+  struct netaddr source_ip;
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
 #endif
@@ -790,7 +791,15 @@ _cb_receive_data(struct olsr_packet_socket *sock,
   interf = sock->config.user;
   protocol = interf->protocol;
 
-  protocol->input_address = from;
+  if (netaddr_from_socket(&source_ip, from)) {
+    OLSR_WARN(LOG_RFC5444, "Could not convert socket to address: %s",
+        netaddr_socket_to_string(&buf, from));
+    return;
+  }
+
+  protocol->input_socket = from;
+  protocol->input_address = &source_ip;
+
   protocol->input_interface = interf;
   protocol->input_is_multicast =
       sock == &interf->_socket.multicast_v4
@@ -994,12 +1003,17 @@ _free_addrtlv_entry(void *addrtlv) {
 static void
 _cb_add_seqno(struct rfc5444_writer *writer, struct rfc5444_writer_interface *interf) {
   struct olsr_rfc5444_target *target;
+  bool seqno;
 
   target = container_of(interf, struct olsr_rfc5444_target, rfc5444_if);
 
-  rfc5444_writer_set_pkt_header(writer, interf, target->_pktseqno_refcount > 0);
-  if (target->_pktseqno_refcount > 0) {
-    rfc5444_writer_set_pkt_seqno(writer, interf, interf->last_seqno + 1);
+  seqno = target->_pktseqno_refcount > 0
+      || target->interface->protocol->_pktseqno_refcount > 0;
+
+  rfc5444_writer_set_pkt_header(writer, interf, seqno);
+  if (seqno) {
+    interf->last_seqno++;
+    rfc5444_writer_set_pkt_seqno(writer, interf, interf->last_seqno);
   }
 }
 
