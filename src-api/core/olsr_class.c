@@ -107,7 +107,7 @@ olsr_class_add(struct olsr_class *ci)
   assert (ci->name);
 
   /* round up size to make block extendable */
-  ci->size = _roundup(ci->size);
+  ci->total_size = _roundup(ci->size);
 
   /* hook into tree */
   ci->_node.key = ci->name;
@@ -118,11 +118,10 @@ olsr_class_add(struct olsr_class *ci)
     ci->to_keystring = _cb_to_keystring;
   }
 
-  /* Init the free list */
+  /* Init list heads */
   list_init_head(&ci->_free_list);
-
-  /* Init the list for listeners */
   list_init_head(&ci->_listeners);
+  list_init_head(&ci->_extensions);
 }
 
 /**
@@ -144,6 +143,32 @@ olsr_class_remove(struct olsr_class *ci)
   list_for_each_element_safe(&ci->_listeners, l, _node, iterator) {
     olsr_class_listener_remove(l);
   }
+}
+
+/**
+ * Set a class to a new size. Can only be done as long as no
+ * memory objects are allocated.
+ * @param ci pointer to class
+ */
+int
+olsr_class_resize(struct olsr_class *ci) {
+  struct olsr_class_extension *ext;
+  if (ci->_current_usage > 0) {
+    return -1;
+  }
+
+  /* round up size to make block extendable */
+  ci->total_size = _roundup(ci->size);
+
+  _free_freelist(ci);
+
+  /* recalculate offsets */
+  list_for_each_element(&ci->_extensions, ext, _node) {
+    ext->_offset = ci->total_size;
+
+    ci->total_size = _roundup(ci->total_size + ext->size);
+  }
+  return 0;
 }
 
 /**
@@ -169,7 +194,7 @@ olsr_class_malloc(struct olsr_class *ci)
      * No reusable memory block on the free_list.
      * Allocate a fresh one.
      */
-    ptr = calloc(1, ci->size);
+    ptr = calloc(1, ci->total_size);
     if (ptr == NULL) {
       OLSR_WARN(LOG_CLASS, "Out of memory for: %s", ci->name);
       return NULL;
@@ -274,10 +299,10 @@ olsr_class_extend(struct olsr_class_extension *ext) {
   _free_freelist(c);
 
   /* old size is new offset */
-  ext->_offset = c->size;
+  ext->_offset = c->total_size;
 
   /* calculate new size */
-  c->size = _roundup(c->size + ext->size);
+  c->total_size = _roundup(c->total_size + ext->size);
   return 0;
 }
 

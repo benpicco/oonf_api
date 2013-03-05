@@ -280,6 +280,8 @@ olsr_rfc5444_init(void) {
     olsr_rfc5444_cleanup();
     return -1;
   }
+
+  memset(&_printer_session, 0, sizeof(_printer_session));
   _printer_session.output = &_printer_buffer;
 
   rfc5444_reader_init(&_printer);

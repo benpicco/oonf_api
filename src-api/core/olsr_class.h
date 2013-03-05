@@ -78,7 +78,8 @@ struct olsr_class {
    */
   const char *(*to_keystring)(struct olsr_objectkey_str *, struct olsr_class *, void *);
 
-  /* Statistics and internal bookkeeping */
+  /* Size of class including extensions */
+  size_t total_size;
 
   /* List node for classes */
   struct avl_node _node;
@@ -88,6 +89,9 @@ struct olsr_class {
 
   /* listeners of this class */
   struct list_entity _listeners;
+
+  /* extensions of this class */
+  struct list_entity _extensions;
 
   /* Length of free list */
   uint32_t _free_list_size;
@@ -99,12 +103,25 @@ struct olsr_class {
   uint32_t _allocated, _recycled;
 };
 
+/*
+ * This structure represents an extension of a class. The extension can
+ * be registered as long as no memory objects are allocated
+ */
 struct olsr_class_extension {
+  /* name of the extension for logging/debug purpose */
   const char *name;
+
+  /* name of the class to be extended */
   const char *class_name;
+
+  /* size of the extension */
   size_t size;
 
+  /* offset of the extension within the memory block */
   size_t _offset;
+
+  /* node for list of class extensions */
+  struct list_entity _node;
 };
 
 struct olsr_class_listener {
@@ -139,6 +156,7 @@ void olsr_class_cleanup(void);
 
 EXPORT void olsr_class_add(struct olsr_class *);
 EXPORT void olsr_class_remove(struct olsr_class *);
+EXPORT int olsr_class_resize(struct olsr_class *);
 
 EXPORT void *olsr_class_malloc(struct olsr_class *)
     __attribute__((warn_unused_result));
