@@ -86,11 +86,14 @@ static struct rfc5444_reader_tlvblock_consumer _packet_consumer = {
   .tlv_callback = _pkt_tlv_callback,
 };
 static struct rfc5444_reader_tlvblock_consumer _msg_consumer = {
+  .default_msg_consumer = true,
   .start_callback = _msg_start_callback,
   .end_callback = _msg_end_callback,
   .tlv_callback = _msg_tlv_callback,
 };
 static struct rfc5444_reader_tlvblock_consumer _addr_consumer = {
+  .default_msg_consumer = true,
+  .addrblock_consumer = true,
   .start_callback = _addr_start_callback,
   .end_callback = _addr_end_callback,
   .tlv_callback = _addr_tlv_callback,
@@ -431,9 +434,9 @@ main(int argc __attribute__((unused)), char **argv __attribute__((unused))) {
   BEGIN_TESTING(NULL);
 
   rfc5444_reader_init(&reader);
-  rfc5444_reader_add_packet_consumer(&reader, &_packet_consumer, NULL, 0, 0);
-  rfc5444_reader_add_defaultmsg_consumer(&reader, &_msg_consumer, NULL, 0, 0);
-  rfc5444_reader_add_defaultaddress_consumer(&reader, &_addr_consumer, NULL, 0, 0);
+  rfc5444_reader_add_packet_consumer(&reader, &_packet_consumer, NULL, 0);
+  rfc5444_reader_add_message_consumer(&reader, &_msg_consumer, NULL, 0);
+  rfc5444_reader_add_message_consumer(&reader, &_addr_consumer, NULL, 0);
 
   avl_for_each_element(&_test_tree, packet, _node) {
     test_interop2010(packet);

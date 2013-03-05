@@ -156,57 +156,65 @@ The total order of callbacks can be described as:
    - tlv_callback (tlv_1)
    - ...
    - tlv_callback (tlv_n)
+   - block_callback (tlvs)
  * packet_consumer "order 2"
    - start_callback
    - tlv_callback (tlv_1)
    - ...
    - tlv_callback (tlv_n)
+   - block_callback (tlvs)
  
    * message_consumer "order 1"
      - start_callback
      - tlv_callback (tlv_1)
      - ...
      - tlv_callback (tlv_n)
+     - block_callback (tlvs)
 
-     * address_consumer "order 1"
+   * address_consumer "order 1"
+     * address addr_1
        - start_callback (addr_1)
        - tlv_callback (addr_1, tlv_1)
        - ...
        - tlv_callback (addr_1, tlv_n)
+       - block_callback (tlvs)
        - end_callback (addr_1)
    
-     * address_consumer "order 1"
+     * address addr_2
        - start_callback (addr_2)
        - tlv_callback (addr_2, tlv_1)
        - ...
        - tlv_callback (addr_2, tlv_n)
+       - block_callback (tlvs)
        - end_callback (addr_2)
  
    * message_consumer "order 1"
      - end_callback
   
-   * message_consumer "order 1"
+   * message_consumer "order 2"
      - start_callback
      - tlv_callback (tlv_1)
      - ...
      - tlv_callback (tlv_n)
+     - block_callback (tlvs)
+     - end_callback
 
-     * address_consumer "order 1"
+   * address_consumer "order 3"
+     * address addr_1
        - start_callback (addr_1)
        - tlv_callback (addr_1, tlv_1)
        - ...
        - tlv_callback (addr_1, tlv_n)
+       - block_callback (tlvs)
        - end_callback (addr_1)
    
-     * address_consumer "order 1"
+     * address addr_2
        - start_callback (addr_2)
        - tlv_callback (addr_2, tlv_1)
        - ...
        - tlv_callback (addr_2, tlv_n)
+       - block_callback (tlvs)
        - end_callback (addr_2)
- 
-   * message_consumer "order 1"
-     - end_callback
  
  * packet_consumer "order 2"
    - end_callback

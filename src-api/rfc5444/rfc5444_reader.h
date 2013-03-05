@@ -246,7 +246,7 @@ struct rfc5444_reader_tlvblock_consumer {
   uint8_t msg_id;
 
   /* true if an address block consumer, false if message/packet consumer */
-  bool _addrblock_consumer;
+  bool addrblock_consumer;
 
   /* List of sorted consumer entries */
   struct list_entity _consumer_list;
@@ -297,24 +297,11 @@ EXPORT void rfc5444_reader_init(struct rfc5444_reader *);
 EXPORT void rfc5444_reader_cleanup(struct rfc5444_reader *);
 EXPORT void rfc5444_reader_add_packet_consumer(struct rfc5444_reader *parser,
     struct rfc5444_reader_tlvblock_consumer *consumer,
-    struct rfc5444_reader_tlvblock_consumer_entry *entries, size_t entrycount,
-    int order);
+    struct rfc5444_reader_tlvblock_consumer_entry *entries, size_t entrycount);
 EXPORT void rfc5444_reader_add_message_consumer(struct rfc5444_reader *,
     struct rfc5444_reader_tlvblock_consumer *,
     struct rfc5444_reader_tlvblock_consumer_entry *,
-    size_t entrycount, uint8_t msg_id, int order);
-EXPORT void rfc5444_reader_add_defaultmsg_consumer(struct rfc5444_reader *parser,
-    struct rfc5444_reader_tlvblock_consumer *,
-    struct rfc5444_reader_tlvblock_consumer_entry *entries,
-    size_t entrycount, int order);
-EXPORT void rfc5444_reader_add_address_consumer(struct rfc5444_reader *,
-    struct rfc5444_reader_tlvblock_consumer *,
-    struct rfc5444_reader_tlvblock_consumer_entry *,
-    size_t entrycount, uint8_t msg_id, int order);
-EXPORT void rfc5444_reader_add_defaultaddress_consumer(struct rfc5444_reader *parser,
-    struct rfc5444_reader_tlvblock_consumer *,
-    struct rfc5444_reader_tlvblock_consumer_entry *entries,
-    size_t entrycount, int order);
+    size_t entrycount);
 
 EXPORT void rfc5444_reader_remove_packet_consumer(
     struct rfc5444_reader *, struct rfc5444_reader_tlvblock_consumer *);

@@ -175,10 +175,6 @@ enum rfc5444_linkmetric_values {
   RFC5444_LINKMETRIC_FLAGS_MASK = 0xf000,
 };
 
-enum {
-  RFC5444_LINKMETRIC_INFINITE = -1,
-};
-
 /* values for MPR address TLV */
 enum rfc5444_mpr_values {
   RFC5444_MPR_FLOODING = 1,

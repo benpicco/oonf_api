@@ -43,17 +43,25 @@
 
 #include "common/common_types.h"
 
-/* timetlv_max = 15 * 2^28 * 1000 / 1024 = 15000 << 18 = 3 932 160 000 ms */
-#define RFC5444_TIMETLV_MAX 0xea600000
+enum {
+  /* timetlv_max = 15 * 2^28 * 1000 / 1024 = 15000 << 18 = 3 932 160 000 ms */
+  RFC5444_TIMETLV_MAX = 0xea600000,
 
-/* timetlv_min = 1000/1024 ms */
-#define RFC5444_TIMETLV_MIN 0x00000001
+  /* timetlv_min = 1000/1024 ms */
+  RFC5444_TIMETLV_MIN = 0x00000001,
 
-/* metric_max = 1<<24 - 256 */
-#define RFC5444_METRIC_MAX 0xffff00
+  /* metric_max = 1<<24 - 256 */
+  RFC5444_METRIC_MAX = 0xffff00,
 
-/* metric_min = 1 */
-#define RFC5444_METRIC_MIN 0x000001
+  /* metric_min = 1 */
+  RFC5444_METRIC_MIN = 0x000001,
+
+  /* larger than possible metric value */
+  RFC5444_METRIC_INFINITE = 0xffffff,
+
+  /* default metric value */
+  RFC5444_METRIC_DEFAULT = 0x10000,
+};
 
 EXPORT uint8_t rfc5444_timetlv_encode(uint64_t);
 EXPORT uint64_t rfc5444_timetlv_decode(uint8_t);

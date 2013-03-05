@@ -83,7 +83,10 @@ static uint8_t testpacket212[] = {
 };
 
 static struct rfc5444_reader reader;
-struct rfc5444_reader_tlvblock_consumer consumer;
+struct rfc5444_reader_tlvblock_consumer consumer = {
+  .order = 1,
+};
+
 static bool got_tlv[2];
 static bool got_multiple_times[2];
 static bool got_failed_constraints;
@@ -184,7 +187,7 @@ static void test_packet212(void) {
 
 int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   rfc5444_reader_init(&reader);
-  rfc5444_reader_add_packet_consumer(&reader, &consumer, consumer_entries, ARRAYSIZE(consumer_entries), 1);
+  rfc5444_reader_add_packet_consumer(&reader, &consumer, consumer_entries, ARRAYSIZE(consumer_entries));
   consumer.block_callback = cb_blocktlv_packet_okay;
   consumer.block_callback_failed_constraints = cb_blocktlv_packet_failed;
 

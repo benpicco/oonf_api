@@ -79,20 +79,23 @@ rfc5444_print_add(struct rfc5444_print_session *session,
   /* memorize reader */
   session->_reader = reader;
 
-  rfc5444_reader_add_packet_consumer(reader, &session->_pkt, NULL, 0, 0);
   session->_pkt.start_callback = _cb_print_pkt_start;
   session->_pkt.tlv_callback = _cb_print_pkt_tlv;
   session->_pkt.end_callback = _cb_print_pkt_end;
+  rfc5444_reader_add_packet_consumer(reader, &session->_pkt, NULL, 0);
 
-  rfc5444_reader_add_defaultmsg_consumer(reader, &session->_msg, NULL, 0, 0);
+  session->_msg.default_msg_consumer = true;
   session->_msg.start_callback = _cb_print_msg_start;
   session->_msg.tlv_callback = _cb_print_msg_tlv;
   session->_msg.end_callback = _cb_print_msg_end;
+  rfc5444_reader_add_message_consumer(reader, &session->_msg, NULL, 0);
 
-  rfc5444_reader_add_defaultaddress_consumer(reader, &session->_addr, NULL, 0, 0);
+  session->_addr.default_msg_consumer = true;
+  session->_addr.addrblock_consumer = true;
   session->_addr.start_callback = _cb_print_addr_start;
   session->_addr.tlv_callback = _cb_print_addr_tlv;
   session->_addr.end_callback = _cb_print_addr_end;
+  rfc5444_reader_add_message_consumer(reader, &session->_addr, NULL, 0);
 }
 
 /**

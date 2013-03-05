@@ -2478,29 +2478,37 @@ main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   rfc5444_reader_init(&context);
 
   for (order = 1; order <= 2; order++) {
-    rfc5444_reader_add_packet_consumer(&context, &packet_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries), order);
+    packet_consumer[order-1].order = order;
     packet_consumer[order-1].start_callback = cb_start_packet;
     packet_consumer[order-1].tlv_callback = cb_tlv_packet;
     packet_consumer[order-1].end_callback = cb_end_packet;
     packet_consumer[order-1].block_callback = cb_blocktlv_packet;
+    rfc5444_reader_add_packet_consumer(&context, &packet_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries));
 
-    rfc5444_reader_add_message_consumer(&context, &msg1_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries), 1, order);
+    msg1_consumer[order-1].order = order;
+    msg1_consumer[order-1].msg_id = 1;
     msg1_consumer[order-1].start_callback = cb_start_message;
     msg1_consumer[order-1].tlv_callback = cb_tlv_message;
     msg1_consumer[order-1].end_callback = cb_end_message;
     msg1_consumer[order-1].block_callback = cb_blocktlv_message;
+    rfc5444_reader_add_message_consumer(&context, &msg1_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries));
 
-    rfc5444_reader_add_address_consumer(&context, &msg1_addr_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries), 1, order);
+    msg1_addr_consumer[order-1].order = order;
+    msg1_addr_consumer[order-1].msg_id = 1;
+    msg1_addr_consumer[order-1].addrblock_consumer = true;
     msg1_addr_consumer[order-1].start_callback = cb_start_addr;
     msg1_addr_consumer[order-1].tlv_callback = cb_tlv_address;
     msg1_addr_consumer[order-1].end_callback = cb_end_addr;
     msg1_addr_consumer[order-1].block_callback = cb_blocktlv_address;
+    rfc5444_reader_add_message_consumer(&context, &msg1_addr_consumer[order-1], consumer_entries, ARRAYSIZE(consumer_entries));
   }
 
-  rfc5444_reader_add_message_consumer(&context, &msg2_consumer, consumer_entries, ARRAYSIZE(consumer_entries), 2, 3);
+  msg2_consumer.order = 3;
+  msg2_consumer.msg_id = 2;
   msg2_consumer.start_callback = cb_start_message2;
   msg2_consumer.end_callback = cb_end_message2;
   msg2_consumer.block_callback = cb_blocktlv_message2;
+  rfc5444_reader_add_message_consumer(&context, &msg2_consumer, consumer_entries, ARRAYSIZE(consumer_entries));
 
   BEGIN_TESTING(clear_elements);
 
