@@ -329,7 +329,7 @@ _consumer_avl_comp(const void *k1, const void *k2,
  * @param entry pointer tlvblock entry
  * @return 256*type + exttype
  */
-static int
+static INLINE int
 _calc_tlvconsumer_intorder(struct rfc5444_reader_tlvblock_consumer_entry *entry) {
   return (((int)entry->type) << 8) | ((int)entry->type_ext);
 }
@@ -339,7 +339,7 @@ _calc_tlvconsumer_intorder(struct rfc5444_reader_tlvblock_consumer_entry *entry)
  * @param entry pointer tlvblock entry
  * @return 256*type + exttype
  */
-static int
+static INLINE int
 _calc_tlvblock_intorder(struct rfc5444_reader_tlvblock_entry *entry) {
   return (((int)entry->type) << 8) | ((int)entry->type_ext);
 }
@@ -350,7 +350,7 @@ _calc_tlvblock_intorder(struct rfc5444_reader_tlvblock_entry *entry) {
  * @param int_type2 second internal type
  * @return true if both have the same tlv type, false otherwise
  */
-static bool
+static INLINE bool
 _has_same_tlvtype(int int_type1, int int_type2) {
   return (int_type1 & 0xff00) == (int_type2 & 0xff00);
 }
@@ -440,7 +440,7 @@ _parse_tlv(struct rfc5444_reader_tlvblock_entry *entry, uint8_t **ptr, uint8_t *
   }
 
   /* calculate internal combination of tlv type and extension */
-  entry->int_order = _calc_tlvblock_intorder(entry);
+  entry->_order = _calc_tlvblock_intorder(entry);
 
   /* check for TLV index values */
   masked = entry->flags & (RFC5444_TLV_FLAG_SINGLE_IDX | RFC5444_TLV_FLAG_MULTI_IDX);
@@ -475,7 +475,7 @@ _parse_tlv(struct rfc5444_reader_tlvblock_entry *entry, uint8_t **ptr, uint8_t *
   }
 
   /* check for multivalue tlv field */
-  entry->int_multivalue_tlv = (entry->flags & RFC5444_TLV_FLAG_MULTIVALUE) != 0;
+  entry->_multivalue_tlv = (entry->flags & RFC5444_TLV_FLAG_MULTIVALUE) != 0;
 
   /* not enough bytes left ? */
   if (*ptr + entry->length > eob) {
@@ -488,21 +488,21 @@ _parse_tlv(struct rfc5444_reader_tlvblock_entry *entry, uint8_t **ptr, uint8_t *
 
   /* copy pointer to value */
   if (entry->length == 0) {
-    entry->int_value = NULL;
+    entry->_value = NULL;
     return RFC5444_OKAY;
   }
 
-  entry->int_value = *ptr;
+  entry->_value = *ptr;
   *ptr += entry->length;
 
   /* handle multivalue TLVs */
   count = entry->index2 - entry->index1 + 1;
   if (count == 1) {
-    entry->int_multivalue_tlv = false;
+    entry->_multivalue_tlv = false;
   }
-  if (!entry->int_multivalue_tlv) {
+  if (!entry->_multivalue_tlv) {
     /* copy internal value pointer if no multivalue tlv */
-    entry->single_value = entry->int_value;
+    entry->single_value = entry->_value;
     return RFC5444_OKAY;
   }
 
@@ -565,7 +565,7 @@ _parse_tlvblock(struct rfc5444_reader *parser,
     memcpy (tlv1, &entry, sizeof(entry));
 
     /* put into sorted list */
-    tlv1->node.key = &tlv1->int_order;
+    tlv1->node.key = &tlv1->_order;
     avl_insert(tlvblock, &tlv1->node);
   }
 cleanup_parse_tlvblock:
@@ -605,7 +605,7 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
   }
   else {
     tlv = avl_first_element(entries, tlv, node);
-    tlv_order = tlv->int_order;
+    tlv_order = tlv->_order;
   }
 
   /* initialize consumer pointer */
@@ -641,12 +641,12 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
       }
     }
 
-    if (index_match && tlv->int_multivalue_tlv) {
+    if (index_match && tlv->_multivalue_tlv) {
       size_t offset;
 
       /* calculate value pointer for multivalue tlv */
       offset = (idx - tlv->index1) * tlv->length;
-      tlv->single_value = &tlv->int_value[offset];
+      tlv->single_value = &tlv->_value[offset];
     }
 
     /* handle tlv_callback first */
@@ -709,7 +709,7 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
       }
       else {
         tlv = avl_next_element(tlv, node);
-        tlv_order = tlv->int_order;
+        tlv_order = tlv->_order;
       }
     }
     if (cons_order < tlv_order) {

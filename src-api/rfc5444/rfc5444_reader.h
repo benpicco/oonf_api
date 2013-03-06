@@ -62,7 +62,7 @@ enum rfc5444_reader_tlvblock_context_type {
  * This struct temporary holds the content of a decoded TLV.
  */
 struct rfc5444_reader_tlvblock_entry {
-  /* single linked list of entries */
+  /* tree of TLVs */
   struct avl_node node;
 
   /* tlv type */
@@ -87,16 +87,16 @@ struct rfc5444_reader_tlvblock_entry {
   uint8_t index1, index2;
 
   /* internal sorting order for types: tlvtype * 256 + exttype */
-  uint16_t int_order;
+  uint16_t _order;
 
   /*
    * pointer to start of value array, can be different from
    * "value" because of multivalue tlvs
    */
-  uint8_t *int_value;
+  uint8_t *_value;
 
   /* true if this is a multivalue tlv */
-  bool int_multivalue_tlv;
+  bool _multivalue_tlv;
 
   /* internal bitarray to mark tlvs that shall be skipped by the next handler */
   struct rfc5444_reader_bitarray256 int_drop_tlv;
@@ -307,20 +307,6 @@ EXPORT void rfc5444_reader_remove_packet_consumer(
     struct rfc5444_reader *, struct rfc5444_reader_tlvblock_consumer *);
 EXPORT void rfc5444_reader_remove_message_consumer(
     struct rfc5444_reader *, struct rfc5444_reader_tlvblock_consumer *);
-
-/**
- * Inline function to remove an address consumer. Both message and
- * address consumers are internally mapped to the same data structure,
- * so you can just use the rfc5444_reader_remove_message_consumer()
- * function.
- *
- * @param reader pointer to reader context
- * @param consumer pointer to tlvblock consumer object
- */
-static INLINE void rfc5444_reader_remove_address_consumer(
-    struct rfc5444_reader *reader, struct rfc5444_reader_tlvblock_consumer *consumer) {
-  rfc5444_reader_remove_message_consumer(reader, consumer);
-}
 
 EXPORT int rfc5444_reader_handle_packet(
     struct rfc5444_reader *parser, uint8_t *buffer, size_t length);
