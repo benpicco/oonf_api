@@ -86,6 +86,12 @@ struct rfc5444_reader_tlvblock_entry {
   /* index range of tlv (for address blocks) */
   uint8_t index1, index2;
 
+  /*
+   * this points to the next tlvblock entry if there is more than one
+   * fitting to the current callback (e.g. multiple linkmetric tlvs)
+   */
+  struct rfc5444_reader_tlvblock_entry *next_entry;
+
   /* internal sorting order for types: tlvtype * 256 + exttype */
   uint16_t _order;
 
@@ -213,9 +219,6 @@ struct rfc5444_reader_tlvblock_consumer_entry {
   /* set by the consumer to make the parser copy the TLV value into a private buffer */
   void *copy_value;
 
-  /* set by the parser to announce that the TLV was present multiple times */
-  bool duplicate_tlv;
-
   /*
    * set by parser as a pointer to the TLVs data
    * This pointer will only be valid during the runtime of the
@@ -310,5 +313,8 @@ EXPORT void rfc5444_reader_remove_message_consumer(
 
 EXPORT int rfc5444_reader_handle_packet(
     struct rfc5444_reader *parser, uint8_t *buffer, size_t length);
+
+EXPORT uint8_t *rfc5444_reader_get_tlv_value(
+    struct rfc5444_reader_tlvblock_entry *tlv);
 
 #endif /* RFC5444_PARSER_H_ */

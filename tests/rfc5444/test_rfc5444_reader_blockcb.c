@@ -96,10 +96,10 @@ cb_blocktlv_packet(struct rfc5444_reader_tlvblock_consumer *cons __attribute__ (
       struct rfc5444_reader_tlvblock_context *cont __attribute__ ((unused)),
       bool mandatory_missing) {
   got_tlv[0] = consumer_entries[0].tlv != NULL;
-  got_multiple_times[0] = consumer_entries[0].duplicate_tlv;
+  got_multiple_times[0] = got_tlv[0] && consumer_entries[0].tlv->next_entry != NULL;
 
   got_tlv[1] = consumer_entries[1].tlv != NULL;
-  got_multiple_times[1] = consumer_entries[1].duplicate_tlv;
+  got_multiple_times[1] = got_tlv[1] && consumer_entries[1].tlv->next_entry != NULL;
 
   got_failed_constraints = mandatory_missing;
   return RFC5444_OKAY;

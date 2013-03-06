@@ -590,7 +590,7 @@ cleanup_parse_tlvblock:
 static enum rfc5444_result
 _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc5444_reader_tlvblock_context *context,
     struct avl_tree *entries, uint8_t idx) {
-  struct rfc5444_reader_tlvblock_entry *tlv = NULL;
+  struct rfc5444_reader_tlvblock_entry *tlv = NULL, *nexttlv = NULL;
   struct rfc5444_reader_tlvblock_consumer_entry *cons_entry;
   bool constraints_failed;
   int cons_order, tlv_order;
@@ -617,7 +617,6 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
     cons_entry = list_first_element(&consumer->_consumer_list, cons_entry, _node);
     cons_order = _calc_tlvconsumer_intorder(cons_entry);
     cons_entry->tlv = NULL;
-    cons_entry->duplicate_tlv = false;
   }
 
   /* we are running in parallel through two sorted lists */
@@ -682,8 +681,11 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
           constraints_failed = true;
         }
 
+        /* this is the last TLV that fits the description... for now */
+        tlv->next_entry = NULL;
+
         if (cons_entry->tlv == NULL) {
-          /* remember new tlv */
+          /* it is also the first one we find */
           cons_entry->tlv = tlv;
 
           if (cons_entry->copy_value != NULL && tlv->length > 0) {
@@ -697,7 +699,12 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
           }
         }
         else {
-          cons_entry->duplicate_tlv = true;
+          /* its one of many, put it at the end of the list */
+          nexttlv = cons_entry->tlv;
+          while (nexttlv->next_entry) {
+            nexttlv = nexttlv->next_entry;
+          }
+          nexttlv->next_entry = tlv;
         }
       }
     }
@@ -724,7 +731,6 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
         cons_entry = list_next_element(cons_entry, _node);
         cons_order = _calc_tlvconsumer_intorder(cons_entry);
         cons_entry->tlv = NULL;
-        cons_entry->duplicate_tlv = false;
       }
     }
   }
