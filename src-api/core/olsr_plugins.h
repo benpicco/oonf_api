@@ -66,6 +66,9 @@ void hookup_plugin_ ## plg_name (void) { \
 } \
 static struct olsr_plugin olsr_internal_plugin_definition =
 
+#define OLSR_PLUGIN7_GET_NAME() _OLSR_PLUGIN7_GET_NAME(PLUGIN_FULLNAME)
+#define _OLSR_PLUGIN7_GET_NAME(plg_name) #plg_name
+
 struct olsr_plugin {
   struct avl_node p_node;
 
@@ -116,7 +119,7 @@ EXPORT int olsr_plugins_disable(struct olsr_plugin *);
  * @param p pointer to plugin
  * @return true if its a static plugin, false otherwise
  */
-static inline bool
+static INLINE bool
 olsr_plugins_is_static(struct olsr_plugin *p) {
   return p->_dlhandle == NULL;
 }
@@ -125,7 +128,7 @@ olsr_plugins_is_static(struct olsr_plugin *p) {
  * @param p pointer to plugin
  * @return true if its a static plugin, false otherwise
  */
-static inline bool
+static INLINE bool
 olsr_plugins_is_enabled(struct olsr_plugin *p) {
   return p->_enabled;
 }

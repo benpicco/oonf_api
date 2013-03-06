@@ -122,6 +122,9 @@ olsr_class_add(struct olsr_class *ci)
   list_init_head(&ci->_free_list);
   list_init_head(&ci->_listeners);
   list_init_head(&ci->_extensions);
+
+  OLSR_DEBUG(LOG_CLASS, "Class %s added: %" PRINTF_SIZE_T_SPECIFIER " bytes\n",
+             ci->name, ci->total_size);
 }
 
 /**
@@ -143,6 +146,8 @@ olsr_class_remove(struct olsr_class *ci)
   list_for_each_element_safe(&ci->_listeners, l, _node, iterator) {
     olsr_class_listener_remove(l);
   }
+
+  OLSR_DEBUG(LOG_CLASS, "Class %s removed\n", ci->name);
 }
 
 /**
@@ -165,9 +170,16 @@ olsr_class_resize(struct olsr_class *ci) {
   /* recalculate offsets */
   list_for_each_element(&ci->_extensions, ext, _node) {
     ext->_offset = ci->total_size;
+    OLSR_DEBUG(LOG_CLASS, "Class %s resized: "
+        " '%s' has offset %" PRINTF_SIZE_T_SPECIFIER " and size %" PRINTF_SIZE_T_SPECIFIER "\n",
+               ci->name, ext->name, ext->_offset, ext->size);
 
     ci->total_size = _roundup(ci->total_size + ext->size);
   }
+
+  OLSR_DEBUG(LOG_CLASS, "Class %s: resized to %" PRINTF_SIZE_T_SPECIFIER " bytes\n",
+             ci->name, ci->total_size);
+
   return 0;
 }
 
@@ -208,7 +220,7 @@ olsr_class_malloc(struct olsr_class *ci)
     entity = ci->_free_list.next;
     list_remove(entity);
 
-    memset(entity, 0, ci->size);
+    memset(entity, 0, ci->total_size);
     ptr = entity;
 
     ci->_free_list_size--;
@@ -222,7 +234,7 @@ olsr_class_malloc(struct olsr_class *ci)
   ci->_current_usage++;
 
   OLSR_DEBUG(LOG_CLASS, "MEMORY: alloc %s, %" PRINTF_SIZE_T_SPECIFIER " bytes%s\n",
-             ci->name, ci->size, reuse ? ", reuse" : "");
+             ci->name, ci->total_size, reuse ? ", reuse" : "");
   return ptr;
 }
 
@@ -295,6 +307,9 @@ olsr_class_extend(struct olsr_class_extension *ext) {
     return -1;
   }
 
+  /* add to class extension list */
+  list_add_tail(&c->_extensions, &ext->_node);
+
   /* make sure freelist is empty */
   _free_freelist(c);
 
@@ -303,6 +318,11 @@ olsr_class_extend(struct olsr_class_extension *ext) {
 
   /* calculate new size */
   c->total_size = _roundup(c->total_size + ext->size);
+
+  OLSR_DEBUG(LOG_CLASS, "Class %s extended: %" PRINTF_SIZE_T_SPECIFIER " bytes,"
+      " '%s' has offset %" PRINTF_SIZE_T_SPECIFIER " and length %" PRINTF_SIZE_T_SPECIFIER "\n",
+             c->name, c->total_size, ext->name, ext->_offset, ext->size);
+
   return 0;
 }
 

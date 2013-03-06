@@ -156,7 +156,8 @@ void olsr_class_cleanup(void);
 
 EXPORT void olsr_class_add(struct olsr_class *);
 EXPORT void olsr_class_remove(struct olsr_class *);
-EXPORT int olsr_class_resize(struct olsr_class *);
+EXPORT int olsr_class_resize(struct olsr_class *)
+    __attribute__((warn_unused_result));
 
 EXPORT void *olsr_class_malloc(struct olsr_class *)
     __attribute__((warn_unused_result));
