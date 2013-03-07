@@ -568,7 +568,7 @@ netaddr_socket_to_string(struct netaddr_str *dst, const union netaddr_socket *sr
  * @return >0 if k1>k2, <0 if k1<k2, 0 otherwise
  */
 int
-netaddr_avlcmp(const void *k1, const void *k2, void *unused __attribute__((unused))) {
+netaddr_avlcmp(const void *k1, const void *k2) {
   return netaddr_cmp(k1, k2);
 }
 
@@ -583,7 +583,7 @@ netaddr_avlcmp(const void *k1, const void *k2, void *unused __attribute__((unuse
  * @return >0 if k1>k2, <0 if k1<k2, 0 otherwise
  */
 int
-netaddr_socket_avlcmp(const void *k1, const void *k2, void *unused __attribute__((unused))) {
+netaddr_socket_avlcmp(const void *k1, const void *k2) {
   return netaddr_socket_cmp(k1, k2);
 }
 

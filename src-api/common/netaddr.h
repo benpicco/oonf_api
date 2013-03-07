@@ -153,8 +153,8 @@ EXPORT bool netaddr_binary_is_in_subnet(const struct netaddr *subnet,
 
 EXPORT uint8_t netaddr_get_af_maxprefix(const uint32_t);
 
-EXPORT int netaddr_avlcmp(const void *, const void *, void *);
-EXPORT int netaddr_socket_avlcmp(const void *, const void *, void *);
+EXPORT int netaddr_avlcmp(const void *, const void *);
+EXPORT int netaddr_socket_avlcmp(const void *, const void *);
 
 #ifdef WIN32
 EXPORT const char *inet_ntop(int af, const void* src, char* dst, int cnt);
