@@ -53,8 +53,6 @@
 
 #include "common/autobuf.h"
 
-static size_t AUTOBUFCHUNK = 0;
-
 /**
  * @param val original size
  * @param pow2 power of 2 (1024, 4096, ...)
@@ -75,17 +73,13 @@ static int _autobuf_enlarge(struct autobuf *autobuf, size_t new_size);
 int
 abuf_init(struct autobuf *autobuf)
 {
-  if (AUTOBUFCHUNK == 0) {
-    AUTOBUFCHUNK = getpagesize();
-  }
-
   autobuf->_len = 0;
-  autobuf->_buf = calloc(1, AUTOBUFCHUNK);
+  autobuf->_buf = calloc(1, getpagesize());
   if (autobuf->_buf == NULL) {
     autobuf->_error = true;
     return -1;
   }
-  autobuf->_total = AUTOBUFCHUNK;
+  autobuf->_total = getpagesize();
   return 0;
 }
 
@@ -208,7 +202,7 @@ abuf_strftime(struct autobuf *autobuf, const char *format, const struct tm *tm)
   rc = strftime(autobuf->_buf + autobuf->_len, autobuf->_total - autobuf->_len, format, tm);
   if (rc == 0) {
     /* we had an error! Probably the buffer too small. So we add some bytes. */
-    if (_autobuf_enlarge(autobuf, autobuf->_total + AUTOBUFCHUNK) < 0) {
+    if (_autobuf_enlarge(autobuf, autobuf->_total + getpagesize()) < 0) {
       autobuf->_buf[autobuf->_len] = '\0';
       return -1;
     }
@@ -299,13 +293,13 @@ abuf_pull(struct autobuf * autobuf, size_t len) {
   }
   autobuf->_len -= len;
 
-  if (autobuf->_len + AUTOBUFCHUNK > autobuf->_total) {
+  if (autobuf->_len + getpagesize() > autobuf->_total) {
     /* only reduce buffer size if difference is larger than a chunk */
     return;
   }
-  newsize = autobuf->_total -= AUTOBUFCHUNK;
-  if (newsize < AUTOBUFCHUNK) {
-    newsize = AUTOBUFCHUNK;
+  newsize = autobuf->_total -= getpagesize();
+  if (newsize < (size_t)getpagesize()) {
+    newsize = getpagesize();
   }
 
   /* generate smaller buffer */
@@ -334,7 +328,7 @@ _autobuf_enlarge(struct autobuf *autobuf, size_t new_size)
 
   new_size++;
   if (new_size > autobuf->_total) {
-    roundUpSize = ROUND_UP_TO_POWER_OF_2(new_size+1, AUTOBUFCHUNK);
+    roundUpSize = ROUND_UP_TO_POWER_OF_2(new_size+1, getpagesize());
     p = realloc(autobuf->_buf, roundUpSize);
     if (p == NULL) {
 #ifdef WIN32
