@@ -187,6 +187,7 @@ cfg_get_choice_index(const char *key, const char **array, size_t array_size) {
  * a number of digits to allow fractional input
  * @param result pointer to 64 bit integer variable
  * @param string string to convert into integer
+ * @param fractions number of fractional digits
  * @return -1 if an error happened, 0 otherwise
  */
 int

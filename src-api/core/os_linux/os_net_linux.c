@@ -116,7 +116,8 @@ os_recvfrom(int fd, void *buf, size_t length, union netaddr_socket *source,
 
 /**
  * Updates the data of an interface.
- * @param interf pointer to uninitialized interface object.
+ * The interface data object will be completely overwritten
+ * @param ifdata pointer to an interface data object
  * @param name name of interface
  * @return -1 if an error happened, 0 otherwise
  */
