@@ -86,7 +86,7 @@ olsr_interface_init(void) {
 
   olsr_timer_add(&_change_timer_info);
 
-  avl_init(&olsr_interface_tree, avl_comp_strcasecmp, false, NULL);
+  avl_init(&olsr_interface_tree, avl_comp_strcasecmp, false);
   list_init_head(&_interface_listener);
 }
 

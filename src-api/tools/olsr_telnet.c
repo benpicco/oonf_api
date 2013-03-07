@@ -165,7 +165,7 @@ olsr_telnet_init(void) {
   olsr_stream_add_managed(&_telnet_managed);
 
   /* initialize telnet commands */
-  avl_init(&telnet_cmd_tree, avl_comp_strcasecmp, false, NULL);
+  avl_init(&telnet_cmd_tree, avl_comp_strcasecmp, false);
   for (i=0; i<ARRAYSIZE(_builtin); i++) {
     olsr_telnet_add(&_builtin[i]);
   }

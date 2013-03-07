@@ -340,7 +340,7 @@ _init_plugin_tree(void) {
   if (plugin_tree_initialized) {
     return;
   }
-  avl_init(&plugin_tree, avl_comp_strcasecmp, false, NULL);
+  avl_init(&plugin_tree, avl_comp_strcasecmp, false);
   plugin_tree_initialized = true;
 }
 

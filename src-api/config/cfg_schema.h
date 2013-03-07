@@ -315,7 +315,7 @@ EXPORT int cfg_schema_tobin(void *target, struct cfg_named_section *named,
 EXPORT int cfg_schema_handle_db_changes(struct cfg_db *pre_change, struct cfg_db *post_change);
 EXPORT int cfg_schema_handle_db_startup_changes(struct cfg_db *db);
 
-EXPORT int cfg_avlcmp_schemaentries(const void *p1, const void *p2, void *unused);
+EXPORT int cfg_avlcmp_schemaentries(const void *p1, const void *p2);
 
 EXPORT int cfg_schema_validate_printable(const struct cfg_schema_entry *entry,
     const char *section_name, const char *value, struct autobuf *out);

@@ -75,7 +75,7 @@ olsr_class_init(void) {
   if (olsr_subsystem_init(&_memcookie_state))
     return;
 
-  avl_init(&olsr_classes, avl_comp_strcasecmp, false, NULL);
+  avl_init(&olsr_classes, avl_comp_strcasecmp, false);
 }
 
 /**

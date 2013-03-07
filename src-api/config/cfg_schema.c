@@ -95,9 +95,9 @@ const struct {
  */
 void
 cfg_schema_add(struct cfg_schema *schema) {
-  avl_init(&schema->sections, cfg_avlcmp_keys, true, NULL);
-  avl_init(&schema->entries, cfg_avlcmp_schemaentries, true, NULL);
-  avl_init(&schema->handlers, avl_comp_uint32, true, NULL);
+  avl_init(&schema->sections, cfg_avlcmp_keys, true);
+  avl_init(&schema->entries, cfg_avlcmp_schemaentries, true);
+  avl_init(&schema->handlers, avl_comp_uint32, true);
 }
 
 /**
@@ -400,18 +400,17 @@ cfg_schema_handle_db_startup_changes(struct cfg_db *post_db) {
  *
  * @param p1 pointer to first key
  * @param p2 pointer to second key
- * @param unused
  * @return <0 if p1 comes first, 0 if both are the same, >0 otherwise
  */
 int
-cfg_avlcmp_schemaentries(const void *p1, const void *p2, void *unused) {
+cfg_avlcmp_schemaentries(const void *p1, const void *p2) {
   const struct cfg_schema_entry_key *key1, *key2;
   int result;
 
   key1 = p1;
   key2 = p2;
 
-  result = cfg_avlcmp_keys(key1->type, key2->type, unused);
+  result = cfg_avlcmp_keys(key1->type, key2->type);
   if (result != 0) {
     return result;
   }
@@ -423,7 +422,7 @@ cfg_avlcmp_schemaentries(const void *p1, const void *p2, void *unused) {
     return 1;
   }
 
-  return cfg_avlcmp_keys(key1->entry, key2->entry, unused);
+  return cfg_avlcmp_keys(key1->entry, key2->entry);
 }
 
 /**

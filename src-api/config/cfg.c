@@ -58,8 +58,8 @@ void
 cfg_add(struct cfg_instance *instance) {
   memset(instance, 0, sizeof(*instance));
 
-  avl_init(&instance->io_tree, avl_comp_strcasecmp, false, NULL);
-  avl_init(&instance->parser_tree, avl_comp_strcasecmp, false, NULL);
+  avl_init(&instance->io_tree, avl_comp_strcasecmp, false);
+  avl_init(&instance->parser_tree, avl_comp_strcasecmp, false);
 }
 
 /**
@@ -145,11 +145,10 @@ cfg_is_allowed_key(const char *key) {
  * NULL is considered a string greater than all normal strings.
  * @param p1 pointer to key 1
  * @param p2 pointer to key 2
- * @param unused not used in this comparator
  * @return similar to strcmp()
  */
 int
-cfg_avlcmp_keys(const void *p1, const void *p2, void *unused __attribute__((unused))) {
+cfg_avlcmp_keys(const void *p1, const void *p2) {
   const char *str1 = p1;
   const char *str2 = p2;
 

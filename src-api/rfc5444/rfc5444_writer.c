@@ -53,7 +53,7 @@
 
 static void _register_addrtlvtype(struct rfc5444_writer_message *msg,
     struct rfc5444_writer_tlvtype *type);
-static int _msgaddr_avl_comp(const void *k1, const void *k2, void *ptr);
+static int _msgaddr_avl_comp(const void *k1, const void *k2);
 static void *_copy_addrtlv_value(struct rfc5444_writer *writer, const void *value, size_t length);
 static void _free_tlvtype_tlvs(struct rfc5444_writer *writer, struct rfc5444_writer_tlvtype *tlvtype);
 static void _lazy_free_message(struct rfc5444_writer *writer, struct rfc5444_writer_message *msg);
@@ -92,7 +92,7 @@ rfc5444_writer_init(struct rfc5444_writer *writer) {
   _rfc5444_tlv_writer_init(&writer->_msg, 0, writer->msg_size);
 
   list_init_head(&writer->_pkthandlers);
-  avl_init(&writer->_msgcreators, avl_comp_uint8, false, NULL);
+  avl_init(&writer->_msgcreators, avl_comp_uint8, false);
 
 #if WRITER_STATE_MACHINE == true
   writer->_state = RFC5444_WRITER_NONE;
@@ -267,7 +267,7 @@ rfc5444_writer_add_address(struct rfc5444_writer *writer __attribute__ ((unused)
     list_add_tail(&msg->_addr_head, &address->_addr_node);
     avl_insert(&msg->_addr_tree, &address->_addr_tree_node);
 
-    avl_init(&address->_addrtlv_tree, avl_comp_uint32, true, NULL);
+    avl_init(&address->_addrtlv_tree, avl_comp_uint32, true);
   }
 
   address->_mandatory_addr |= mandatory;
@@ -562,11 +562,11 @@ _get_message(struct rfc5444_writer *writer, uint8_t msgid) {
   msg->addr_len = RFC5444_MAX_ADDRLEN;
 
   /* initialize list/tree heads */
-  avl_init(&msg->_provider_tree, avl_comp_uint32, true, NULL);
+  avl_init(&msg->_provider_tree, avl_comp_uint32, true);
 
   list_init_head(&msg->_tlvtype_head);
 
-  avl_init(&msg->_addr_tree, _msgaddr_avl_comp, false, msg);
+  avl_init(&msg->_addr_tree, _msgaddr_avl_comp, false);
   list_init_head(&msg->_addr_head);
   return msg;
 }
@@ -587,7 +587,7 @@ _register_addrtlvtype(struct rfc5444_writer_message *msg,
   tlvtype->_creator = msg;
   tlvtype->_full_type = _get_fulltype(tlvtype->type, tlvtype->exttype);
 
-  avl_init(&tlvtype->_tlv_tree, avl_comp_uint32, true, NULL);
+  avl_init(&tlvtype->_tlv_tree, avl_comp_uint32, true);
 
   /* add to message creator list */
   list_add_tail(&msg->_tlvtype_head, &tlvtype->_tlvtype_node);
@@ -598,9 +598,8 @@ _register_addrtlvtype(struct rfc5444_writer_message *msg,
  * Custom pointer points to corresponding rfc5444_writer_message.
  */
 static int
-_msgaddr_avl_comp(const void *k1, const void *k2, void *ptr) {
-  const struct rfc5444_writer_message *msg = ptr;
-  return memcmp(k1, k2, msg->addr_len);
+_msgaddr_avl_comp(const void *k1, const void *k2) {
+  return memcmp(k1, k2, 16);
 }
 
 /**

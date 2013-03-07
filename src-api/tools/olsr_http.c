@@ -146,7 +146,7 @@ olsr_http_init(void) {
 
   olsr_stream_add_managed(&_http_managed_socket);
 
-  avl_init(&_http_site_tree, avl_comp_strcasecmp, false, NULL);
+  avl_init(&_http_site_tree, avl_comp_strcasecmp, false);
 }
 
 /**

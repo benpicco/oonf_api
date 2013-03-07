@@ -73,7 +73,7 @@ cfg_db_add(void) {
 
   db = calloc(1, sizeof(*db));
   if (db) {
-    avl_init(&db->sectiontypes, cfg_avlcmp_keys, false, NULL);
+    avl_init(&db->sectiontypes, cfg_avlcmp_keys, false);
   }
   return db;
 }
@@ -473,7 +473,7 @@ _alloc_section(struct cfg_db *db, const char *type) {
 
   section->db = db;
 
-  avl_init(&section->names, cfg_avlcmp_keys, false, NULL);
+  avl_init(&section->names, cfg_avlcmp_keys, false);
   return section;
 }
 
@@ -522,7 +522,7 @@ _alloc_namedsection(struct cfg_section_type *section,
   avl_insert(&section->names, &named->node);
 
   named->section_type = section;
-  avl_init(&named->entries, cfg_avlcmp_keys, false, NULL);
+  avl_init(&named->entries, cfg_avlcmp_keys, false);
   return named;
 }
 

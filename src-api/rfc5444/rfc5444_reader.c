@@ -54,7 +54,7 @@
 #define RFC5444_CONSUMER_DROP_ONLY(value, def) (value)
 #endif
 
-static int _consumer_avl_comp(const void *k1, const void *k2, void *ptr);
+static int _consumer_avl_comp(const void *k1, const void *k2);
 static int _calc_tlvconsumer_intorder(struct rfc5444_reader_tlvblock_consumer_entry *entry);
 static int _calc_tlvblock_intorder(struct rfc5444_reader_tlvblock_entry *entry);
 static bool _has_same_tlvtype(int int_type1, int int_type2);
@@ -94,8 +94,8 @@ static const int TLVTYPE_ORDER_INFINITE = 0x10000;
  */
 void
 rfc5444_reader_init(struct rfc5444_reader *context) {
-  avl_init(&context->packet_consumer, _consumer_avl_comp, true, NULL);
-  avl_init(&context->message_consumer, _consumer_avl_comp, true, NULL);
+  avl_init(&context->packet_consumer, _consumer_avl_comp, true);
+  avl_init(&context->message_consumer, _consumer_avl_comp, true);
 
   if (context->malloc_addrblock_entry == NULL)
     context->malloc_addrblock_entry = _malloc_addrblock_entry;
@@ -173,7 +173,7 @@ rfc5444_reader_handle_packet(struct rfc5444_reader *parser, uint8_t *buffer, siz
   }
 
   /* initialize avl_tree */
-  avl_init(&entries, avl_comp_uint32, true, NULL);
+  avl_init(&entries, avl_comp_uint32, true);
   last_started = NULL;
 
   /* check for packet tlv */
@@ -304,8 +304,7 @@ rfc5444_reader_remove_message_consumer(struct rfc5444_reader *parser,
  * used as a tie-breaker if order is the same.
  */
 static int
-_consumer_avl_comp(const void *k1, const void *k2,
-    void *ptr __attribute__ ((unused))) {
+_consumer_avl_comp(const void *k1, const void *k2) {
   const struct rfc5444_reader_tlvblock_consumer *c1 = k1;
   const struct rfc5444_reader_tlvblock_consumer *c2 = k2;
 
@@ -1035,7 +1034,7 @@ _handle_message(struct rfc5444_reader *parser,
   /* initialize variables */
   result = RFC5444_OKAY;
   same_order[0] = same_order[1] = NULL;
-  avl_init(&tlv_entries, avl_comp_uint16, true, NULL);
+  avl_init(&tlv_entries, avl_comp_uint16, true);
   list_init_head(&addr_head);
 
   /* remember start of message */
@@ -1106,7 +1105,7 @@ _handle_message(struct rfc5444_reader *parser,
     }
 
     /* initialize avl_tree */
-    avl_init(&addr->tlvblock, avl_comp_uint16, true, NULL);
+    avl_init(&addr->tlvblock, avl_comp_uint16, true);
 
     /* parse address block... */
     if ((result = _parse_addrblock(addr, tlv_context, ptr, end)) != RFC5444_OKAY) {

@@ -245,7 +245,7 @@ olsr_rfc5444_init(void) {
 
   LOG_RFC5444 = olsr_log_register_source(_LOG_RFC5444_NAME);
 
-  avl_init(&_protocol_tree, avl_comp_strcasecmp, false, NULL);
+  avl_init(&_protocol_tree, avl_comp_strcasecmp, false);
 
   olsr_class_add(&_protocol_memcookie);
   olsr_class_add(&_target_memcookie);
@@ -403,7 +403,7 @@ olsr_rfc5444_add_protocol(const char *name, bool fixed_local_port) {
   rfc5444_writer_init(&protocol->writer);
 
   /* init interface subtree */
-  avl_init(&protocol->_interface_tree, avl_comp_strcasecmp, false, NULL);
+  avl_init(&protocol->_interface_tree, avl_comp_strcasecmp, false);
 
   /* set initial refcount */
   protocol->_refcount = 1;
@@ -472,7 +472,7 @@ olsr_rfc5444_add_interface(struct olsr_rfc5444_protocol *protocol,
     avl_insert(&protocol->_interface_tree, &interf->_node);
 
     /* initialize target subtree */
-    avl_init(&interf->_target_tree, avl_comp_netaddr, false, NULL);
+    avl_init(&interf->_target_tree, avl_comp_netaddr, false);
 
     /* initialize socket */
     memcpy (&interf->_socket.config, &_socket_config, sizeof(_socket_config));

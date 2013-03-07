@@ -421,7 +421,7 @@ test_interop2010(struct test_packet *p) {
 void
 add_test(struct test_packet *p) {
   if (_test_tree.comp == NULL) {
-    avl_init(&_test_tree, avl_comp_strcasecmp, false, NULL);
+    avl_init(&_test_tree, avl_comp_strcasecmp, false);
   }
 
   p->_node.key = p->test;
