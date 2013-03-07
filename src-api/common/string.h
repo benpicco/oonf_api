@@ -106,16 +106,32 @@ str_char_is_printable(char c) {
   return !(uc < 32 || uc == 127 || uc == 255);
 }
 
+/**
+ * Copy a constant string array into a second array
+ * @param dst target array
+ * @param src constant source array
+ * @return 0 if array was copied, -1 if an error happened
+ */
 static INLINE int
 strarray_copy_c(struct strarray *dst, const struct const_strarray *src) {
   return strarray_copy(dst, (const struct strarray *)src);
 }
 
+/**
+ * Get a string of an string array
+ * @param array source array
+ * @param idx index of string to be extracted
+ * @return string at the specified index, NULL if not found
+ */
 static INLINE const char *
 strarray_get_c(const struct const_strarray *array, size_t idx) {
   return strarray_get((const struct strarray *)array, idx);
 }
 
+/**
+ * @param array constant string array
+ * @return number of strings in string array
+ */
 static INLINE size_t
 strarray_get_count_c(const struct const_strarray *array) {
   return strarray_get_count((const struct strarray *)array);
@@ -150,6 +166,10 @@ strarray_is_empty(const struct strarray *array) {
   return array->value == NULL;
 }
 
+/**
+ * @param array pointer to constant string array object
+ * @return true if the array is empty, false otherwise
+ */
 static INLINE bool
 strarray_is_empty_c(const struct const_strarray *array) {
   return array->value == NULL;
@@ -174,6 +194,10 @@ strarray_get_first(const struct strarray *array) {
   return array->value;
 }
 
+/**
+ * @param array pointer to constant strarray object
+ * @return pointer to first string of string array
+ */
 static INLINE const char *
 strarray_get_first_c(const struct const_strarray *array) {
   return array->value;
@@ -190,6 +214,12 @@ strarray_get_next(char *current) {
   return current + strlen(current) + 1;
 }
 
+/**
+ * Do not call this function for the last string in
+ * a string array.
+ * @param current pointer to a string in constant array
+ * @return pointer to next string in string array
+ */
 static INLINE const char *
 strarray_get_next_c(const char *current) {
   return current + strlen(current) + 1;
@@ -212,6 +242,12 @@ strarray_get_next_safe(const struct strarray *array, char *current) {
   return next;
 }
 
+/**
+ * @param array pointer to constant strarray object
+ * @param current pointer to a string in array
+ * @return pointer to next string in string array,
+ *   NULL if there is no further string
+ */
 static INLINE const char *
 strarray_get_next_safe_c(const struct const_strarray *array,
     const char *current) {

@@ -167,6 +167,14 @@ str_hasnextword (const char *buffer, const char *word) {
   return NULL;
 }
 
+/**
+ * Copies the next word of a constant stringbuffer into
+ * a second buffer.
+ * @param dst pointer to target buffer
+ * @param buffer constant source buffer
+ * @param len length of source buffer
+ * @return pointer to next word behind the copied word
+ */
 const char *
 str_cpynextword (char *dst, const char *buffer, size_t len) {
   size_t i;
