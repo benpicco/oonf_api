@@ -61,14 +61,27 @@ enum olsr_telnet_result {
   _TELNET_RESULT_UNKNOWN_COMMAND,
 };
 
+/*
+ * represents a cleanup handler that must be called when the
+ * telnet core is shut down.
+ */
 struct olsr_telnet_cleanup {
-  struct list_entity node;
+  /* pointer to telnet data */
   struct olsr_telnet_data *data;
 
+  /* callback for cleanup */
   void (*cleanup_handler)(struct olsr_telnet_cleanup *);
+
+  /* custom data pointer for cleanup handler */
   void *custom;
+
+  /* node for list of cleanup handlers */
+  struct list_entity node;
 };
 
+/*
+ * represents the data part of a telnet connection to a client
+ */
 struct olsr_telnet_data {
   /* address of remote communication partner */
   struct netaddr *remote;
@@ -93,6 +106,9 @@ struct olsr_telnet_data {
   struct list_entity cleanup_list;
 };
 
+/*
+ * represents a full telnet session including socket
+ */
 struct olsr_telnet_session {
   struct olsr_stream_session session;
   struct olsr_telnet_data data;
@@ -107,19 +123,27 @@ typedef enum olsr_telnet_result (*olsr_telnethandler)
 #define TELNET_CMD(cmd, cb, helptext, args...) { .command = (cmd), .handler = (cb), .help = "", ##args }
 #endif
 
+/* represents a telnet command */
 struct olsr_telnet_command {
-  struct avl_node node;
+  /* name of telnet command */
   const char *command;
 
+  /* help text for telnet command, NULL if it uses a custom help handler */
   const char *help;
 
+  /* access control list for telnet command, NULL if not used */
   struct olsr_netaddr_acl *acl;
 
+  /* handler for telnet command */
   olsr_telnethandler handler;
+
+  /* handler for help text */
   olsr_telnethandler help_handler;
+
+  /* node for tree of telnet commands */
+  struct avl_node _node;
 };
 
-#define FOR_ALL_TELNET_COMMANDS(cmd, ptr) avl_for_each_element_safe(&telnet_cmd_tree, cmd, node, ptr)
 EXPORT struct avl_tree telnet_cmd_tree;
 
 EXPORT void olsr_telnet_init(void);

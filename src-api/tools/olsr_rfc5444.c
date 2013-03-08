@@ -65,7 +65,6 @@ struct _rfc5444_config {
 };
 
 /* prototypes */
-
 static struct olsr_rfc5444_target *_create_target(
     struct olsr_rfc5444_interface *, struct netaddr *dst, bool unicast);
 static void _destroy_target(struct olsr_rfc5444_target *);
@@ -371,12 +370,20 @@ enum rfc5444_result olsr_rfc5444_send(
       msgid, _cb_single_ifselector, target);
 }
 
+/**
+ * Add a new protocol to the rfc5444 framework
+ * @param name name of protocol, must be an unique identifier
+ * @param fixed_local_port true if the local port must be fixed to the
+ *   external port
+ * @return pointer to new protocol instance, NULL if out of memory
+ */
 struct olsr_rfc5444_protocol *
 olsr_rfc5444_add_protocol(const char *name, bool fixed_local_port) {
   struct olsr_rfc5444_protocol *protocol;
 
   protocol = avl_find_element(&_protocol_tree, name, protocol, _node);
   if (protocol) {
+    /* protocol already exists */
     protocol->_refcount++;
     return protocol;
   }
@@ -411,11 +418,23 @@ olsr_rfc5444_add_protocol(const char *name, bool fixed_local_port) {
   return protocol;
 }
 
+/**
+ * Remove a protocol instance from the framework
+ * @param protocol pointer to protocol
+ */
 void
 olsr_rfc5444_remove_protocol(struct olsr_rfc5444_protocol *protocol) {
+  struct olsr_rfc5444_interface *interf, *i_it;
+
   if (protocol->_refcount > 1) {
+    /* There are still users left for this protocol */
     protocol->_refcount--;
     return;
+  }
+
+  /* free all remaining interfaces */
+  avl_for_each_element_safe(&protocol->_interface_tree, interf, _node, i_it) {
+    olsr_rfc5444_remove_interface(interf, NULL);
   }
 
   rfc5444_reader_cleanup(&protocol->reader);
@@ -423,6 +442,11 @@ olsr_rfc5444_remove_protocol(struct olsr_rfc5444_protocol *protocol) {
   olsr_class_free(&_protocol_memcookie, protocol);
 }
 
+/**
+ * Set the port of a protocol
+ * @param protocol pointer to protocol instance
+ * @param port port number in host byteorder
+ */
 void
 olsr_rfc5444_reconfigure_protocol(
     struct olsr_rfc5444_protocol *protocol, uint16_t port) {
@@ -448,6 +472,13 @@ olsr_rfc5444_reconfigure_protocol(
   }
 }
 
+/**
+ * Add a new interface to a rfc5444 protocol.
+ * @param protocol pointer to protocol instance
+ * @param listener pointer to interface listener, NULL if none
+ * @param name name of interface
+ * @return pointer to rfc5444 interface instance, NULL if out of memory
+ */
 struct olsr_rfc5444_interface *
 olsr_rfc5444_add_interface(struct olsr_rfc5444_protocol *protocol,
     struct olsr_rfc5444_interface_listener *listener, const char *name) {
@@ -498,17 +529,30 @@ olsr_rfc5444_add_interface(struct olsr_rfc5444_protocol *protocol,
   return interf;
 }
 
+/**
+ * Remove a rfc5444 interface instance
+ * @param interf pointer to interface instance
+ * @param listener pointer to interface listener, NULL if none
+ */
 void
 olsr_rfc5444_remove_interface(struct olsr_rfc5444_interface *interf,
     struct olsr_rfc5444_interface_listener *listener) {
+  struct olsr_rfc5444_target *target, *t_it;
+
   if (listener != NULL && listener->interface != NULL) {
     list_remove(&listener->_node);
     listener->interface = NULL;
   }
 
   if (interf->_refcount > 1) {
+    /* still users left for this interface */
     interf->_refcount--;
     return;
+  }
+
+  /* remove all remaining targets */
+  avl_for_each_element_safe(&interf->_target_tree, target, _node, t_it) {
+    _destroy_target(target);
   }
 
   /* remove multicast targets */
@@ -640,6 +684,12 @@ olsr_rfc5444_reconfigure_interface(struct olsr_rfc5444_interface *interf,
   }
 }
 
+/**
+ * Add an unicast target to a rfc5444 interface
+ * @param interf pointer to interface instance
+ * @param dst pointer to destination IP address
+ * @return pointer to target, NULL if out of memory
+ */
 struct olsr_rfc5444_target *
 olsr_rfc5444_add_target(struct olsr_rfc5444_interface *interf,
     struct netaddr *dst) {
@@ -647,6 +697,7 @@ olsr_rfc5444_add_target(struct olsr_rfc5444_interface *interf,
 
   target = avl_find_element(&interf->_target_tree, dst, target, _node);
   if (target) {
+    /* target already exists */
     target->_refcount++;
     return target;
   }
@@ -665,9 +716,14 @@ olsr_rfc5444_add_target(struct olsr_rfc5444_interface *interf,
   return target;
 }
 
+/**
+ * Removes an unicast target from a rfc5444 interface
+ * @param target pointer to target instance
+ */
 void
 olsr_rfc5444_remove_target(struct olsr_rfc5444_target *target) {
   if (target->_refcount > 1) {
+    /* target still in use */
     target->_refcount--;
     return;
   }
@@ -682,13 +738,13 @@ olsr_rfc5444_remove_target(struct olsr_rfc5444_target *target) {
   _destroy_target(target);
 }
 
-uint16_t
-olsr_rfc5444_next_target_seqno(struct olsr_rfc5444_target *target) {
-  target->_seqno++;
-
-  return target->_seqno;
-}
-
+/**
+ * Create a new rfc5444 target
+ * @param interf rfc5444 interface
+ * @param dst destination ip address
+ * @param unicast true of unicast, false if multicast
+ * @return pointer to target, NULL if out of memory
+ */
 static struct olsr_rfc5444_target *
 _create_target(struct olsr_rfc5444_interface *interf,
     struct netaddr *dst, bool unicast) {
@@ -713,9 +769,6 @@ _create_target(struct olsr_rfc5444_interface *interf,
   rfc5444_writer_register_interface(
       &interf->protocol->writer, &target->rfc5444_if);
 
-  /* get initial sequence number */
-  target->_seqno = random() & 0xffff;
-
   /* copy socket description */
   memcpy(&target->dst, dst, sizeof(target->dst));
 
@@ -731,6 +784,10 @@ _create_target(struct olsr_rfc5444_interface *interf,
   return target;
 }
 
+/**
+ * Destroy a target and free its resources
+ * @param target pointer to rfc5444 target
+ */
 static void
 _destroy_target(struct olsr_rfc5444_target *target) {
   /* cleanup interface */
@@ -744,6 +801,15 @@ _destroy_target(struct olsr_rfc5444_target *target) {
   olsr_class_free(&_target_memcookie, target);
 }
 
+/**
+ * Print a rfc5444 packet to the logging system
+ * @param sock socket the packet is reffering to
+ * @param interf pointer to rfc5444 interface
+ * @param ptr pointer to packet
+ * @param len length of packet
+ * @param success text prefix for successful printing
+ * @param error text prefix when error happens during packet parsing
+ */
 static void
 _print_packet_to_buffer(union netaddr_socket *sock __attribute__((unused)),
     struct olsr_rfc5444_interface *interf __attribute__((unused)),
@@ -870,6 +936,12 @@ _cb_send_unicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
   olsr_packet_send_managed(&target->interface->_socket, &sock, ptr, len);
 }
 
+/**
+ * Handle forwarding of rfc5444 messages
+ * @param context
+ * @param buffer
+ * @param length
+ */
 static void
 _cb_forward_message(
     struct rfc5444_reader_tlvblock_context *context,

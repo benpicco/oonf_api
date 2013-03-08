@@ -57,7 +57,6 @@ struct olsr_config_global {
 
 /* section types for configuration */
 #define CFG_SECTION_GLOBAL   "global"
-#define CFG_GLOBAL_PLUGIN    "plugin"
 
 EXPORT extern struct olsr_config_global config_global;
 
@@ -74,7 +73,7 @@ EXPORT bool olsr_cfg_is_reload_set(void);
 EXPORT void olsr_cfg_trigger_commit(void);
 EXPORT bool olsr_cfg_is_commit_set(void);
 
-/* do not export this to plugins */
+/* do not use this in plugins */
 EXPORT int olsr_cfg_update_globalcfg(bool) __attribute__((warn_unused_result));
 EXPORT int olsr_cfg_clear_rawdb(void) __attribute__((warn_unused_result));
 

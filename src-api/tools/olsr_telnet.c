@@ -191,8 +191,8 @@ olsr_telnet_cleanup(void) {
  */
 int
 olsr_telnet_add(struct olsr_telnet_command *command) {
-  command->node.key = command->command;
-  if (avl_insert(&telnet_cmd_tree, &command->node)) {
+  command->_node.key = command->command;
+  if (avl_insert(&telnet_cmd_tree, &command->_node)) {
     return -1;
   }
   return 0;
@@ -204,9 +204,13 @@ olsr_telnet_add(struct olsr_telnet_command *command) {
  */
 void
 olsr_telnet_remove(struct olsr_telnet_command *command) {
-  avl_remove(&telnet_cmd_tree, &command->node);
+  avl_remove(&telnet_cmd_tree, &command->_node);
 }
 
+/**
+ * Stop a currently running continuous telnet command
+ * @param data pointer to telnet data
+ */
 void
 olsr_telnet_stop(struct olsr_telnet_data *data) {
   _call_stop_handler(data);
@@ -336,14 +340,23 @@ _cb_telnet_create_error(struct olsr_stream_session *session,
   }
 }
 
-/* handle clean call of stop handler */
+/**
+ * Stop a continuous telnet command
+ * @param data pointer to telnet data
+ */
 static void
 _call_stop_handler(struct olsr_telnet_data *data) {
   void (*stop_handler)(struct olsr_telnet_data *);
 
   if (data->stop_handler) {
+    /*
+     * make sure that stop_handler is not set anymore when
+     * it is called.
+     */
     stop_handler = data->stop_handler;
     data->stop_handler = NULL;
+
+    /* call stop handler */
     stop_handler(data);
   }
 }
@@ -515,8 +528,9 @@ _check_telnet_command(struct olsr_telnet_data *data,
   struct netaddr_str buf;
 #endif
 
+  // TODO: split into two functions
   if (cmd == NULL) {
-    cmd = avl_find_element(&telnet_cmd_tree, name, cmd, node);
+    cmd = avl_find_element(&telnet_cmd_tree, name, cmd, _node);
     if (cmd == NULL) {
       return cmd;
     }
@@ -550,20 +564,20 @@ _cb_telnet_quit(struct olsr_telnet_data *data __attribute__((unused))) {
  */
 static enum olsr_telnet_result
 _cb_telnet_help(struct olsr_telnet_data *data) {
-  struct olsr_telnet_command *ptr, *iterator;
+  struct olsr_telnet_command *cmd;
 
   if (data->parameter != NULL && data->parameter[0] != 0) {
-    ptr = _check_telnet_command(data, data->parameter, NULL);
-    if (ptr == NULL) {
+    cmd = _check_telnet_command(data, data->parameter, NULL);
+    if (cmd == NULL) {
       abuf_appendf(data->out, "No help text found for command: %s\n", data->parameter);
       return TELNET_RESULT_ACTIVE;
     }
 
-    if (ptr->help_handler) {
-      ptr->help_handler(data);
+    if (cmd->help_handler) {
+      cmd->help_handler(data);
     }
     else {
-      if (abuf_appendf(data->out, "%s", ptr->help) < 0) {
+      if (abuf_appendf(data->out, "%s", cmd->help) < 0) {
         return TELNET_RESULT_INTERNAL_ERROR;
       }
     }
@@ -574,9 +588,9 @@ _cb_telnet_help(struct olsr_telnet_data *data) {
     return TELNET_RESULT_INTERNAL_ERROR;
   }
 
-  FOR_ALL_TELNET_COMMANDS(ptr, iterator) {
-    if (_check_telnet_command(data, NULL, ptr)) {
-      if (abuf_appendf(data->out, "  %s\n", ptr->command) < 0) {
+  avl_for_each_element(&telnet_cmd_tree, cmd, _node) {
+    if (_check_telnet_command(data, NULL, cmd)) {
+      if (abuf_appendf(data->out, "  %s\n", cmd->command) < 0) {
         return TELNET_RESULT_INTERNAL_ERROR;
       }
     }

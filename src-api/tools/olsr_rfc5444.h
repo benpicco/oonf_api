@@ -68,14 +68,16 @@ enum {
  */
 #define CFG_INTERFACE_SECTION "interface"
 
-/* Maximum packet size for this RFC5444 multiplexer */
-#define RFC5444_MAX_PACKET_SIZE (1500-20-8)
+enum {
+  /* Maximum packet size for this RFC5444 multiplexer */
+  RFC5444_MAX_PACKET_SIZE = 1500-20-8,
 
-/* Maximum message size for this RFC5444 multiplexer */
-#define RFC5444_MAX_MESSAGE_SIZE (1280-40-8-3)
+  /* Maximum message size for this RFC5444 multiplexer */
+  RFC5444_MAX_MESSAGE_SIZE = 1280-40-8-3,
 
-/* Maximum buffer size for address TLVs before splitting */
-#define RFC5444_ADDRTLV_BUFFER (8192)
+  /* Maximum buffer size for address TLVs before splitting */
+  RFC5444_ADDRTLV_BUFFER = 8192,
+};
 
 /* Protocol name for IANA allocated MANET port */
 #define RFC5444_PROTOCOL "rfc5444_default"
@@ -85,6 +87,9 @@ enum {
 
 struct olsr_rfc5444_target;
 
+/*
+ * Representation of a rfc5444 based protocol
+ */
 struct olsr_rfc5444_protocol {
   /* name of the protocol */
   char name[32];
@@ -111,55 +116,96 @@ struct olsr_rfc5444_protocol {
   struct rfc5444_reader reader;
   struct rfc5444_writer writer;
 
+  /* node for tree of protocols */
   struct avl_node _node;
+
+  /* tree of interfaces for this protocol */
   struct avl_tree _interface_tree;
 
+  /* reference count of this protocol */
   int _refcount;
+
+  /* number of users who need a packet sequence number for all packets */
   int _pktseqno_refcount;
 
+  /* message buffer for protocol */
   uint8_t _msg_buffer[RFC5444_MAX_MESSAGE_SIZE];
+
+  /* buffer for addresstlvs before splitting the message */
   uint8_t _addrtlv_buffer[RFC5444_ADDRTLV_BUFFER];
 };
 
+/*
+ * Representation of a rfc5444 interface of a protocol
+ */
 struct olsr_rfc5444_interface {
+  /* name of interface */
   char name[IF_NAMESIZE];
 
+  /* backpointer to protocol */
   struct olsr_rfc5444_protocol *protocol;
 
+  /* Node for tree of interfaces in protocol */
   struct avl_node _node;
+
+  /* tree of unicast targets */
   struct avl_tree _target_tree;
+
+  /* tree of interface event listeners of this interface */
   struct list_entity _listener;
 
+  /* socket for this interface */
   struct olsr_packet_managed _socket;
+
+  /* current socket configuration of this interface */
   struct olsr_packet_managed_config _socket_config;
 
+  /* pointer to ipv4/ipv6 targets for this interface */
   struct olsr_rfc5444_target *multicast4, *multicast6;
 
   int _refcount;
 };
 
+/*
+ * Represents a listener to the interface events of a rfc5444 interface
+ */
 struct olsr_rfc5444_interface_listener {
-  void (*cb_interface_changed)(struct olsr_rfc5444_interface_listener *, bool);
+  /* callback fired when an event happens */
+  void (*cb_interface_changed)(struct olsr_rfc5444_interface_listener *, bool changed);
 
+  /* backpointer to interface */
   struct olsr_rfc5444_interface *interface;
+
+  /* node for list of listeners of an interface */
   struct list_entity _node;
 };
 
+/*
+ * Represents a target (destination IP) of a rfc5444 interface
+ */
 struct olsr_rfc5444_target {
+  /* rfc5444 API representation of the target */
   struct rfc5444_writer_interface rfc5444_if;
 
+  /* destination IP */
   struct netaddr dst;
 
+  /* backpointer to interface */
   struct olsr_rfc5444_interface *interface;
 
-  uint16_t _seqno;
-
+  /* node for tree of targets for unicast interfaces */
   struct avl_node _node;
+
+  /* timer for message aggregation on interface */
   struct olsr_timer_entry _aggregation;
 
+  /* number of users of this target */
   int _refcount;
+
+  /* number of users requesting a packet sequence number for this target */
   int _pktseqno_refcount;
 
+  /* packet output buffer for target */
   uint8_t _packet_buffer[RFC5444_MAX_PACKET_SIZE];
 };
 
@@ -183,11 +229,13 @@ EXPORT struct olsr_rfc5444_target *olsr_rfc5444_add_target(
     struct olsr_rfc5444_interface *interface, struct netaddr *dst);
 EXPORT void olsr_rfc5444_remove_target(struct olsr_rfc5444_target *target);
 
-EXPORT uint16_t olsr_rfc5444_next_target_seqno(struct olsr_rfc5444_target *);
-
 EXPORT enum rfc5444_result olsr_rfc5444_send(
     struct olsr_rfc5444_target *, uint8_t msgid);
 
+/**
+ * @param msg pointer to rfc5444 message
+ * @return pointer to rfc5444 target used by message
+ */
 static INLINE struct olsr_rfc5444_target *
 olsr_rfc5444_get_target_from_message(struct rfc5444_writer_message *msg) {
   assert (msg->if_specific);
@@ -195,33 +243,28 @@ olsr_rfc5444_get_target_from_message(struct rfc5444_writer_message *msg) {
   return container_of(msg->specific_if, struct olsr_rfc5444_target, rfc5444_if);
 }
 
-static INLINE struct olsr_rfc5444_target *
-olsr_rfc5444_get_target_from_provider(struct rfc5444_writer_content_provider *prv) {
-  return olsr_rfc5444_get_target_from_message(prv->creator);
-}
-
+/**
+ * @param interf pointer to rfc5444 interface
+ * @return pointer to olsr interface
+ */
 static INLINE struct olsr_interface *
 olsr_rfc5444_get_core_interface(struct olsr_rfc5444_interface *interf) {
   return interf->_socket._if_listener.interface;
 }
 
-static INLINE void
-olsr_rfc5444_add_target_seqno(struct olsr_rfc5444_target *target) {
-  target->_pktseqno_refcount++;
-}
-
-static INLINE void
-olsr_rfc5444_remove_target_seqno(struct olsr_rfc5444_target *target) {
-  if (target->_pktseqno_refcount > 0) {
-    target->_pktseqno_refcount--;
-  }
-}
-
+/**
+ * Request a protocol wide packet sequence number
+ * @param protocol pointer to rfc5444 protocol instance
+ */
 static INLINE void
 olsr_rfc5444_add_protocol_seqno(struct olsr_rfc5444_protocol *protocol) {
   protocol->_pktseqno_refcount++;
 }
 
+/**
+ * Release the request for a protocol wide packet sequence number
+ * @param protocol pointer to rfc5444 protocol instance
+ */
 static INLINE void
 olsr_rfc5444_remove_protocol_seqno(struct olsr_rfc5444_protocol *protocol) {
   if (protocol->_pktseqno_refcount > 0) {
