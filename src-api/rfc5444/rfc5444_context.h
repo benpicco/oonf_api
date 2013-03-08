@@ -119,36 +119,36 @@ enum rfc5444_result {
 EXPORT const char *rfc5444_strerror(enum rfc5444_result result);
 
 /* maximum address length */
-/* defined as a macro because it's used to define length of arrays */
-#define RFC5444_MAX_ADDRLEN ((int)16)
+enum { RFC5444_MAX_ADDRLEN = 16 };
 
 /* packet flags */
-static const int RFC5444_PKT_FLAGMASK         = 0x0f;
-
-static const int RFC5444_PKT_FLAG_SEQNO       = 0x08;
-static const int RFC5444_PKT_FLAG_TLV         = 0x04;
+enum {
+  RFC5444_PKT_FLAGMASK         = 0x0f,
+  RFC5444_PKT_FLAG_SEQNO       = 0x08,
+  RFC5444_PKT_FLAG_TLV         = 0x04,
 
 /* message flags */
-static const int RFC5444_MSG_FLAG_ORIGINATOR  = 0x80;
-static const int RFC5444_MSG_FLAG_HOPLIMIT    = 0x40;
-static const int RFC5444_MSG_FLAG_HOPCOUNT    = 0x20;
-static const int RFC5444_MSG_FLAG_SEQNO       = 0x10;
+  RFC5444_MSG_FLAG_ORIGINATOR  = 0x80,
+  RFC5444_MSG_FLAG_HOPLIMIT    = 0x40,
+  RFC5444_MSG_FLAG_HOPCOUNT    = 0x20,
+  RFC5444_MSG_FLAG_SEQNO       = 0x10,
 
-static const int RFC5444_MSG_FLAG_ADDRLENMASK = 0x0f;
+  RFC5444_MSG_FLAG_ADDRLENMASK = 0x0f,
 
 /* addressblock flags */
-static const int RFC5444_ADDR_FLAG_HEAD       = 0x80;
-static const int RFC5444_ADDR_FLAG_FULLTAIL   = 0x40;
-static const int RFC5444_ADDR_FLAG_ZEROTAIL   = 0x20;
-static const int RFC5444_ADDR_FLAG_SINGLEPLEN = 0x10;
-static const int RFC5444_ADDR_FLAG_MULTIPLEN  = 0x08;
+  RFC5444_ADDR_FLAG_HEAD       = 0x80,
+  RFC5444_ADDR_FLAG_FULLTAIL   = 0x40,
+  RFC5444_ADDR_FLAG_ZEROTAIL   = 0x20,
+  RFC5444_ADDR_FLAG_SINGLEPLEN = 0x10,
+  RFC5444_ADDR_FLAG_MULTIPLEN  = 0x08,
 
 /* tlv flags */
-static const int RFC5444_TLV_FLAG_TYPEEXT     = 0x80;
-static const int RFC5444_TLV_FLAG_SINGLE_IDX  = 0x40;
-static const int RFC5444_TLV_FLAG_MULTI_IDX   = 0x20;
-static const int RFC5444_TLV_FLAG_VALUE       = 0x10;
-static const int RFC5444_TLV_FLAG_EXTVALUE    = 0x08;
-static const int RFC5444_TLV_FLAG_MULTIVALUE  = 0x04;
+  RFC5444_TLV_FLAG_TYPEEXT     = 0x80,
+  RFC5444_TLV_FLAG_SINGLE_IDX  = 0x40,
+  RFC5444_TLV_FLAG_MULTI_IDX   = 0x20,
+  RFC5444_TLV_FLAG_VALUE       = 0x10,
+  RFC5444_TLV_FLAG_EXTVALUE    = 0x08,
+  RFC5444_TLV_FLAG_MULTIVALUE  = 0x04,
+};
 
 #endif /* RFC5444_CONTEXT_H_ */
