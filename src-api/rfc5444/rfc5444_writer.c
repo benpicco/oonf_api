@@ -90,7 +90,7 @@ rfc5444_writer_init(struct rfc5444_writer *writer) {
   if (!writer->free_addrtlv_entry)
     writer->free_addrtlv_entry = free;
 
-  list_init_head(&writer->_interfaces);
+  list_init_head(&writer->_targets);
 
   /* initialize packet buffer */
   writer->_msg.buffer = writer->msg_buffer;
@@ -116,7 +116,7 @@ rfc5444_writer_cleanup(struct rfc5444_writer *writer) {
   struct rfc5444_writer_pkthandler *pkt, *safe_pkt;
   struct rfc5444_writer_content_provider *provider, *safe_prv;
   struct rfc5444_writer_tlvtype *tlvtype, *safe_tt;
-  struct rfc5444_writer_interface *interf, *safe_interf;
+  struct rfc5444_writer_target *interf, *safe_interf;
 
   assert(writer);
 #if WRITER_STATE_MACHINE == true
@@ -128,9 +128,9 @@ rfc5444_writer_cleanup(struct rfc5444_writer *writer) {
     rfc5444_writer_unregister_pkthandler(writer, pkt);
   }
 
-  /* remove all _interfaces */
-  list_for_each_element_safe(&writer->_interfaces, interf, _if_node, safe_interf) {
-    rfc5444_writer_unregister_interface(writer, interf);
+  /* remove all _targets */
+  list_for_each_element_safe(&writer->_targets, interf, _target_node, safe_interf) {
+    rfc5444_writer_unregister_target(writer, interf);
   }
 
   /* remove all message creators */
@@ -397,7 +397,7 @@ rfc5444_writer_unregister_content_provider(
  *
  * @param writer pointer to writer context
  * @param msgid message type
- * @param if_specific true if an unique message must be created for each
+ * @param target_specific true if an unique message must be created for each
  *   interface
  * @param addr_len address length in bytes for this message
  * @return message object, NULL if an error happened
@@ -425,9 +425,9 @@ rfc5444_writer_register_message(struct rfc5444_writer *writer, uint8_t msgid,
   /* mark message as _registered */
   msg->_registered = true;
 
-  /* set real address length and if_specific flag */
+  /* set real address length and target_specific flag */
   msg->addr_len = addr_len;
-  msg->if_specific = if_specific;
+  msg->target_specific = if_specific;
   return msg;
 }
 
@@ -500,8 +500,8 @@ rfc5444_writer_unregister_pkthandler(
  * @param interf pointer to interface object
  */
 void
-rfc5444_writer_register_interface(struct rfc5444_writer *writer,
-    struct rfc5444_writer_interface *interf) {
+rfc5444_writer_register_target(struct rfc5444_writer *writer,
+    struct rfc5444_writer_target *interf) {
 #if WRITER_STATE_MACHINE == true
   assert(writer->_state == RFC5444_WRITER_NONE);
 #endif
@@ -513,7 +513,7 @@ rfc5444_writer_register_interface(struct rfc5444_writer *writer,
 
   interf->_is_flushed = true;
 
-  list_add_tail(&writer->_interfaces, &interf->_if_node);
+  list_add_tail(&writer->_targets, &interf->_target_node);
 }
 
 /**
@@ -523,16 +523,16 @@ rfc5444_writer_register_interface(struct rfc5444_writer *writer,
  * @param interf pointer to interface object
  */
 void
-rfc5444_writer_unregister_interface(
+rfc5444_writer_unregister_target(
     struct rfc5444_writer *writer  __attribute__ ((unused)),
-    struct rfc5444_writer_interface *interf) {
+    struct rfc5444_writer_target *interf) {
 #if WRITER_STATE_MACHINE == true
   assert(writer->_state == RFC5444_WRITER_NONE);
 #endif
 
   /* remove interface from writer */
-  if (list_is_node_added(&interf->_if_node)) {
-    list_remove(&interf->_if_node);
+  if (list_is_node_added(&interf->_target_node)) {
+    list_remove(&interf->_target_node);
   }
 }
 

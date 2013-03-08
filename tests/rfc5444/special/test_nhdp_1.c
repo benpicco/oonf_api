@@ -111,7 +111,7 @@ uint8_t result[] = {
 #define MSG_TYPE 1
 
 static void write_packet(struct rfc5444_writer *,
-    struct rfc5444_writer_interface *, void *, size_t);
+    struct rfc5444_writer_target *, void *, size_t);
 static void addAddresses(struct rfc5444_writer *wr,
     struct rfc5444_writer_content_provider *provider);
 
@@ -136,7 +136,7 @@ static struct rfc5444_writer_tlvtype addrtlvs[] = {
 };
 
 static uint8_t packet_buffer_if[128];
-static struct rfc5444_writer_interface out_if = {
+static struct rfc5444_writer_target out_if = {
   .packet_buffer = packet_buffer_if,
   .packet_size = sizeof(packet_buffer_if),
   .sendPacket = write_packet,
@@ -170,7 +170,7 @@ static void addAddresses(struct rfc5444_writer *wr,
 }
 
 static void write_packet(struct rfc5444_writer *w __attribute__ ((unused)),
-    struct rfc5444_writer_interface *iface __attribute__((unused)),
+    struct rfc5444_writer_target *iface __attribute__((unused)),
     void *buffer, size_t length) {
   size_t i, j;
   uint8_t *buf = buffer;
@@ -205,7 +205,7 @@ static void clear_elements(void) {
 static void test(void) {
   START_TEST();
 
-  CHECK_TRUE(0 == rfc5444_writer_create_message_allif(&writer, 1), "Parser should return 0");
+  CHECK_TRUE(0 == rfc5444_writer_create_message_alltarget(&writer, 1), "Parser should return 0");
   rfc5444_writer_flush(&writer, &out_if, false);
 
   END_TEST();
@@ -216,7 +216,7 @@ int main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))
 
   rfc5444_writer_init(&writer);
 
-  rfc5444_writer_register_interface(&writer, &out_if);
+  rfc5444_writer_register_target(&writer, &out_if);
 
   msg = rfc5444_writer_register_message(&writer, MSG_TYPE, false, 4);
   msg->addMessageHeader = addMessageHeader;

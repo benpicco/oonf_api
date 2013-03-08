@@ -128,6 +128,9 @@ struct olsr_rfc5444_protocol {
   /* number of users who need a packet sequence number for all packets */
   int _pktseqno_refcount;
 
+  /* next protocol message sequence number */
+  uint16_t _msg_seqno;
+
   /* message buffer for protocol */
   uint8_t _msg_buffer[RFC5444_MAX_MESSAGE_SIZE];
 
@@ -185,7 +188,7 @@ struct olsr_rfc5444_interface_listener {
  */
 struct olsr_rfc5444_target {
   /* rfc5444 API representation of the target */
-  struct rfc5444_writer_interface rfc5444_if;
+  struct rfc5444_writer_target rfc5444_if;
 
   /* destination IP */
   struct netaddr dst;
@@ -204,6 +207,9 @@ struct olsr_rfc5444_target {
 
   /* number of users requesting a packet sequence number for this target */
   int _pktseqno_refcount;
+
+  /* last packet sequence number used for this target */
+  uint16_t _pktseqno;
 
   /* packet output buffer for target */
   uint8_t _packet_buffer[RFC5444_MAX_PACKET_SIZE];
@@ -238,7 +244,7 @@ EXPORT enum rfc5444_result olsr_rfc5444_send(
  */
 static INLINE struct olsr_rfc5444_target *
 olsr_rfc5444_get_target_from_message(struct rfc5444_writer_message *msg) {
-  assert (msg->if_specific);
+  assert (msg->target_specific);
 
   return container_of(msg->specific_if, struct olsr_rfc5444_target, rfc5444_if);
 }
@@ -257,7 +263,7 @@ olsr_rfc5444_get_core_interface(struct olsr_rfc5444_interface *interf) {
  * @param protocol pointer to rfc5444 protocol instance
  */
 static INLINE void
-olsr_rfc5444_add_protocol_seqno(struct olsr_rfc5444_protocol *protocol) {
+olsr_rfc5444_add_protocol_pktseqno(struct olsr_rfc5444_protocol *protocol) {
   protocol->_pktseqno_refcount++;
 }
 
@@ -266,9 +272,51 @@ olsr_rfc5444_add_protocol_seqno(struct olsr_rfc5444_protocol *protocol) {
  * @param protocol pointer to rfc5444 protocol instance
  */
 static INLINE void
-olsr_rfc5444_remove_protocol_seqno(struct olsr_rfc5444_protocol *protocol) {
+olsr_rfc5444_remove_protocol_pktseqno(struct olsr_rfc5444_protocol *protocol) {
   if (protocol->_pktseqno_refcount > 0) {
     protocol->_pktseqno_refcount--;
   }
 }
+
+/**
+ * Request packet sequence number for a target
+ * @param protocol pointer to rfc5444 protocol instance
+ */
+static INLINE void
+olsr_rfc5444_add_target_pktseqno(struct olsr_rfc5444_target *target) {
+  target->_pktseqno_refcount++;
+}
+
+/**
+ * Release the request for a packet sequence number for a target
+ * @param protocol pointer to rfc5444 protocol instance
+ */
+static INLINE void
+olsr_rfc5444_remove_target_pktseqno(struct olsr_rfc5444_target *target) {
+  if (target->_pktseqno_refcount > 0) {
+    target->_pktseqno_refcount--;
+  }
+}
+
+/**
+ * @param target pointer to rfc5444 target instance
+ * @return last used packet sequence number on this target
+ */
+static INLINE uint16_t
+olsr_rfc5444_get_last_packet_seqno(struct olsr_rfc5444_target *target) {
+  return target->_pktseqno;
+}
+
+/**
+ * Generates a new message sequence number for a protocol.
+ * @param protocol pointer to rfc5444 protocol instance
+ * @return new message sequence number
+ */
+static INLINE uint16_t
+olsr_rfc5444_get_next_message_seqno(struct olsr_rfc5444_protocol *protocol) {
+  protocol->_msg_seqno++;
+
+  return protocol->_msg_seqno;
+}
+
 #endif /* OLSR_RFC5444_H_ */

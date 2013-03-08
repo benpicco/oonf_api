@@ -72,14 +72,14 @@ static void _destroy_target(struct olsr_rfc5444_target *);
 static void _cb_receive_data(struct olsr_packet_socket *,
       union netaddr_socket *from, size_t length);
 static void _cb_send_unicast_packet(
-    struct rfc5444_writer *, struct rfc5444_writer_interface *, void *, size_t);
+    struct rfc5444_writer *, struct rfc5444_writer_target *, void *, size_t);
 static void _cb_send_multicast_packet(
-    struct rfc5444_writer *, struct rfc5444_writer_interface *, void *, size_t);
+    struct rfc5444_writer *, struct rfc5444_writer_target *, void *, size_t);
 static void _cb_forward_message(struct rfc5444_reader_tlvblock_context *context,
     uint8_t *buffer, size_t length);
 
-static bool _cb_single_ifselector(struct rfc5444_writer *, struct rfc5444_writer_interface *, void *);
-static bool _cb_forward_ifselector(struct rfc5444_writer *, struct rfc5444_writer_interface *, void *);
+static bool _cb_single_ifselector(struct rfc5444_writer *, struct rfc5444_writer_target *, void *);
+static bool _cb_forward_ifselector(struct rfc5444_writer *, struct rfc5444_writer_target *, void *);
 
 static struct rfc5444_reader_addrblock_entry *_alloc_addrblock_entry(void);
 static struct rfc5444_reader_tlvblock_entry *_alloc_tlvblock_entry(void);
@@ -90,7 +90,7 @@ static void _free_tlvblock_entry(void *);
 static void _free_address_entry(void *);
 static void _free_addrtlv_entry(void *);
 
-static void _cb_add_seqno(struct rfc5444_writer *, struct rfc5444_writer_interface *);
+static void _cb_add_seqno(struct rfc5444_writer *, struct rfc5444_writer_target *);
 static void _cb_aggregation_event (void *);
 
 static void _cb_cfg_rfc5444_changed(void);
@@ -511,6 +511,9 @@ olsr_rfc5444_add_interface(struct olsr_rfc5444_protocol *protocol,
     interf->_socket.cb_settings_change = _cb_interface_changed;
     olsr_packet_add_managed(&interf->_socket);
 
+    /* initialize message sequence number */
+    protocol->_msg_seqno = random() & 0xffff;
+
     /* initialize listener list */
     list_init_head(&interf->_listener);
 
@@ -765,8 +768,7 @@ _create_target(struct olsr_rfc5444_interface *interf,
   else {
     target->rfc5444_if.sendPacket = _cb_send_multicast_packet;
   }
-  target->rfc5444_if.last_seqno = random() & 0xffff;
-  rfc5444_writer_register_interface(
+  rfc5444_writer_register_target(
       &interf->protocol->writer, &target->rfc5444_if);
 
   /* copy socket description */
@@ -781,6 +783,10 @@ _create_target(struct olsr_rfc5444_interface *interf,
   target->_aggregation.cb_context = target;
 
   target->_refcount = 1;
+
+  /* initialize pktseqno */
+  target->_pktseqno = rand() & 0xffff;
+
   return target;
 }
 
@@ -791,7 +797,7 @@ _create_target(struct olsr_rfc5444_interface *interf,
 static void
 _destroy_target(struct olsr_rfc5444_target *target) {
   /* cleanup interface */
-  rfc5444_writer_unregister_interface(
+  rfc5444_writer_unregister_target(
       &target->interface->protocol->writer, &target->rfc5444_if);
 
   /* stop timer */
@@ -894,7 +900,7 @@ _cb_receive_data(struct olsr_packet_socket *sock,
  */
 static void
 _cb_send_multicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
-    struct rfc5444_writer_interface *interf, void *ptr, size_t len) {
+    struct rfc5444_writer_target *interf, void *ptr, size_t len) {
   struct olsr_rfc5444_target *target;
   union netaddr_socket sock;
 
@@ -920,7 +926,7 @@ _cb_send_multicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
  */
 static void
 _cb_send_unicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
-    struct rfc5444_writer_interface *interf, void *ptr, size_t len) {
+    struct rfc5444_writer_target *interf, void *ptr, size_t len) {
   struct olsr_rfc5444_target *target;
   union netaddr_socket sock;
 
@@ -976,7 +982,7 @@ _cb_forward_message(
  */
 static bool
 _cb_single_ifselector(struct rfc5444_writer *writer __attribute__((unused)),
-    struct rfc5444_writer_interface *interf, void *ptr) {
+    struct rfc5444_writer_target *interf, void *ptr) {
   struct olsr_rfc5444_target *target = ptr;
 
   return &target->rfc5444_if == interf;
@@ -991,7 +997,7 @@ _cb_single_ifselector(struct rfc5444_writer *writer __attribute__((unused)),
  */
 static bool
 _cb_forward_ifselector(struct rfc5444_writer *writer __attribute__((unused)),
-    struct rfc5444_writer_interface *interf __attribute__((unused)),
+    struct rfc5444_writer_target *interf __attribute__((unused)),
     void *ptr __attribute__((unused))) {
   // TODO: select forwarding interfaces
   return true;
@@ -1075,19 +1081,19 @@ _free_addrtlv_entry(void *addrtlv) {
  * @param interf pointer to rfc5444 interface
  */
 static void
-_cb_add_seqno(struct rfc5444_writer *writer, struct rfc5444_writer_interface *interf) {
+_cb_add_seqno(struct rfc5444_writer *writer, struct rfc5444_writer_target *rfc5444_target) {
   struct olsr_rfc5444_target *target;
   bool seqno;
 
-  target = container_of(interf, struct olsr_rfc5444_target, rfc5444_if);
+  target = container_of(rfc5444_target, struct olsr_rfc5444_target, rfc5444_if);
 
   seqno = target->_pktseqno_refcount > 0
       || target->interface->protocol->_pktseqno_refcount > 0;
 
-  rfc5444_writer_set_pkt_header(writer, interf, seqno);
+  rfc5444_writer_set_pkt_header(writer, rfc5444_target, seqno);
   if (seqno) {
-    interf->last_seqno++;
-    rfc5444_writer_set_pkt_seqno(writer, interf, interf->last_seqno);
+    target->_pktseqno++;
+    rfc5444_writer_set_pkt_seqno(writer, rfc5444_target, target->_pktseqno);
   }
 }
 

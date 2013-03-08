@@ -60,7 +60,7 @@ static void _close_addrblock(struct _rfc5444_internal_addr_compress_session *acs
 static void _finalize_message_fragment(struct rfc5444_writer *writer,
     struct rfc5444_writer_message *msg, struct rfc5444_writer_address *first,
     struct rfc5444_writer_address *last, bool not_fragmented,
-    rfc5444_writer_ifselector useIf, void *param);
+    rfc5444_writer_targetselector useIf, void *param);
 static int _compress_address(struct _rfc5444_internal_addr_compress_session *acs,
     struct rfc5444_writer_message *msg, struct rfc5444_writer_address *addr,
     int same_prefixlen, bool first);
@@ -81,14 +81,14 @@ static void _write_msgheader(struct rfc5444_writer *writer, struct rfc5444_write
  */
 enum rfc5444_result
 rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
-    rfc5444_writer_ifselector useIf, void *param) {
+    rfc5444_writer_targetselector useIf, void *param) {
   struct rfc5444_writer_message *msg;
   struct rfc5444_writer_content_provider *prv;
   struct list_entity *ptr1;
   struct rfc5444_writer_address *addr = NULL, *last_processed = NULL;
   struct rfc5444_writer_address *first_addr = NULL, *first_mandatory = NULL;
   struct rfc5444_writer_tlvtype *tlvtype;
-  struct rfc5444_writer_interface *interface;
+  struct rfc5444_writer_target *interface;
 
   struct _rfc5444_internal_addr_compress_session acs[RFC5444_MAX_ADDRLEN];
   int best_size, best_head, same_prefixlen = 0;
@@ -101,7 +101,7 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
 #endif
 
   /* do nothing if no interface is defined */
-  if (list_is_empty(&writer->_interfaces)) {
+  if (list_is_empty(&writer->_targets)) {
     return RFC5444_OKAY;
   }
 
@@ -116,11 +116,11 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
    * test if we need interface specific messages
    * and this is not the single_if selector
    */
-  if (!msg->if_specific) {
+  if (!msg->target_specific) {
     /* not interface specific */
     msg->specific_if = NULL;
   }
-  else if (useIf == rfc5444_writer_singleif_selector) {
+  else if (useIf == rfc5444_writer_singletarget_selector) {
     /* interface specific, but single_if selector is used */
     msg->specific_if = param;
   }
@@ -128,14 +128,14 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
     /* interface specific, but generic selector is used */
     enum rfc5444_result result;
 
-    list_for_each_element(&writer->_interfaces, interface, _if_node) {
+    list_for_each_element(&writer->_targets, interface, _target_node) {
       /* check if we should send over this interface */
       if (!useIf(writer, interface, param)) {
         continue;
       }
 
       /* create an unique message by recursive call */
-      result = rfc5444_writer_create_message(writer, msgid, rfc5444_writer_singleif_selector, interface);
+      result = rfc5444_writer_create_message(writer, msgid, rfc5444_writer_singletarget_selector, interface);
       if (result != RFC5444_OKAY) {
         return result;
       }
@@ -148,7 +148,7 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
    * and calculate message MTU
    */
   max_msg_size = writer->msg_size;
-  list_for_each_element(&writer->_interfaces, interface, _if_node) {
+  list_for_each_element(&writer->_targets, interface, _target_node) {
     size_t interface_msg_mtu;
 
     /* check if we should send over this interface */
@@ -353,8 +353,8 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
  * @return true if param equals interf, false otherwise
  */
 bool
-rfc5444_writer_singleif_selector(struct rfc5444_writer *writer __attribute__ ((unused)),
-    struct rfc5444_writer_interface *interf, void *param) {
+rfc5444_writer_singletarget_selector(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_target *interf, void *param) {
   return interf == param;
 }
 
@@ -365,8 +365,8 @@ rfc5444_writer_singleif_selector(struct rfc5444_writer *writer __attribute__ ((u
  * @param param
  * @return always true
  */
-bool rfc5444_writer_allif_selector(struct rfc5444_writer *writer __attribute__ ((unused)),
-    struct rfc5444_writer_interface *interf __attribute__ ((unused)),
+bool rfc5444_writer_alltargets_selector(struct rfc5444_writer *writer __attribute__ ((unused)),
+    struct rfc5444_writer_target *interf __attribute__ ((unused)),
     void *param __attribute__ ((unused))) {
   return true;
 }
@@ -391,12 +391,12 @@ bool rfc5444_writer_allif_selector(struct rfc5444_writer *writer __attribute__ (
  */
 enum rfc5444_result
 rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t len,
-    rfc5444_writer_ifselector useIf, void *param) {
+    rfc5444_writer_targetselector useIf, void *param) {
   int cnt, hopcount = -1, hoplimit = -1;
   uint16_t size;
   uint8_t flags, addr_len;
   uint8_t *ptr;
-  struct rfc5444_writer_interface *interf;
+  struct rfc5444_writer_target *interf;
   size_t max_msg_size;
 
 #if WRITER_STATE_MACHINE == true
@@ -405,7 +405,7 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
 
   /* check if message is small enough to be forwarded */
   max_msg_size = writer->_msg.max;
-  list_for_each_element(&writer->_interfaces, interf, _if_node) {
+  list_for_each_element(&writer->_targets, interf, _target_node) {
     size_t max;
 
     if (!useIf(writer, interf, param)) {
@@ -452,7 +452,7 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
     return RFC5444_OKAY;
   }
 
-  list_for_each_element(&writer->_interfaces, interf, _if_node) {
+  list_for_each_element(&writer->_targets, interf, _target_node) {
     if (!useIf(writer, interf, param)) {
       continue;
     }
@@ -1185,14 +1185,14 @@ _write_msgheader(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
  * @param first pointer to first address of this fragment
  * @param last pointer to last address of this fragment
  * @param not_fragmented true if this is the only fragment of this message
- * @param useIf pointer to callback for selecting outgoing _interfaces
+ * @param useIf pointer to callback for selecting outgoing _targets
  */
 static void
 _finalize_message_fragment(struct rfc5444_writer *writer, struct rfc5444_writer_message *msg,
     struct rfc5444_writer_address *first, struct rfc5444_writer_address *last, bool not_fragmented,
-    rfc5444_writer_ifselector useIf, void *param) {
+    rfc5444_writer_targetselector useIf, void *param) {
   struct rfc5444_writer_content_provider *prv;
-  struct rfc5444_writer_interface *interface;
+  struct rfc5444_writer_target *interface;
   uint8_t *ptr;
   size_t len;
 
@@ -1233,7 +1233,7 @@ _finalize_message_fragment(struct rfc5444_writer *writer, struct rfc5444_writer_
   /* precalculate number of fixed bytes of message header */
   len = writer->_msg.header + writer->_msg.added;
 
-  list_for_each_element(&writer->_interfaces, interface, _if_node) {
+  list_for_each_element(&writer->_targets, interface, _target_node) {
     /* do we need to handle this interface ? */
     if (!useIf(writer, interface, param)) {
       continue;
