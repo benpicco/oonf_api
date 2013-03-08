@@ -68,12 +68,12 @@ static const char *_rfc5444_negative_result_texts[] = {
 };
 
 /**
- * @param result pbb result code
- * @return text message for result code
+ * @param result RFC5445 API result code
+ * @return text text representation of the result code
  */
 const char *
 rfc5444_strerror(enum rfc5444_result result) {
-  const char *UNKNOWN = "Unknown pbb result";
+  const char *UNKNOWN = "Unknown RFC5444-API result";
   if (result >= RFC5444_OKAY && result <= RFC5444_RESULT_MAX) {
     return _rfc5444_positive_result_texts[result];
   }

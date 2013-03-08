@@ -61,6 +61,11 @@ static struct rfc5444_writer_message *_get_message(struct rfc5444_writer *writer
 static struct rfc5444_writer_address *_malloc_address_entry(void);
 static struct rfc5444_writer_addrtlv *_malloc_addrtlv_entry(void);
 
+/**
+ * @param type TLV type
+ * @param exttype TLV extension type
+ * @return combined type
+ */
 static INLINE int
 _get_fulltype(uint8_t type, uint8_t exttype) {
   return type * 256 + exttype;
@@ -204,7 +209,7 @@ rfc5444_writer_add_addrtlv(struct rfc5444_writer *writer, struct rfc5444_writer_
 }
 
 /**
- * Add a network prefix to a pbb message.
+ * Add a network prefix to a rfc5444 message.
  * This function must not be called outside the message_addresses callback.
  *
  * @param writer pointer to writer context
@@ -277,7 +282,7 @@ rfc5444_writer_add_address(struct rfc5444_writer *writer __attribute__ ((unused)
 
 /**
  * Register an tlv type for addressblocks of a certain message.
- * This function must NOT be called from the pbb writer callbacks.
+ * This function must NOT be called from the rfc5444 writer callbacks.
  *
  * @param writer pointer to writer context
  * @param msgtype messagetype for this tlv
@@ -532,7 +537,7 @@ rfc5444_writer_unregister_interface(
 }
 
 /**
- * Creates a pbb writer object
+ * Creates a rfc5444 writer object
  * @param writer pointer to writer context
  * @param msgid message type
  * @return pointer to message object, NULL if an error happened
@@ -573,7 +578,7 @@ _get_message(struct rfc5444_writer *writer, uint8_t msgid) {
 
 /**
  * Register an tlv type for addressblocks of a certain message.
- * This function must NOT be called from the pbb writer callbacks.
+ * This function must NOT be called from the rfc5444 writer callbacks.
  *
  * @param writer pointer to writer context
  * @param msg pointer to allocated rfc5444_writer_message
@@ -639,6 +644,11 @@ _free_tlvtype_tlvs(struct rfc5444_writer *writer, struct rfc5444_writer_tlvtype 
   }
 }
 
+/**
+ * Free all allocated addresses in a writers context
+ * @param writer pointer to writer context
+ * @param msg pointer to message object
+ */
 void
 _rfc5444_writer_free_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *msg) {
   struct rfc5444_writer_address *addr, *safe_addr;

@@ -70,7 +70,7 @@ static enum rfc5444_result _cb_print_addr_end(struct rfc5444_reader_tlvblock_con
 
 /**
  * Add a printer for a rfc5444 reader
- * @param session pointer to initialized pbb printer session
+ * @param session pointer to initialized rfc5444 printer session
  * @param reader pointer to initialized reader
  */
 void
@@ -100,7 +100,7 @@ rfc5444_print_add(struct rfc5444_print_session *session,
 
 /**
  * Remove printer from rfc5444 reader
- * @param session pointer to initialized pbb printer session
+ * @param session pointer to initialized rfc5444 printer session
  */
 void
 rfc5444_print_remove(struct rfc5444_print_session *session) {

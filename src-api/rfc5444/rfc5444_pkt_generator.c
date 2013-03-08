@@ -50,7 +50,7 @@ static void _write_pktheader(struct rfc5444_writer_interface *interf);
 
 /**
  * Internal function to start generation of a packet
- * This function should not be called by the user of the pbb API!
+ * This function should not be called by the user of the rfc5444 API!
  *
  * @param writer pointer to writer context
  * @param interf pointer to interface for packet

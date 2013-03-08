@@ -70,7 +70,7 @@ static void _write_msgheader(struct rfc5444_writer *writer, struct rfc5444_write
 
 /**
  * Create a message with a defined type
- * This function must NOT be called from the pbb writer callbacks.
+ * This function must NOT be called from the rfc5444 writer callbacks.
  *
  * @param writer pointer to writer context
  * @param msgid type of message
@@ -375,7 +375,7 @@ bool rfc5444_writer_allif_selector(struct rfc5444_writer *writer __attribute__ (
  * Write a binary rfc5444 message into the writers buffer to
  * forward it. This function handles the modification of hopcount
  * and hoplimit field. The original message will not be modified.
- * This function must NOT be called from the pbb writer callbacks.
+ * This function must NOT be called from the rfc5444 writer callbacks.
  *
  * The function does demand the writer context pointer as void*
  * to be compatible with the readers forward_message callback.

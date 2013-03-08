@@ -53,7 +53,7 @@ static void _write_tlv(uint8_t *ptr, uint8_t type, uint8_t exttype,
 /**
  * Internal function to initialize a data buffer (message or packet)
  * for writer.
- * This function should not be called by the user of the pbb API!
+ * This function should not be called by the user of the rfc5444 API!
  *
  * @param data pointer to tlvdata object
  * @param max maximum number of bytes allowed for current context
@@ -75,7 +75,7 @@ _rfc5444_tlv_writer_init(struct rfc5444_tlv_writer_data *data, size_t max,
 
 /**
  * Internal function to add a tlv to a tlvdata object.
- * This function should not be called by the user of the pbb API!
+ * This function should not be called by the user of the rfc5444 API!
  *
  * @param data pointer to tlvdata object
  * @param type tlv type
@@ -103,7 +103,7 @@ _rfc5444_tlv_writer_add(struct rfc5444_tlv_writer_data *data,
 
 /**
  * Internal function to allocate memory for a tlv in a tlvdata object.
- * This function should not be called by the user of the pbb API!
+ * This function should not be called by the user of the rfc5444 API!
  *
  * @param data pointer to tlvdata object
  * @param has_exttype true if tlv needs an extended tlv type
@@ -127,7 +127,7 @@ _rfc5444_tlv_writer_allocate(struct rfc5444_tlv_writer_data *data,
 /**
  * Internal function to set a tlv in a tlvdata object,
  * which memory has been already allocated.
- * This function should not be called by the user of the pbb API!
+ * This function should not be called by the user of the rfc5444 API!
  *
  * @param data pointer to tlvdata object
  * @param type tlv type

@@ -116,7 +116,7 @@ struct rfc5444_writer_addrtlv {
 };
 
 /**
- * This struct represents a single address during the pbb
+ * This struct represents a single address during the RFC5444
  * message creation.
  */
 struct rfc5444_writer_address {
@@ -271,7 +271,7 @@ struct rfc5444_writer_message {
 
 /**
  * This struct represents a single outgoing interface for
- * the pbb writer
+ * the rfc5444 writer
  */
 struct rfc5444_writer_interface {
   /* buffer for packet generation */
