@@ -53,9 +53,6 @@
 
 #include "tools/olsr_cfg.h"
 
-/* name of parameter in 'global' section to load plugins */
-#define CFG_GLOBAL_PLUGIN    "plugin"
-
 /* global config */
 struct olsr_config_global config_global;
 
