@@ -124,6 +124,10 @@ struct olsr_class_extension {
   struct list_entity _node;
 };
 
+/*
+ * This structure defines a listener that can receive Add/Change/Remove
+ * events for a certain class
+ */
 struct olsr_class_listener {
   /* name of the consumer */
   const char *name;

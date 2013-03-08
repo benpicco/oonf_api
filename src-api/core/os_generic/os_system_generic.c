@@ -41,7 +41,6 @@
 
 #include <syslog.h>
 
-#include "builddata/data.h"
 #include "core/olsr_logging.h"
 #include "core/os_system.h"
 #include "core/olsr_subsystem.h"
@@ -115,7 +114,7 @@ os_system_openlog(void) {
     return;
   }
 
-  openlog(olsr_log_get_builddata()->app_name, LOG_PID | LOG_ODELAY, LOG_DAEMON);
+  openlog(olsr_log_get_appdata()->app_name, LOG_PID | LOG_ODELAY, LOG_DAEMON);
   setlogmask(LOG_UPTO(LOG_DEBUG));
 
   return;

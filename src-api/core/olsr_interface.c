@@ -172,6 +172,11 @@ olsr_interface_trigger_change(const char *name, bool down) {
   olsr_interface_trigger_handler(interf);
 }
 
+/**
+ * Trigger the interface change handler after a short waiting period
+ * to accumulate multiple change events.
+ * @param interf pointer to olsr interface
+ */
 void
 olsr_interface_trigger_handler(struct olsr_interface *interf) {
   /* trigger interface reload in 100 ms */

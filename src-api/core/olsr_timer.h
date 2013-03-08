@@ -83,13 +83,12 @@ struct olsr_timer_info {
   bool _timer_stopped;
 };
 
-
 /*
  * Our timer implementation is a based on individual timers arranged in
- * a double linked list hanging of hash containers called a timer wheel slot.
- * For every timer a olsr_timer_entry is created and attached to the timer wheel slot.
- * When the timer fires, the timer_cb function is called with the
- * context pointer.
+ * a double linked list hanging in a hierarchical list of timer slots.
+ *
+ * When an event is triggered, its callback is called with cb_context
+ * as its parameter.
  */
 struct olsr_timer_entry {
   /* Wheel membership */

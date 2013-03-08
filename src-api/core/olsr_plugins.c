@@ -68,6 +68,23 @@ enum {
   IDX_DLOPEN_VERLIB,
 };
 
+/*
+ * List of paths to look for plugins
+ *
+ * The elements of the patterns are:
+ *
+ * %LIB%:  name of the plugin
+ * %PATH%: local path (linux: ".")
+ *
+ * %PRE%:  shared library prefix defined by the app (linux: "lib<app>_")
+ * %POST%: shared library postfix defined by the app (linux: ".so")
+ * %VER:   version number as defined by the app (e.g. "0.1.0")
+ *
+ * %PRELIB%: shared library prefix defined by the API (linux: "liboonf_")
+ * %POST%:   shared library postfix defined by the app (linux: ".so")
+ * %VER:     version number as defined by the app (e.g. "0.1.0")
+ */
+// TODO: put a "local library path" setting into the configuration
 static const char *dlopen_patterns[] = {
   "%PATH%/oonf/%PRE%%LIB%%POST%.%VER%",
   "%PATH%/oonf/%PRELIB%%LIB%%POSTLIB%.%VERLIB%",

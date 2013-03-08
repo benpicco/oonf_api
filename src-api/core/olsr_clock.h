@@ -78,11 +78,25 @@ EXPORT int olsr_clock_tobin(const struct cfg_schema_entry *s_entry,
 EXPORT void  olsr_clock_help(
     const struct cfg_schema_entry *entry, struct autobuf *out);
 
+/**
+ * Converts an internal time value into a string representation with
+ * the numbers of seconds (including milliseconds as fractions)
+ * @param buf target buffer
+ * @param i time value
+ * @return pointer to string representation
+ */
 static INLINE const char *
 olsr_clock_toIntervalString(struct fraction_str *buf, int64_t i) {
   return cfg_fraction_to_string(buf, i, 3);
 }
 
+/**
+ * Converts a string representation of seconds (including up to three
+ * fractional digits for milliseconds) into a 64 bit time value
+ * @param result pointer to output buffer
+ * @param string string representation of the time value
+ * @return -1 if an error happened, 0 otherwise
+ */
 static INLINE int
 olsr_clock_fromIntervalString(uint64_t *result, const char *string) {
   int64_t t;

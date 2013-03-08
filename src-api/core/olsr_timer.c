@@ -490,6 +490,11 @@ _calc_clock(struct olsr_timer_entry *timer, uint64_t rel_time)
   timer->_clock = (t + BUCKET_TIMESLICE/2) & BUCKET_TIMESLICE_MASK;
 }
 
+/**
+ * Copies a bucket of timer events to the next finer-grained level
+ * @param depth level of the bucket
+ * @param idx index of the bucket
+ */
 static void
 _copy_bucket(unsigned depth, unsigned idx) {
   struct olsr_timer_entry *timer, *timer_it;
@@ -512,6 +517,14 @@ _copy_bucket(unsigned depth, unsigned idx) {
   }
 }
 
+/**
+ * Look for the next event that will happen on a certain depth
+ * and return its index. If all buckets of this depth are empty,
+ * the next higher depth will be copied into this one.
+ * @param depth depth to look for the event.
+ * @return index of bucket with next event(s), -1 if no event
+ *   available
+ */
 static int
 _look_for_event(unsigned depth) {
   unsigned i;
@@ -562,6 +575,9 @@ _look_for_event(unsigned depth) {
   return -1;
 }
 
+/**
+ * Calculate the next event in the bucket list and update the pointers
+ */
 static void
 _calculate_next_event(void) {
   struct olsr_timer_entry *timer;
