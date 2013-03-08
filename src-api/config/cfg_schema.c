@@ -78,6 +78,7 @@ const char *CFG_SCHEMA_SECTIONMODE[CFG_SSMODE_MAX] = {
     "named, mandatory"
 };
 
+/* List of predefined address prefixes */
 const struct {
   const char *name;
   const struct netaddr *prefix;

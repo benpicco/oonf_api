@@ -76,6 +76,25 @@ struct cfg_schema_entry;
 #define _CFG_VALIDATE(p_name, p_def, p_help,args...)                         { .key.entry = (p_name), .def = { .value = (p_def), .length = sizeof(p_def)}, ##args }
 #endif
 
+/*
+ * Example of a section schema definition.
+ *
+ * All CFG_VALIDATE_xxx macros follow a similar pattern.
+ * - the first parameter is the name of the key in the configuration file
+ * - the second parameter is the default value (as a string!)
+ * - the third parameter is the help text
+ *
+ * static struct cfg_schema_section section =
+ * {
+ *     .type = "testsection",
+ *     .mode = CFG_SSMODE_NAMED
+ * };
+ *
+ * static struct cfg_schema_entry entries[] = {
+ *     CFG_VALIDATE_PRINTABLE("text", "defaulttext", "help for text parameter"),
+ *     CFG_VALIDATE_INT_MINMAX("number", "0", "help for number parameter", 0, 10),
+ * };
+ */
 #define CFG_VALIDATE_STRING(p_name, p_def, p_help, args...)                                _CFG_VALIDATE(p_name, p_def, p_help, ##args)
 #define CFG_VALIDATE_STRING_LEN(p_name, p_def, p_help, maxlen, args...)                    _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_strlen, .cb_valhelp = cfg_schema_help_strlen, .validate_param = {{.s = (maxlen) }}, ##args )
 #define CFG_VALIDATE_PRINTABLE(p_name, p_def, p_help, args...)                             _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_printable, .cb_valhelp = cfg_schema_help_printable, .validate_param = {{.s = INT32_MAX }}, ##args )
@@ -95,6 +114,32 @@ struct cfg_schema_entry;
 
 #define CFG_VALIDATE_BOOL(p_name, p_def, p_help, args...)                                  CFG_VALIDATE_CHOICE(p_name, p_def, p_help, CFGLIST_BOOL, ##args)
 
+/*
+ * Example of a section schema definition with binary mapping
+ *
+ * All CFG_MAP_xxx macros follow a similar pattern.
+ * - the first parameter is the name of the struct the data will be mapped into
+ * - the second parameter is the name of the field the data will be mapped into
+ * - the third parameter is the name of the key in the configuration file
+ * - the fourth parameter is the default value (as a string!)
+ * - the fifth parameter is the help text
+ *
+ * struct bin_data {
+ *   char *string;
+ *   int int_value;
+ * };
+ *
+ * static struct cfg_schema_section section =
+ * {
+ *     .type = "testsection",
+ *     .mode = CFG_SSMODE_NAMED
+ * };
+ *
+ * static struct cfg_schema_entry entries[] = {
+ *     CFG_MAP_PRINTABLE(bin_data, string, "text", "defaulttext", "help for text parameter"),
+ *     CFG_MAP_INT_MINMAX(bin_data, int_value, "number", "0", "help for number parameter", 0, 10),
+ * };
+ */
 #define CFG_MAP_STRING(p_reference, p_field, p_name, p_def, p_help, args...)                                _CFG_VALIDATE(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_strptr, .bin_offset = offsetof(struct p_reference, p_field), ##args )
 #define CFG_MAP_STRING_LEN(p_reference, p_field, p_name, p_def, p_help, maxlen, args...)                    CFG_VALIDATE_STRING_LEN(p_name, p_def, p_help, maxlen, .cb_to_binary = cfg_schema_tobin_strptr, .bin_offset = offsetof(struct p_reference, p_field), ##args)
 #define CFG_MAP_STRING_ARRAY(p_reference, p_field, p_name, p_def, p_help, maxlen, args...)                  CFG_VALIDATE_STRING_LEN(p_name, p_def, p_help, maxlen, .cb_to_binary = cfg_schema_tobin_strarray, .bin_offset = offsetof(struct p_reference, p_field), ##args )
@@ -117,40 +162,6 @@ struct cfg_schema_entry;
 #define CFG_MAP_BOOL(p_reference, p_field, p_name, p_def, p_help, args...)                    CFG_VALIDATE_BOOL(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_bool, .bin_offset = offsetof(struct p_reference, p_field), ##args)
 #define CFG_MAP_STRINGLIST(p_reference, p_field, p_name, p_def, p_help, args...)              _CFG_VALIDATE(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_stringlist, .bin_offset = offsetof(struct p_reference, p_field), .list = true, ##args )
 
-/*
- * Example of a section schema definition
- *
- * static struct cfg_schema_section section =
- * {
- *     .type = "testsection",
- *     .mode = CFG_SSMODE_NAMED
- * };
- *
- * static struct cfg_schema_entry entries[] = {
- *     CFG_VALIDATE_PRINTABLE("text", "defaulttext", "help for text parameter"),
- *     CFG_VALIDATE_INT_MINMAX("number", "0", "help for number parameter", 0, 10),
- * };
- */
-
-/*
- * Example of a section schema definition with binary mapping
- *
- * struct bin_data {
- *   char *string;
- *   int int_value;
- * };
- *
- * static struct cfg_schema_section section =
- * {
- *     .type = "testsection",
- *     .mode = CFG_SSMODE_NAMED
- * };
- *
- * static struct cfg_schema_entry entries[] = {
- *     CFG_MAP_PRINTABLE(bin_data, string, "text", "defaulttext", "help for text parameter"),
- *     CFG_MAP_INT_MINMAX(bin_data, int_value, "number", "0", "help for number parameter", 0, 10),
- * };
- */
 
 struct cfg_schema {
   /* tree of sections of this schema */
@@ -269,7 +280,7 @@ struct cfg_schema_entry {
 
   void (*cb_valhelp)(const struct cfg_schema_entry *entry, struct autobuf *out);
 
-  /* parameters for check functions */
+  /* parameters for validator functions */
   union {
     int8_t i8[8];
     uint8_t u8[8];
