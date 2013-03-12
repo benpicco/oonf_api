@@ -59,8 +59,7 @@
 #define _LOG_RFC5444_NAME "rfc5444"
 
 struct _rfc5444_config {
-  struct olsr_packet_managed_config socket;
-
+  uint16_t port;
   uint64_t aggregation_interval;
 };
 
@@ -151,15 +150,8 @@ static struct cfg_schema_section _rfc5444_section = {
 };
 
 static struct cfg_schema_entry _rfc5444_entries[] = {
-  CFG_MAP_ACL_V46(_rfc5444_config, socket.acl, "acl", "default_accept",
-    "Access control list for RFC5444 interface"),
-  CFG_MAP_NETADDR_V4(_rfc5444_config, socket.bindto_v4, "bindto_v4", NETADDR_STR_ANY4,
-    "Bind RFC5444 ipv4 socket to this address", true, true),
-  CFG_MAP_NETADDR_V6(_rfc5444_config, socket.bindto_v6, "bindto_v6", NETADDR_STR_ANY6,
-    "Bind RFC5444 ipv6 socket to this address", true, true),
-  CFG_MAP_INT_MINMAX(_rfc5444_config, socket.port, "port", RFC5444_MANET_UDP_PORT_TXT,
+  CFG_MAP_INT_MINMAX(_rfc5444_config, port, "port", RFC5444_MANET_UDP_PORT_TXT,
     "UDP port for RFC5444 interface", 1, 65535),
-
   CFG_MAP_CLOCK(_rfc5444_config, aggregation_interval, "agregation_interval", "0.100",
     "Interval in seconds for message aggregation"),
 };
@@ -1130,7 +1122,7 @@ _cb_cfg_rfc5444_changed(void) {
   }
 
   /* apply values */
-  olsr_rfc5444_reconfigure_protocol(_rfc5444_protocol, config.socket.port);
+  olsr_rfc5444_reconfigure_protocol(_rfc5444_protocol, config.port);
   _aggregation_interval = config.aggregation_interval;
 
   /* create unicast socket */
