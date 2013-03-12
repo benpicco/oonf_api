@@ -49,8 +49,8 @@ struct rfc5444_writer_message;
 #include "common/common_types.h"
 #include "common/list.h"
 #include "rfc5444/rfc5444_context.h"
+#include "rfc5444/rfc5444_reader.h"
 #include "rfc5444/rfc5444_tlv_writer.h"
-
 /*
  * Macros to iterate over existing addresses in a message(fragment)
  * during message generation (finishMessageHeader/finishMessageTLVs
@@ -262,6 +262,9 @@ struct rfc5444_writer_message {
   void (*finishMessageHeader)(struct rfc5444_writer *, struct rfc5444_writer_message *,
       struct rfc5444_writer_address *, struct rfc5444_writer_address *, bool);
 
+  /* callback to determine if a message shall be forwarded */
+  bool (*shall_forward)(struct rfc5444_reader_tlvblock_context *);
+
   /* number of bytes necessary for addressblocks including tlvs */
   size_t _bin_addr_size;
 
@@ -442,7 +445,8 @@ EXPORT enum rfc5444_result rfc5444_writer_create_message(
     rfc5444_writer_targetselector useIf, void *param);
 
 EXPORT enum rfc5444_result rfc5444_writer_forward_msg(struct rfc5444_writer *writer,
-    uint8_t *msg, size_t len, rfc5444_writer_targetselector useIf, void *param);
+    uint8_t *msg, size_t len, struct rfc5444_reader_tlvblock_context *context,
+    rfc5444_writer_targetselector useIf, void *param);
 
 EXPORT void rfc5444_writer_flush(struct rfc5444_writer *, struct rfc5444_writer_target *, bool);
 

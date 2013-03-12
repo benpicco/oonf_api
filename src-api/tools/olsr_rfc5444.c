@@ -947,15 +947,10 @@ _cb_forward_message(
   struct olsr_rfc5444_protocol *protocol;
   enum rfc5444_result result;
 
-  if (!context->has_hoplimit || context->hoplimit <= 1) {
-    /* do only forward if hoplimit is greater than 1 */
-    return;
-  }
-
   /* get protocol to use for forwarding message */
   protocol = container_of(context->reader, struct olsr_rfc5444_protocol, reader);
   result = rfc5444_writer_forward_msg(&protocol->writer, buffer, length,
-      _cb_forward_ifselector, NULL);
+      context, _cb_forward_ifselector, NULL);
   if (result) {
     OLSR_WARN(LOG_RFC5444, "Error while forwarding message: %s (%d)",
         rfc5444_strerror(result), result);

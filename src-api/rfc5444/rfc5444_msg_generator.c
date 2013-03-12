@@ -383,32 +383,51 @@ bool rfc5444_writer_alltargets_selector(struct rfc5444_writer *writer __attribut
  * @param writer pointer to writer context
  * @param msg pointer to message to be forwarded
  * @param len number of bytes of message
- * @param useIf function pointer to decide which interface is used
+ * @param context context of original rfc5444 message
+ * @param useTarget function pointer to decide which target is used
  *   for forwarding the message
- * @param param custom attribute of interface selector
+ * @param param custom attribute of target selector
  * @return RFC5444_OKAY if the message was put into the writer buffer,
  *   RFC5444_... if an error happened
  */
 enum rfc5444_result
 rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t len,
-    rfc5444_writer_targetselector useIf, void *param) {
+    struct rfc5444_reader_tlvblock_context *context,
+    rfc5444_writer_targetselector useTarget, void *param) {
+  struct rfc5444_writer_target *interf;
+  struct rfc5444_writer_message *rfc5444_msg;
   int cnt, hopcount = -1, hoplimit = -1;
   uint16_t size;
   uint8_t flags, addr_len;
   uint8_t *ptr;
-  struct rfc5444_writer_target *interf;
   size_t max_msg_size;
 
 #if WRITER_STATE_MACHINE == true
   assert(writer->_state == RFC5444_WRITER_NONE);
 #endif
 
+  rfc5444_msg = avl_find_element(&writer->_msgcreators, &msg[0], rfc5444_msg, _msgcreator_node);
+  if (rfc5444_msg == NULL) {
+    /* error, no msgcreator found */
+    return RFC5444_NO_MSGCREATOR;
+  }
+
+  if (!rfc5444_msg->shall_forward) {
+    /* no forwarding handler, do not forward */
+    return RFC5444_OKAY;
+  }
+
+  if (!rfc5444_msg->shall_forward(context)) {
+    /* forwarding handler declined to forward the message */
+    return RFC5444_OKAY;
+  }
+
   /* check if message is small enough to be forwarded */
   max_msg_size = writer->_msg.max;
   list_for_each_element(&writer->_targets, interf, _target_node) {
     size_t max;
 
-    if (!useIf(writer, interf, param)) {
+    if (!useTarget(writer, interf, param)) {
       continue;
     }
 
@@ -453,7 +472,7 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
   }
 
   list_for_each_element(&writer->_targets, interf, _target_node) {
-    if (!useIf(writer, interf, param)) {
+    if (!useTarget(writer, interf, param)) {
       continue;
     }
 
