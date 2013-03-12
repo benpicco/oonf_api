@@ -1124,9 +1124,6 @@ _cb_cfg_rfc5444_changed(void) {
   /* apply values */
   olsr_rfc5444_reconfigure_protocol(_rfc5444_protocol, config.port);
   _aggregation_interval = config.aggregation_interval;
-
-  /* create unicast socket */
-
 }
 
 /**

@@ -59,8 +59,8 @@ enum {
   RFC5444_PLUGIN_PARSER_PRIORITY = 256,
 };
 
-/* Configuration section for global rfc5444 settings */
-#define CFG_RFC5444_SECTION "rfc5444"
+/* Configuration section for global mesh settings */
+#define CFG_RFC5444_SECTION "mesh"
 
 /*
  * Configuration settings for interfaces with rfc5444 default protocol
