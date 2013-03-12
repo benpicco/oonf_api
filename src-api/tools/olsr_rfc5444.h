@@ -188,7 +188,7 @@ struct olsr_rfc5444_interface_listener {
  */
 struct olsr_rfc5444_target {
   /* rfc5444 API representation of the target */
-  struct rfc5444_writer_target rfc5444_if;
+  struct rfc5444_writer_target rfc5444_target;
 
   /* destination IP */
   struct netaddr dst;
@@ -246,7 +246,7 @@ static INLINE struct olsr_rfc5444_target *
 olsr_rfc5444_get_target_from_message(struct rfc5444_writer_message *msg) {
   assert (msg->target_specific);
 
-  return container_of(msg->specific_if, struct olsr_rfc5444_target, rfc5444_if);
+  return container_of(msg->specific_if, struct olsr_rfc5444_target, rfc5444_target);
 }
 
 /**

@@ -77,7 +77,7 @@ static void _cb_send_multicast_packet(
 static void _cb_forward_message(struct rfc5444_reader_tlvblock_context *context,
     uint8_t *buffer, size_t length);
 
-static bool _cb_single_ifselector(struct rfc5444_writer *, struct rfc5444_writer_target *, void *);
+static bool _cb_single_target_selector(struct rfc5444_writer *, struct rfc5444_writer_target *, void *);
 static bool _cb_forward_ifselector(struct rfc5444_writer *, struct rfc5444_writer_target *, void *);
 
 static struct rfc5444_reader_addrblock_entry *_alloc_addrblock_entry(void);
@@ -359,7 +359,7 @@ enum rfc5444_result olsr_rfc5444_send(
       target->interface->name);
 
   return rfc5444_writer_create_message(&target->interface->protocol->writer,
-      msgid, _cb_single_ifselector, target);
+      msgid, _cb_single_target_selector, target);
 }
 
 /**
@@ -751,17 +751,17 @@ _create_target(struct olsr_rfc5444_interface *interf,
   }
 
   /* initialize rfc5444 interfaces */
-  target->rfc5444_if.packet_buffer = target->_packet_buffer;
-  target->rfc5444_if.packet_size = RFC5444_MAX_PACKET_SIZE;
-  target->rfc5444_if.addPacketHeader = _cb_add_seqno;
+  target->rfc5444_target.packet_buffer = target->_packet_buffer;
+  target->rfc5444_target.packet_size = RFC5444_MAX_PACKET_SIZE;
+  target->rfc5444_target.addPacketHeader = _cb_add_seqno;
   if (unicast) {
-    target->rfc5444_if.sendPacket = _cb_send_unicast_packet;
+    target->rfc5444_target.sendPacket = _cb_send_unicast_packet;
   }
   else {
-    target->rfc5444_if.sendPacket = _cb_send_multicast_packet;
+    target->rfc5444_target.sendPacket = _cb_send_multicast_packet;
   }
   rfc5444_writer_register_target(
-      &interf->protocol->writer, &target->rfc5444_if);
+      &interf->protocol->writer, &target->rfc5444_target);
 
   /* copy socket description */
   memcpy(&target->dst, dst, sizeof(target->dst));
@@ -790,7 +790,7 @@ static void
 _destroy_target(struct olsr_rfc5444_target *target) {
   /* cleanup interface */
   rfc5444_writer_unregister_target(
-      &target->interface->protocol->writer, &target->rfc5444_if);
+      &target->interface->protocol->writer, &target->rfc5444_target);
 
   /* stop timer */
   olsr_timer_stop(&target->_aggregation);
@@ -884,7 +884,7 @@ _cb_receive_data(struct olsr_packet_socket *sock,
 }
 
 /**
- * Callback for sending an ipv4 packet to a rfc5444 target
+ * Callback for sending a multicast packet to a rfc5444 target
  * @param writer rfc5444 writer
  * @param interf rfc5444 interface
  * @param ptr pointer to outgoing buffer
@@ -892,25 +892,25 @@ _cb_receive_data(struct olsr_packet_socket *sock,
  */
 static void
 _cb_send_multicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
-    struct rfc5444_writer_target *interf, void *ptr, size_t len) {
-  struct olsr_rfc5444_target *target;
+    struct rfc5444_writer_target *target, void *ptr, size_t len) {
+  struct olsr_rfc5444_target *t;
   union netaddr_socket sock;
 
-  target = container_of(interf, struct olsr_rfc5444_target, rfc5444_if);
+  t = container_of(target, struct olsr_rfc5444_target, rfc5444_target);
 
-  netaddr_socket_init(&sock, &target->dst, target->interface->protocol->port,
-      if_nametoindex(target->interface->name));
+  netaddr_socket_init(&sock, &t->dst, t->interface->protocol->port,
+      if_nametoindex(t->interface->name));
 
-  _print_packet_to_buffer(&sock, target->interface, ptr, len,
+  _print_packet_to_buffer(&sock, t->interface, ptr, len,
       "Outgoing RFC5444 packet to",
       "Error while parsing outgoing RFC5444 packet to");
 
-  olsr_packet_send_managed_multicast(&target->interface->_socket,
-      ptr, len, netaddr_get_address_family(&target->dst));
+  olsr_packet_send_managed_multicast(&t->interface->_socket,
+      ptr, len, netaddr_get_address_family(&t->dst));
 }
 
 /**
- * Callback for sending an ipv4 packet to a rfc5444 target
+ * Callback for sending an unicast packet to a rfc5444 target
  * @param writer rfc5444 writer
  * @param interf rfc5444 interface
  * @param ptr pointer to outgoing buffer
@@ -918,20 +918,20 @@ _cb_send_multicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
  */
 static void
 _cb_send_unicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
-    struct rfc5444_writer_target *interf, void *ptr, size_t len) {
-  struct olsr_rfc5444_target *target;
+    struct rfc5444_writer_target *target, void *ptr, size_t len) {
+  struct olsr_rfc5444_target *t;
   union netaddr_socket sock;
 
-  target = container_of(interf, struct olsr_rfc5444_target, rfc5444_if);
+  t = container_of(target, struct olsr_rfc5444_target, rfc5444_target);
 
-  netaddr_socket_init(&sock, &target->dst, target->interface->protocol->port,
-      if_nametoindex(target->interface->name));
+  netaddr_socket_init(&sock, &t->dst, t->interface->protocol->port,
+      if_nametoindex(t->interface->name));
 
-  _print_packet_to_buffer(&sock, target->interface, ptr, len,
+  _print_packet_to_buffer(&sock, t->interface, ptr, len,
       "Outgoing RFC5444 packet to",
       "Error while parsing outgoing RFC5444 packet to");
 
-  olsr_packet_send_managed(&target->interface->_socket, &sock, ptr, len);
+  olsr_packet_send_managed(&t->interface->_socket, &sock, ptr, len);
 }
 
 /**
@@ -947,14 +947,12 @@ _cb_forward_message(
   struct olsr_rfc5444_protocol *protocol;
   enum rfc5444_result result;
 
-  if (!context->has_origaddr || !context->has_seqno) {
-    /* do not forward messages that cannot run through the duplicate check */
+  if (!context->has_hoplimit || context->hoplimit <= 1) {
+    /* do only forward if hoplimit is greater than 1 */
     return;
   }
 
-  // TODO: handle duplicate detection
-  return;
-
+  /* get protocol to use for forwarding message */
   protocol = container_of(context->reader, struct olsr_rfc5444_protocol, reader);
   result = rfc5444_writer_forward_msg(&protocol->writer, buffer, length,
       _cb_forward_ifselector, NULL);
@@ -965,34 +963,36 @@ _cb_forward_message(
 }
 
 /**
- * Selector for outgoing interfaces
+ * Selector for outgoing target
  * @param writer rfc5444 writer
- * @param interf rfc5444 interface
+ * @param target rfc5444 target
  * @param ptr custom pointer, contains rfc5444 target
- *   or NULL if all interfaces
- * @return true if ptr is NULL or interface corresponds to custom pointer
+ * @return true if target corresponds to selection
  */
 static bool
-_cb_single_ifselector(struct rfc5444_writer *writer __attribute__((unused)),
-    struct rfc5444_writer_target *interf, void *ptr) {
-  struct olsr_rfc5444_target *target = ptr;
+_cb_single_target_selector(struct rfc5444_writer *writer __attribute__((unused)),
+    struct rfc5444_writer_target *target, void *ptr) {
+  struct olsr_rfc5444_target *t = ptr;
 
-  return &target->rfc5444_if == interf;
+  return &t->rfc5444_target == target;
 }
 
 /**
- * Selector for forwarding interfaces
+ * Selector for forwarding targets, only selects multicast targets
  * @param writer rfc5444 writer
- * @param interf rfc5444 interface
+ * @param target rfc5444 target
  * @param ptr NULL in this case
  * @return true if ptr is NULL or interface corresponds to custom pointer
  */
 static bool
 _cb_forward_ifselector(struct rfc5444_writer *writer __attribute__((unused)),
-    struct rfc5444_writer_target *interf __attribute__((unused)),
+    struct rfc5444_writer_target *target,
     void *ptr __attribute__((unused))) {
-  // TODO: select forwarding interfaces
-  return true;
+  struct olsr_rfc5444_target *t;
+
+  t = container_of(target, struct olsr_rfc5444_target, rfc5444_target);
+  return t == t->interface->multicast4
+      || t == t->interface->multicast6;
 }
 
 /**
@@ -1077,7 +1077,7 @@ _cb_add_seqno(struct rfc5444_writer *writer, struct rfc5444_writer_target *rfc54
   struct olsr_rfc5444_target *target;
   bool seqno;
 
-  target = container_of(rfc5444_target, struct olsr_rfc5444_target, rfc5444_if);
+  target = container_of(rfc5444_target, struct olsr_rfc5444_target, rfc5444_target);
 
   seqno = target->_pktseqno_refcount > 0
       || target->interface->protocol->_pktseqno_refcount > 0;
@@ -1100,7 +1100,7 @@ _cb_aggregation_event (void *ptr) {
   target = ptr;
 
   rfc5444_writer_flush(
-      &target->interface->protocol->writer, &target->rfc5444_if, false);
+      &target->interface->protocol->writer, &target->rfc5444_target, false);
 }
 
 /**
