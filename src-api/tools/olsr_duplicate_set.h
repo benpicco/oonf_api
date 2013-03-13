@@ -58,11 +58,16 @@ struct olsr_duplicate_set {
   struct avl_tree _tree;
 };
 
-struct olsr_duplicate_entry {
+struct olsr_duplicate_entry_key {
   struct netaddr addr;
+  uint8_t  msg_type;
+};
 
-  uint16_t current;
+struct olsr_duplicate_entry {
+  struct olsr_duplicate_entry_key key;
+
   uint32_t history;
+  uint16_t current;
 
   struct olsr_duplicate_set *set;
 
@@ -73,12 +78,15 @@ struct olsr_duplicate_entry {
 void olsr_duplicate_set_init(void);
 void olsr_duplicate_set_cleanup(void);
 
+EXPORT void olsr_duplicate_set_add(struct olsr_duplicate_set *);
+EXPORT void olsr_duplicate_set_remove(struct olsr_duplicate_set *);
+
 EXPORT enum olsr_duplicate_result olsr_duplicate_entry_add(
-    struct olsr_duplicate_set *,
+    struct olsr_duplicate_set *, uint8_t msg_type,
     struct netaddr *, uint16_t seqno, uint64_t vtime);
 
 EXPORT enum olsr_duplicate_result olsr_duplicate_test(
-    struct olsr_duplicate_set *,
+    struct olsr_duplicate_set *, uint8_t msg_type,
     struct netaddr *, uint16_t seqno);
 
 #endif /* OLSR_DUPLICATE_SET_H_ */

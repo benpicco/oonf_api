@@ -401,6 +401,10 @@ olsr_rfc5444_add_protocol(const char *name, bool fixed_local_port) {
   rfc5444_reader_init(&protocol->reader);
   rfc5444_writer_init(&protocol->writer);
 
+  /* initialize processing and forwarding set */
+  olsr_duplicate_set_add(&protocol->forwarded_set);
+  olsr_duplicate_set_add(&protocol->processed_set);
+
   /* init interface subtree */
   avl_init(&protocol->_interface_tree, avl_comp_strcasecmp, false);
 
@@ -429,6 +433,11 @@ olsr_rfc5444_remove_protocol(struct olsr_rfc5444_protocol *protocol) {
     olsr_rfc5444_remove_interface(interf, NULL);
   }
 
+  /* free processing/forwarding set */
+  olsr_duplicate_set_remove(&protocol->forwarded_set);
+  olsr_duplicate_set_remove(&protocol->processed_set);
+
+  /* free reader, writer and protocol itself */
   rfc5444_reader_cleanup(&protocol->reader);
   rfc5444_writer_cleanup(&protocol->writer);
   olsr_class_free(&_protocol_memcookie, protocol);
@@ -497,6 +506,9 @@ olsr_rfc5444_add_interface(struct olsr_rfc5444_protocol *protocol,
     /* initialize target subtree */
     avl_init(&interf->_target_tree, avl_comp_netaddr, false);
 
+    /* initialize received set */
+    olsr_duplicate_set_add(&interf->duplicate_set);
+
     /* initialize socket */
     memcpy (&interf->_socket.config, &_socket_config, sizeof(_socket_config));
     interf->_socket.config.user = interf;
@@ -557,6 +569,9 @@ olsr_rfc5444_remove_interface(struct olsr_rfc5444_interface *interf,
   if (interf->multicast6) {
     _destroy_target(interf->multicast6);
   }
+
+  /* remove received set */
+  olsr_duplicate_set_remove(&interf->duplicate_set);
 
   /* remove from protocol tree */
   avl_remove(&interf->protocol->_interface_tree, &interf->_node);

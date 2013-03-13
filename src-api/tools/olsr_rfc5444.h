@@ -49,6 +49,7 @@
 #include "rfc5444/rfc5444_writer.h"
 #include "core/olsr_packet_socket.h"
 #include "core/olsr_timer.h"
+#include "tools/olsr_duplicate_set.h"
 
 /* suggested priorities for RFC5444 readers */
 
@@ -116,6 +117,12 @@ struct olsr_rfc5444_protocol {
   struct rfc5444_reader reader;
   struct rfc5444_writer writer;
 
+  /* processed set as defined in OLSRv2 */
+  struct olsr_duplicate_set processed_set;
+
+  /* forwarded set as defined in OLSRv2 */
+  struct olsr_duplicate_set forwarded_set;
+
   /* node for tree of protocols */
   struct avl_node _node;
 
@@ -166,6 +173,10 @@ struct olsr_rfc5444_interface {
   /* pointer to ipv4/ipv6 targets for this interface */
   struct olsr_rfc5444_target *multicast4, *multicast6;
 
+  /* receive set as defined in OLSRv2 */
+  struct olsr_duplicate_set duplicate_set;
+
+  /* number of users of this interface */
   int _refcount;
 };
 
