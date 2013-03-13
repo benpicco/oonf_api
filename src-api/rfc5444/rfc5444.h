@@ -69,4 +69,16 @@ EXPORT uint64_t rfc5444_timetlv_decode(uint8_t);
 EXPORT uint16_t rfc5444_metric_encode(uint32_t);
 EXPORT uint32_t rfc5444_metric_decode(uint16_t);
 
+static INLINE int
+rfc5444_seqno_is_larger(uint16_t s1, uint16_t s2) {
+  /*
+   * The sequence number S1 is said to be "greater than" the sequence
+   * number S2 if:
+   * o  S1 > S2 AND S1 - S2 < MAXVALUE/2 OR
+   * o  S2 > S1 AND S2 - S1 > MAXVALUE/2
+   */
+  return (s1 > s2 && (s1-s2) < (1<<15))
+      || (s2 > s1 && (s2-s1) > (1<<15));
+}
+
 #endif /* RFC5444_CONVERSION_H_ */

@@ -7,7 +7,7 @@ SET(OONF_RFC5444_SRCS rfc5444_context.c
                        rfc5444_reader.c
                        rfc5444_tlv_writer.c
                        rfc5444_writer.c
-                       rfc5444_conversion.c
+                       rfc5444.c
                        rfc5444_iana.c
                        rfc5444_print.c)
 
@@ -15,7 +15,7 @@ SET(OONF_RFC5444_INCLUDES rfc5444_context.h
                           rfc5444_reader.h
                           rfc5444_tlv_writer.h
                           rfc5444_writer.h
-                          rfc5444_conversion.h
+                          rfc5444.h
                           rfc5444_iana.h
                           rfc5444_print.h
                           rfc5444_api_config.h)

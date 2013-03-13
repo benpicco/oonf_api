@@ -41,7 +41,7 @@
 #include <assert.h>
 
 #include "common/common_types.h"
-#include "rfc5444/rfc5444_conversion.h"
+#include "rfc5444/rfc5444.h"
 
 /**
  * Converts a relative time value into its RFC 5497 (timetlv)
