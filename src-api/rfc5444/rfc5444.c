@@ -150,7 +150,12 @@ rfc5444_metric_encode(uint32_t decoded) {
    * metric-code := 256 * a + b
    */
 
-  assert (decoded > 0);
+  if (decoded < RFC5444_METRIC_MIN) {
+    return 0;
+  }
+  if (decoded > RFC5444_METRIC_MAX) {
+    return 0x0fff;
+  }
 
   /* metric-value + 256 = (257+b)<<a */
   decoded += 256;
