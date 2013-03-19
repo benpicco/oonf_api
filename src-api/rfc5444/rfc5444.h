@@ -58,9 +58,6 @@ enum {
 
   /* larger than possible metric value */
   RFC5444_METRIC_INFINITE = 0xffffff,
-
-  /* default metric value */
-  RFC5444_METRIC_DEFAULT = 0x10000,
 };
 
 EXPORT uint8_t rfc5444_timetlv_encode(uint64_t);
