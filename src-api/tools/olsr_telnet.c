@@ -695,6 +695,10 @@ _cb_telnet_repeat(struct olsr_telnet_data *data) {
   ptr++;
 
   interval = atoi(data->parameter);
+  if (interval < 1) {
+    abuf_puts(data->out, "Please specify an interval >= 1\n");
+    return TELNET_RESULT_ACTIVE;
+  }
 
   timer = calloc(1, sizeof(*timer));
   if (timer == NULL) {
