@@ -228,8 +228,14 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
     }
 
     if (first) {
-      /* clear tlvtype information for adress compression */
-      list_for_each_element(&msg->_tlvtype_head, tlvtype, _tlvtype_node) {
+      /* clear message specific tlvtype information for address compression */
+      list_for_each_element(&msg->_msgspecific_tlvtype_head, tlvtype, _tlvtype_node) {
+        memset(tlvtype->_tlvblock_count, 0, sizeof(tlvtype->_tlvblock_count));
+        memset(tlvtype->_tlvblock_multi, 0, sizeof(tlvtype->_tlvblock_multi));
+      }
+
+      /* clear generic tlvtype information for address compression */
+      list_for_each_element(&writer->_addr_tlvtype_head, tlvtype, _tlvtype_node) {
         memset(tlvtype->_tlvblock_count, 0, sizeof(tlvtype->_tlvblock_count));
         memset(tlvtype->_tlvblock_multi, 0, sizeof(tlvtype->_tlvblock_multi));
       }
@@ -937,6 +943,106 @@ _compress_address(struct _rfc5444_internal_addr_compress_session *acs,
 }
 
 /**
+ * Write the address-TLVs of a specific type
+ * @param addr_start first address for TLVs
+ * @param addr_end last address for TLVs
+ * @param tlvtype tlvtype to write into buffer
+ * @param ptr target buffer pointer
+ * @return modified target buffer pointer
+ */
+static uint8_t *
+_write_tlvtype(struct rfc5444_writer_address *addr_start, struct rfc5444_writer_address *addr_end,
+    struct rfc5444_writer_tlvtype *tlvtype, uint8_t *ptr) {
+  struct rfc5444_writer_addrtlv *tlv_start, *tlv_end, *tlv;
+  uint16_t total_len;
+  uint8_t *flag;
+
+  /* find first/last tlv for this address block */
+  tlv_start = avl_find_ge_element(&tlvtype->_tlv_tree, &addr_start->index, tlv_start, tlv_node);
+
+  while (tlv_start != NULL && tlv_start->address->index <= addr_end->index) {
+    bool same_value;
+
+    /* get end of local TLV-Block and value-mode */
+    same_value = true;
+    tlv_end = tlv_start;
+
+    avl_for_element_to_last(&tlvtype->_tlv_tree, tlv_start, tlv, tlv_node) {
+      if (tlv != tlv_start && tlv->address->index <= addr_end->index) {
+        if (!tlv->same_length) {
+          /* sequence of TLVs got interrupted */
+          break;
+        }
+        tlv_end = tlv;
+        same_value &= tlv->same_value;
+      }
+    }
+
+    /* write tlv */
+    *ptr++ = tlvtype->type;
+
+    /* remember flag pointer */
+    flag = ptr;
+    *ptr++ = 0;
+    if (tlvtype->exttype) {
+      *flag |= RFC5444_TLV_FLAG_TYPEEXT;
+      *ptr++ = tlvtype->exttype;
+    }
+
+    /* copy original length field */
+    total_len = tlv_start->length;
+
+    if (tlv_start->address == addr_start && tlv_end->address == addr_end) {
+      /* no index necessary */
+    } else if (tlv_start == tlv_end) {
+      *flag |= RFC5444_TLV_FLAG_SINGLE_IDX;
+      *ptr++ = tlv_start->address->index - addr_start->index;
+    } else {
+      *flag |= RFC5444_TLV_FLAG_MULTI_IDX;
+      *ptr++ = tlv_start->address->index - addr_start->index;
+      *ptr++ = tlv_end->address->index - addr_start->index;
+    }
+
+    /* length field is single_length*num for multivalue tlvs */
+    if (!same_value) {
+      total_len = total_len * ((tlv_end->address->index - tlv_start->address->index) + 1);
+      *flag |= RFC5444_TLV_FLAG_MULTIVALUE;
+    }
+
+
+    /* write length field and corresponding flags */
+    if (total_len > 255) {
+      *flag |= RFC5444_TLV_FLAG_EXTVALUE;
+      *ptr++ = total_len >> 8;
+    }
+    if (total_len > 0) {
+      *flag |= RFC5444_TLV_FLAG_VALUE;
+      *ptr++ = total_len & 255;
+    }
+
+    if (tlv_start->length > 0) {
+      /* write value */
+      if (same_value) {
+        memcpy(ptr, tlv_start->value, tlv_start->length);
+        ptr += tlv_start->length;
+      } else {
+        avl_for_element_range(tlv_start, tlv_end, tlv, tlv_node) {
+          memcpy(ptr, tlv->value, tlv->length);
+          ptr += tlv->length;
+        }
+      }
+    }
+
+    if (avl_is_last(&tlvtype->_tlv_tree, &tlv_end->tlv_node)) {
+      tlv_start = NULL;
+    } else {
+      tlv_start = avl_next_element(tlv_end, tlv_node);
+    }
+  }
+  return ptr;
+}
+
+/**
  * Write the address blocks to the message buffer.
  * @param writer pointer to writer context
  * @param msg pointer to message context
@@ -948,10 +1054,8 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
     struct rfc5444_writer_address *first_addr, struct rfc5444_writer_address *last_addr) {
   struct rfc5444_writer_address *addr_start, *addr_end, *addr;
   struct rfc5444_writer_tlvtype *tlvtype;
-  struct rfc5444_writer_addrtlv *tlv_start, *tlv_end, *tlv;
 
   uint8_t *start, *ptr, *flag, *tlvblock_length;
-  uint16_t total_len;
 
   assert(first_addr->_block_end);
 
@@ -1052,91 +1156,14 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
     tlvblock_length = ptr;
     ptr += 2;
 
-    /* loop through all tlv types */
-    list_for_each_element(&msg->_tlvtype_head, tlvtype, _tlvtype_node) {
+    /* loop through all message specific address-tlv types */
+    list_for_each_element(&msg->_msgspecific_tlvtype_head, tlvtype, _tlvtype_node) {
+      ptr = _write_tlvtype(addr_start, addr_end, tlvtype, ptr);
+    }
 
-      /* find first/last tlv for this address block */
-      tlv_start = avl_find_ge_element(&tlvtype->_tlv_tree, &addr_start->index, tlv_start, tlv_node);
-
-      while (tlv_start != NULL && tlv_start->address->index <= addr_end->index) {
-        bool same_value;
-
-        /* get end of local TLV-Block and value-mode */
-        same_value = true;
-        tlv_end = tlv_start;
-
-        avl_for_element_to_last(&tlvtype->_tlv_tree, tlv_start, tlv, tlv_node) {
-          if (tlv != tlv_start && tlv->address->index <= addr_end->index) {
-            if (!tlv->same_length) {
-              /* sequence of TLVs got interrupted */
-              break;
-            }
-            tlv_end = tlv;
-            same_value &= tlv->same_value;
-          }
-        }
-
-        /* write tlv */
-        *ptr++ = tlvtype->type;
-
-        /* remember flag pointer */
-        flag = ptr;
-        *ptr++ = 0;
-        if (tlvtype->exttype) {
-          *flag |= RFC5444_TLV_FLAG_TYPEEXT;
-          *ptr++ = tlvtype->exttype;
-        }
-
-        /* copy original length field */
-        total_len = tlv_start->length;
-
-        if (tlv_start->address == addr_start && tlv_end->address == addr_end) {
-          /* no index necessary */
-        } else if (tlv_start == tlv_end) {
-          *flag |= RFC5444_TLV_FLAG_SINGLE_IDX;
-          *ptr++ = tlv_start->address->index - addr_start->index;
-        } else {
-          *flag |= RFC5444_TLV_FLAG_MULTI_IDX;
-          *ptr++ = tlv_start->address->index - addr_start->index;
-          *ptr++ = tlv_end->address->index - addr_start->index;
-        }
-
-        /* length field is single_length*num for multivalue tlvs */
-        if (!same_value) {
-          total_len = total_len * ((tlv_end->address->index - tlv_start->address->index) + 1);
-          *flag |= RFC5444_TLV_FLAG_MULTIVALUE;
-        }
-
-
-        /* write length field and corresponding flags */
-        if (total_len > 255) {
-          *flag |= RFC5444_TLV_FLAG_EXTVALUE;
-          *ptr++ = total_len >> 8;
-        }
-        if (total_len > 0) {
-          *flag |= RFC5444_TLV_FLAG_VALUE;
-          *ptr++ = total_len & 255;
-        }
-
-        if (tlv_start->length > 0) {
-          /* write value */
-          if (same_value) {
-            memcpy(ptr, tlv_start->value, tlv_start->length);
-            ptr += tlv_start->length;
-          } else {
-            avl_for_element_range(tlv_start, tlv_end, tlv, tlv_node) {
-              memcpy(ptr, tlv->value, tlv->length);
-              ptr += tlv->length;
-            }
-          }
-        }
-
-        if (avl_is_last(&tlvtype->_tlv_tree, &tlv_end->tlv_node)) {
-          tlv_start = NULL;
-        } else {
-          tlv_start = avl_next_element(tlv_end, tlv_node);
-        }
-      }
+    /* look through  all generic address-tlv types */
+    list_for_each_element(&writer->_addr_tlvtype_head, tlvtype, _tlvtype_node) {
+      ptr = _write_tlvtype(addr_start, addr_end, tlvtype, ptr);
     }
 
     tlvblock_length[0] = (ptr - tlvblock_length - 2) >> 8;

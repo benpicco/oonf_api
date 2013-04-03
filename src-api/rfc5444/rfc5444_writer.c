@@ -51,7 +51,8 @@
 #include "rfc5444/rfc5444_writer.h"
 #include "rfc5444/rfc5444_api_config.h"
 
-static void _register_addrtlvtype(struct rfc5444_writer_message *msg,
+static void _register_addrtlvtype(struct rfc5444_writer *writer,
+    struct rfc5444_writer_message *msg,
     struct rfc5444_writer_tlvtype *type);
 static int _msgaddr_avl_comp(const void *k1, const void *k2);
 static void *_copy_addrtlv_value(struct rfc5444_writer *writer, const void *value, size_t length);
@@ -97,6 +98,9 @@ rfc5444_writer_init(struct rfc5444_writer *writer) {
   _rfc5444_tlv_writer_init(&writer->_msg, 0, writer->msg_size);
 
   list_init_head(&writer->_pkthandlers);
+  list_init_head(&writer->_targets);
+  list_init_head(&writer->_addr_tlvtype_head);
+
   avl_init(&writer->_msgcreators, avl_comp_uint8, false);
 
 #if WRITER_STATE_MACHINE == true
@@ -133,6 +137,11 @@ rfc5444_writer_cleanup(struct rfc5444_writer *writer) {
     rfc5444_writer_unregister_target(writer, interf);
   }
 
+  /* remove all generic address tlvtypes */
+  list_for_each_element_safe(&writer->_addr_tlvtype_head, tlvtype, _tlvtype_node, safe_tt) {
+    rfc5444_writer_unregister_addrtlvtype(writer, tlvtype);
+  }
+
   /* remove all message creators */
   avl_for_each_element_safe(&writer->_msgcreators, msg, _msgcreator_node, safe_msg) {
     /* prevent message from being freed in the middle of the processing */
@@ -143,9 +152,8 @@ rfc5444_writer_cleanup(struct rfc5444_writer *writer) {
       rfc5444_writer_unregister_content_provider(writer, provider, NULL, 0);
     }
 
-    /* remove all _registered address tlvs */
-    list_for_each_element_safe(&msg->_tlvtype_head, tlvtype, _tlvtype_node, safe_tt) {
-      /* reset usage counter */
+    /* remove all registered address tlvs */
+    list_for_each_element_safe(&msg->_msgspecific_tlvtype_head, tlvtype, _tlvtype_node, safe_tt) {
       rfc5444_writer_unregister_addrtlvtype(writer, tlvtype);
     }
 
@@ -285,24 +293,27 @@ rfc5444_writer_add_address(struct rfc5444_writer *writer __attribute__ ((unused)
  * This function must NOT be called from the rfc5444 writer callbacks.
  *
  * @param writer pointer to writer context
- * @param msgtype messagetype for this tlv
+ * @param msgtype messagetype for this tlv, -1 to registere a generic
+ *   (not message specific) address TLV type
  * @param type pointer to tlvtype structure, type and exttype must be already initialized
  * @return 0 if addresstlvtype was registered, -1 otherwise
  */
 int
 rfc5444_writer_register_addrtlvtype(struct rfc5444_writer *writer,
-    struct rfc5444_writer_tlvtype *type, uint8_t msgtype) {
-  struct rfc5444_writer_message *msg;
+    struct rfc5444_writer_tlvtype *type, int msgtype) {
+  struct rfc5444_writer_message *msg = NULL;
 
 #if WRITER_STATE_MACHINE == true
   assert(writer->_state == RFC5444_WRITER_NONE);
 #endif
-  if ((msg = _get_message(writer, msgtype)) == NULL) {
-    /* out of memory error ? */
-    return -1;
+  if (msgtype >= 0 && msgtype <= 255) {
+    if ((msg = _get_message(writer, msgtype)) == NULL) {
+      /* out of memory error ? */
+      return -1;
+    }
   }
 
-  _register_addrtlvtype(msg, type);
+  _register_addrtlvtype(writer, msg, type);
   return 0;
 }
 
@@ -324,7 +335,11 @@ rfc5444_writer_unregister_addrtlvtype(struct rfc5444_writer *writer, struct rfc5
 
   _free_tlvtype_tlvs(writer, tlvtype);
   list_remove(&tlvtype->_tlvtype_node);
-  _lazy_free_message(writer, tlvtype->_creator);
+
+  if (tlvtype->_creator) {
+    /* message specific address tlv, see if we need to remove the message itself */
+    _lazy_free_message(writer, tlvtype->_creator);
+  }
 }
 
 /**
@@ -353,7 +368,7 @@ rfc5444_writer_register_msgcontentprovider(struct rfc5444_writer *writer,
   }
 
   for (i=0; i<addrtlvs_count; i++) {
-    _register_addrtlvtype(msg, &addrtlvs[i]);
+    _register_addrtlvtype(writer, msg, &addrtlvs[i]);
   }
 
   cpr->creator = msg;
@@ -569,7 +584,7 @@ _get_message(struct rfc5444_writer *writer, uint8_t msgid) {
   /* initialize list/tree heads */
   avl_init(&msg->_provider_tree, avl_comp_uint32, true);
 
-  list_init_head(&msg->_tlvtype_head);
+  list_init_head(&msg->_msgspecific_tlvtype_head);
 
   avl_init(&msg->_addr_tree, _msgaddr_avl_comp, false);
   list_init_head(&msg->_addr_head);
@@ -581,12 +596,14 @@ _get_message(struct rfc5444_writer *writer, uint8_t msgid) {
  * This function must NOT be called from the rfc5444 writer callbacks.
  *
  * @param writer pointer to writer context
- * @param msg pointer to allocated rfc5444_writer_message
+ * @param msg pointer to allocated rfc5444_writer_message, NULL
+ *   if generic address tlvtype
  * @param tlvtype pointer to preallocated rfc5444_writer_tlvtype,
  *    type and exttype must already be initialized
  */
 static void
-_register_addrtlvtype(struct rfc5444_writer_message *msg,
+_register_addrtlvtype(struct rfc5444_writer *writer,
+    struct rfc5444_writer_message *msg,
     struct rfc5444_writer_tlvtype *tlvtype) {
   /* initialize addrtlv fields */
   tlvtype->_creator = msg;
@@ -594,8 +611,14 @@ _register_addrtlvtype(struct rfc5444_writer_message *msg,
 
   avl_init(&tlvtype->_tlv_tree, avl_comp_uint32, true);
 
-  /* add to message creator list */
-  list_add_tail(&msg->_tlvtype_head, &tlvtype->_tlvtype_node);
+  if (msg) {
+    /* add to message creator list */
+    list_add_tail(&msg->_msgspecific_tlvtype_head, &tlvtype->_tlvtype_node);
+  }
+  else {
+    /* add to generic address tlvtype list */
+    list_add_tail(&writer->_addr_tlvtype_head, &tlvtype->_tlvtype_node);
+  }
 }
 
 /**
@@ -676,8 +699,10 @@ _rfc5444_writer_free_addresses(struct rfc5444_writer *writer, struct rfc5444_wri
  */
 static void
 _lazy_free_message(struct rfc5444_writer *writer, struct rfc5444_writer_message *msg) {
-  if (!msg->_registered && list_is_empty(&msg->_addr_head)
-      && list_is_empty(&msg->_tlvtype_head) && avl_is_empty(&msg->_provider_tree)) {
+  if (!msg->_registered
+      && list_is_empty(&msg->_addr_head)
+      && list_is_empty(&msg->_msgspecific_tlvtype_head)
+      && avl_is_empty(&msg->_provider_tree)) {
     avl_remove(&writer->_msgcreators, &msg->_msgcreator_node);
     free(msg);
   }

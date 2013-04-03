@@ -254,8 +254,8 @@ struct rfc5444_writer_message {
   struct list_entity _addr_head;
   struct avl_tree _addr_tree;
 
-  /* head of writer_tlvtype list */
-  struct list_entity _tlvtype_head;
+  /* head of message specific tlvtype list */
+  struct list_entity _msgspecific_tlvtype_head;
 
   /* callbacks for controling the message header fields */
   void (*addMessageHeader)(struct rfc5444_writer *, struct rfc5444_writer_message *);
@@ -349,6 +349,9 @@ struct rfc5444_writer {
   /* list of all targets */
   struct list_entity _targets;
 
+  /* list of generic tlvtypes */
+  struct list_entity _addr_tlvtype_head;
+
   /* buffer for constructing the current message */
   struct rfc5444_tlv_writer_data _msg;
 
@@ -408,7 +411,7 @@ EXPORT void rfc5444_writer_set_pkt_seqno(
 
 /* functions that can be called outside the callbacks */
 EXPORT int rfc5444_writer_register_addrtlvtype(struct rfc5444_writer *writer,
-    struct rfc5444_writer_tlvtype *type, uint8_t msgtype);
+    struct rfc5444_writer_tlvtype *type, int msgtype);
 EXPORT void rfc5444_writer_unregister_addrtlvtype(struct rfc5444_writer *writer,
     struct rfc5444_writer_tlvtype *tlvtype);
 
