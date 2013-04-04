@@ -61,11 +61,13 @@
 #include "common/common_types.h"
 #include "common/autobuf.h"
 
+/* Pseude address families for mac/eui64 */
 enum {
   AF_MAC48 = AF_MAX + 1,
   AF_EUI64 = AF_MAX + 2,
 };
 
+/* maximum number of octets for address */
 enum { NETADDR_MAX_LENGTH = 16 };
 
 /**
@@ -120,12 +122,15 @@ struct netaddr_str {
 EXPORT extern const struct netaddr NETADDR_IPV4_ANY;
 EXPORT extern const struct netaddr NETADDR_IPV4_MULTICAST;
 EXPORT extern const struct netaddr NETADDR_IPV4_LINKLOCAL;
+EXPORT extern const struct netaddr NETADDR_IPV4_LOOPBACK;
 
 EXPORT extern const struct netaddr NETADDR_IPV6_ANY;
 EXPORT extern const struct netaddr NETADDR_IPV6_MULTICAST;
 EXPORT extern const struct netaddr NETADDR_IPV6_LINKLOCAL;
 EXPORT extern const struct netaddr NETADDR_IPV6_ULA;
 EXPORT extern const struct netaddr NETADDR_IPV6_IPV4COMPATIBLE;
+EXPORT extern const struct netaddr NETADDR_IPV6_IPV4MAPPED;
+EXPORT extern const struct netaddr NETADDR_IPV6_LOOPBACK;
 
 EXPORT int netaddr_from_binary_prefix(struct netaddr *dst,
     const void *binary, size_t len, uint8_t addr_type, uint8_t prefix_len);

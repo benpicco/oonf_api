@@ -58,6 +58,7 @@ static int _read_hexdigit(const char c);
 static bool _binary_is_in_subnet(const struct netaddr *subnet,
     const void *bin);
 
+/* predefined network prefixes */
 const struct netaddr NETADDR_IPV4_ANY = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET, 0 };
 const struct netaddr NETADDR_IPV6_ANY = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET6, 0 };
 
@@ -70,6 +71,10 @@ const struct netaddr NETADDR_IPV6_LINKLOCAL = { { 0xfe,0x80,0,0,0,0,0,0,0,0,0,0,
 const struct netaddr NETADDR_IPV6_ULA = { { 0xfc,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET6, 7 };
 
 const struct netaddr NETADDR_IPV6_IPV4COMPATIBLE = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET6, 96 };
+const struct netaddr NETADDR_IPV6_IPV4MAPPED = { {0,0,0,0,0,0,0,0,0,0,0xff,0xff,0,0,0,0}, AF_INET6, 96 };
+
+const struct netaddr NETADDR_IPV4_LOOPBACK = { {127,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET, 8 };
+const struct netaddr NETADDR_IPV6_LOOPBACK = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1}, AF_INET6, 128 };
 
 /**
  * Read the binary representation of an address into a netaddr object
