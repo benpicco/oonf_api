@@ -335,16 +335,12 @@ olsr_rfc5444_cleanup(void) {
  */
 enum rfc5444_result olsr_rfc5444_send(
     struct olsr_rfc5444_target *target, uint8_t msgid) {
-  struct olsr_rfc5444_interface *interf;
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_INFO
   struct netaddr_str buf;
 #endif
 
-  interf = target->interface;
-
   /* check if socket can send data */
-  if (!olsr_packet_managed_is_active(&interf->_socket,
-      netaddr_get_address_family(&target->dst))) {
+  if (!olsr_rfc5444_is_target_active(target)) {
     return RFC5444_OKAY;
   }
 

@@ -270,6 +270,16 @@ olsr_rfc5444_get_core_interface(struct olsr_rfc5444_interface *interf) {
 }
 
 /**
+ * @param target pointer to rfc5444 target
+ * @return true if the target (address family type) socket is active
+ */
+static inline bool
+olsr_rfc5444_is_target_active(struct olsr_rfc5444_target *target) {
+  return olsr_packet_managed_is_active(&target->interface->_socket,
+      netaddr_get_address_family(&target->dst));
+}
+
+/**
  * Request a protocol wide packet sequence number
  * @param protocol pointer to rfc5444 protocol instance
  */
