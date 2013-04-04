@@ -75,6 +75,9 @@ EXPORT extern const struct netaddr RFC5444_MANET_MULTICAST_V6;
 enum rfc5444_msgtype_iana {
   /* RFC 6130 (NHDP) */
   RFC5444_MSGTYPE_HELLO = 0,
+
+  /* OLSRv2 draft 19 */
+  RFC5444_MSGTYPE_TC = 1,
 };
 
 /*
