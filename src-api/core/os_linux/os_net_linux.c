@@ -130,7 +130,6 @@ os_net_update_interface(struct olsr_interface_data *ifdata,
   size_t addrcount;
   union netaddr_socket *sock;
   struct netaddr *addr;
-  const void *ptr;
 
   /* cleanup data structure */
   if (ifdata->addresses) {
@@ -207,20 +206,21 @@ os_net_update_interface(struct olsr_interface_data *ifdata,
 
       if (netaddr_from_socket(&ifdata->addresses[ifdata->addrcount], sock) == 0) {
         ifdata->addrcount++;
-        ptr = netaddr_get_binptr(addr);
 
         if (netaddr_get_address_family(addr) == AF_INET) {
-          ifdata->if_v4 = addr;
+          if (!(netaddr_is_in_subnet(&NETADDR_IPV4_LOOPBACK, addr)
+              || netaddr_is_in_subnet(&NETADDR_IPV4_MULTICAST, addr))) {
+            ifdata->if_v4 = addr;
+          }
         }
         else if (netaddr_get_address_family(addr) == AF_INET6) {
-          if (IN6_IS_ADDR_LINKLOCAL(ptr)) {
+          if (netaddr_is_in_subnet(&NETADDR_IPV6_LINKLOCAL, addr)) {
             ifdata->linklocal_v6_ptr = addr;
           }
-          else if (!(IN6_IS_ADDR_LOOPBACK(ptr)
-              || IN6_IS_ADDR_MULTICAST(ptr)
-              || IN6_IS_ADDR_UNSPECIFIED(ptr)
-              || IN6_IS_ADDR_V4COMPAT(ptr)
-              || IN6_IS_ADDR_V4MAPPED(ptr))) {
+          else if (!(netaddr_cmp(&NETADDR_IPV6_LOOPBACK, addr) == 0
+              || netaddr_is_in_subnet(&NETADDR_IPV6_MULTICAST, addr)
+              || netaddr_is_in_subnet(&NETADDR_IPV6_IPV4COMPATIBLE, addr)
+              || netaddr_is_in_subnet(&NETADDR_IPV6_IPV4MAPPED, addr))) {
             ifdata->if_v6 = addr;
           }
         }

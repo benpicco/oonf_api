@@ -48,6 +48,9 @@
 
 #include "core/olsr_interface.h"
 
+/* name of the loopback interface */
+#define IF_LOOPBACK_NAME "lo"
+
 /**
  * Close a file descriptor
  * @param fd filedescriptor
