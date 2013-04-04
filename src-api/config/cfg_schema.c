@@ -302,7 +302,7 @@ cfg_schema_validate(struct cfg_db *db,
     }
     else {
       named = avl_first_element(&section->names, named, node);
-      warning = cfg_db_is_named_section(named) || section->names.count > 1;
+      warning = !cfg_db_is_named_section(named) && section->names.count < 2;
     }
     if (warning) {
       cfg_append_printable_line(out, "Missing mandatory section of type '%s'",
