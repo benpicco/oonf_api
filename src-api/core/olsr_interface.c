@@ -341,10 +341,13 @@ _cb_change_handler(void *ptr) {
   /* call listeners */
   list_for_each_element_safe(&_interface_listener, listener, _node, l_it) {
     if (listener->process != NULL
-        && strcasecmp(listener->name, interf->data.name) == 0) {
+        && (listener->name == NULL
+            || strcasecmp(listener->name, interf->data.name) == 0)) {
       listener->interface = interf;
-      listener->process(listener, &old_data);
+      listener->old = &old_data;
+      listener->process(listener);
       listener->interface = NULL;
+      listener->old = NULL;
     }
   }
 

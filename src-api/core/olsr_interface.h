@@ -117,16 +117,24 @@ struct olsr_interface_listener {
   bool mesh;
 
   /* callback for interface change */
-  void (*process)(struct olsr_interface_listener *, struct olsr_interface_data *old);
+  void (*process)(struct olsr_interface_listener *);
 
-  /* pointer to the interface this listener is registered to */
+  /*
+   * pointer to the interface this listener is registered to, will be
+   * set by the core while process() is called
+   */
   struct olsr_interface *interface;
+
+  /*
+   * pointer to the interface data before the change happened, will be
+   * set by the core while process() is called
+   */
+  struct olsr_interface_data *old;
 
   /* hook into list of listeners */
   struct list_entity _node;
 };
 
-#define OLSR_FOR_ALL_INTERFACES(interf, ptr) avl_for_each_element_safe(&olsr_interface_tree, interf, node, ptr)
 EXPORT extern struct avl_tree olsr_interface_tree;
 
 EXPORT void olsr_interface_init(void);

@@ -68,8 +68,7 @@ static int _apply_managed_socket(struct olsr_packet_managed *managed,
 static void _cb_packet_event_unicast(int fd, void *data, bool r, bool w);
 static void _cb_packet_event_multicast(int fd, void *data, bool r, bool w);
 static void _cb_packet_event(int fd, void *data, bool r, bool w, bool mc);
-static void _cb_interface_listener(
-    struct olsr_interface_listener *l, struct olsr_interface_data *old);
+static void _cb_interface_listener(struct olsr_interface_listener *l);
 
 /**
  * Initialize packet socket handler
@@ -701,8 +700,7 @@ _cb_packet_event(int fd, void *data, bool event_read, bool event_write,
  * @param old
  */
 static void
-_cb_interface_listener(struct olsr_interface_listener *l,
-    struct olsr_interface_data *old __attribute__((unused))) {
+_cb_interface_listener(struct olsr_interface_listener *l) {
   struct olsr_packet_managed *managed;
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   int result;
