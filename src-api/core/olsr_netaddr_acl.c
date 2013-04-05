@@ -51,11 +51,6 @@
 static int _handle_control_cmd(struct olsr_netaddr_acl *, const char *);
 static bool _is_in_array(struct netaddr *, size_t, struct netaddr *);
 
-const char ACL_FIRST_REJECT[13] = "first_reject";
-const char ACL_FIRST_ACCEPT[13] = "first_accept";
-const char ACL_DEFAULT_ACCEPT[15] = "default_accept";
-const char ACL_DEFAULT_REJECT[15] = "default_reject";
-
 /**
  * Initialize an ACL object. It will contain no addresses on both
  * accept and reject list and will be "accept first", "reject default".
