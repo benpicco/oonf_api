@@ -59,6 +59,8 @@ static bool _binary_is_in_subnet(const struct netaddr *subnet,
     const void *bin);
 
 /* predefined network prefixes */
+const struct netaddr NETADDR_UNSPEC = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_UNSPEC, 0 };
+
 const struct netaddr NETADDR_IPV4_ANY = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET, 0 };
 const struct netaddr NETADDR_IPV6_ANY = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET6, 0 };
 

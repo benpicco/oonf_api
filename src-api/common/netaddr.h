@@ -119,6 +119,8 @@ struct netaddr_str {
   char buf[INET6_ADDRSTRLEN+16];
 };
 
+EXPORT extern const struct netaddr NETADDR_UNSPEC;
+
 EXPORT extern const struct netaddr NETADDR_IPV4_ANY;
 EXPORT extern const struct netaddr NETADDR_IPV4_MULTICAST;
 EXPORT extern const struct netaddr NETADDR_IPV4_LINKLOCAL;
