@@ -91,8 +91,8 @@ struct olsr_timer_info {
  * as its parameter.
  */
 struct olsr_timer_entry {
-  /* Wheel membership */
-  struct list_entity _node;
+  /* Tree membership */
+  struct avl_node _node;
 
   /* backpointer to timer info */
   struct olsr_timer_info *info;
@@ -135,7 +135,7 @@ EXPORT uint64_t olsr_timer_getNextEvent(void);
  * @return true if the timer is running, false otherwise
  */
 static INLINE bool
-olsr_timer_is_active(struct olsr_timer_entry *timer) {
+olsr_timer_is_active(const struct olsr_timer_entry *timer) {
   return timer->_clock != 0ull;
 }
 
@@ -144,7 +144,7 @@ olsr_timer_is_active(struct olsr_timer_entry *timer) {
  * @return interval between timer events in milliseconds
  */
 static INLINE uint64_t
-olsr_timer_get_period(struct olsr_timer_entry *timer) {
+olsr_timer_get_period(const struct olsr_timer_entry *timer) {
   return timer->_period;
 }
 
@@ -153,7 +153,7 @@ olsr_timer_get_period(struct olsr_timer_entry *timer) {
  * @return number of milliseconds until timer fires
  */
 static INLINE int64_t
-olsr_timer_get_due(struct olsr_timer_entry *timer) {
+olsr_timer_get_due(const struct olsr_timer_entry *timer) {
   return olsr_clock_get_relative(timer->_clock);
 }
 
