@@ -172,7 +172,7 @@ EXPORT int inet_pton(int af, const char *cp, void * buf);
  */
 static INLINE void
 netaddr_invalidate(struct netaddr *addr) {
-  addr->_type = AF_UNSPEC;
+  memset(addr, 0, sizeof(*addr));
 }
 /**
  * Calculates the maximum prefix length of an address type
