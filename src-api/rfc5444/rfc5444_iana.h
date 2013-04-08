@@ -126,6 +126,12 @@ enum rfc5444_willingness_values {
   RFC5444_WILLINGNESS_ROUTING_MASK  = 0x0f,
 };
 
+/* extension types of CONT_SEQ_NUM TLV */
+enum rfc5444_cont_seq_num_ext {
+  RFC5444_CONT_SEQ_NUM_COMPLETE = 0,
+  RFC5444_CONT_SEQ_NUM_INCOMPLETE = 1,
+};
+
 /*
  * this is a list of all globally defined IANA
  * address TLVs and their allocated values

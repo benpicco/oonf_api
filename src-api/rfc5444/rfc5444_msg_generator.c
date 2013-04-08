@@ -187,7 +187,7 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
   /* call content providers for message TLVs */
   avl_for_each_element(&msg->_provider_tree, prv, _provider_node) {
     if (prv->addMessageTLVs) {
-      prv->addMessageTLVs(writer, prv);
+      prv->addMessageTLVs(writer);
     }
   }
 
@@ -197,7 +197,7 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
   /* call content providers for addresses */
   avl_for_each_element(&msg->_provider_tree, prv, _provider_node) {
     if (prv->addAddresses) {
-      prv->addAddresses(writer, prv);
+      prv->addAddresses(writer);
     }
   }
 
@@ -1252,7 +1252,7 @@ _finalize_message_fragment(struct rfc5444_writer *writer, struct rfc5444_writer_
   /* inform message providers */
   avl_for_each_element_reverse(&msg->_provider_tree, prv, _provider_node) {
     if (prv->finishMessageTLVs) {
-      prv->finishMessageTLVs(writer, prv, first, last, not_fragmented);
+      prv->finishMessageTLVs(writer, first, last, not_fragmented);
     }
   }
 

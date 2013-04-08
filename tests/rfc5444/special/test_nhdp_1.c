@@ -112,8 +112,7 @@ uint8_t result[] = {
 
 static void write_packet(struct rfc5444_writer *,
     struct rfc5444_writer_target *, void *, size_t);
-static void addAddresses(struct rfc5444_writer *wr,
-    struct rfc5444_writer_content_provider *provider);
+static void addAddresses(struct rfc5444_writer *wr);
 
 static uint8_t msg_buffer[128];
 static uint8_t msg_addrtlvs[1000];
@@ -146,26 +145,25 @@ static void addMessageHeader(struct rfc5444_writer *wr, struct rfc5444_writer_me
   rfc5444_writer_set_msg_header(wr, msg, false, false, false, false);
 }
 
-static void addAddresses(struct rfc5444_writer *wr,
-    struct rfc5444_writer_content_provider *provider) {
+static void addAddresses(struct rfc5444_writer *wr) {
   uint8_t ip[4] = { 10,1, 0, 101 };
   struct rfc5444_writer_address *addr;
   char value0 =  0, value1 = 1;
 
   ip[0] = 10; ip[1] = 1; ip[2] = 0; ip[3] = 101;
-  addr = rfc5444_writer_add_address(wr, provider->creator, ip, 32, false);
+  addr = rfc5444_writer_add_address(wr, cpr.creator, ip, 32, false);
   rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[1], &value1, 1, false);
 
   ip[0] = 10; ip[1] = 1; ip[2] = 0; ip[3] = 102;
-  addr = rfc5444_writer_add_address(wr, provider->creator, ip, 32, false);
+  addr = rfc5444_writer_add_address(wr, cpr.creator, ip, 32, false);
   rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[0], &value0, 1, false);
 
   ip[0] = 10; ip[1] = 1; ip[2] = 0; ip[3] = 103;
-  addr = rfc5444_writer_add_address(wr, provider->creator, ip, 32, false);
+  addr = rfc5444_writer_add_address(wr, cpr.creator, ip, 32, false);
   rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[1], &value1, 1, false);
 
   ip[0] = 10; ip[1] = 11; ip[2] = 11; ip[3] = 11;
-  addr = rfc5444_writer_add_address(wr, provider->creator, ip, 32, false);
+  addr = rfc5444_writer_add_address(wr, cpr.creator, ip, 32, false);
   rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[1], &value1, 1, false);
 }
 

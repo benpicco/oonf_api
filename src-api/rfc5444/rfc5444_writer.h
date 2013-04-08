@@ -186,13 +186,11 @@ struct rfc5444_writer_content_provider {
   uint8_t msg_type;
 
   /* callbacks for adding tlvs and addresses to a message */
-  void (*addMessageTLVs)(struct rfc5444_writer *,
-    struct rfc5444_writer_content_provider *);
-  void (*addAddresses)(struct rfc5444_writer *,
-    struct rfc5444_writer_content_provider *);
+  void (*addMessageTLVs)(struct rfc5444_writer *);
+  void (*addAddresses)(struct rfc5444_writer *);
   void (*finishMessageTLVs)(struct rfc5444_writer *,
-    struct rfc5444_writer_content_provider *, struct rfc5444_writer_address *,
-    struct rfc5444_writer_address *, bool);
+    struct rfc5444_writer_address *start,
+    struct rfc5444_writer_address *end, bool complete);
 
   /* node for tree of content providers for a message creator */
   struct avl_node _provider_node;
