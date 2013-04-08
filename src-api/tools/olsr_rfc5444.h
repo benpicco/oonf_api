@@ -246,8 +246,11 @@ EXPORT struct olsr_rfc5444_target *olsr_rfc5444_add_target(
     struct olsr_rfc5444_interface *interface, struct netaddr *dst);
 EXPORT void olsr_rfc5444_remove_target(struct olsr_rfc5444_target *target);
 
-EXPORT enum rfc5444_result olsr_rfc5444_send(
+EXPORT enum rfc5444_result olsr_rfc5444_send_if(
     struct olsr_rfc5444_target *, uint8_t msgid);
+EXPORT enum rfc5444_result olsr_rfc5444_send_all(
+    struct olsr_rfc5444_protocol *protocol,
+    uint8_t msgid, rfc5444_writer_targetselector useIf);
 
 /**
  * @param msg pointer to rfc5444 message

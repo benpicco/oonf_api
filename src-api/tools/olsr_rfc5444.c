@@ -79,6 +79,8 @@ static void _cb_forward_message(struct rfc5444_reader_tlvblock_context *context,
 
 static bool _cb_single_target_selector(struct rfc5444_writer *, struct rfc5444_writer_target *, void *);
 static bool _cb_forward_ifselector(struct rfc5444_writer *, struct rfc5444_writer_target *, void *);
+static bool _cb_filtered_targets_selector(struct rfc5444_writer *writer,
+    struct rfc5444_writer_target *rfc5444_target, void *ptr);
 
 static struct rfc5444_reader_addrblock_entry *_alloc_addrblock_entry(void);
 static struct rfc5444_reader_tlvblock_entry *_alloc_tlvblock_entry(void);
@@ -328,12 +330,12 @@ olsr_rfc5444_cleanup(void) {
 }
 
 /**
- * Trigger the creation of a RFC5444 message
+ * Trigger the creation of a RFC5444 message for a specific interface
  * @param target interface for outgoing message
  * @param msgid id of created message
  * @return return code of rfc5444 writer
  */
-enum rfc5444_result olsr_rfc5444_send(
+enum rfc5444_result olsr_rfc5444_send_if(
     struct olsr_rfc5444_target *target, uint8_t msgid) {
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_INFO
   struct netaddr_str buf;
@@ -356,6 +358,22 @@ enum rfc5444_result olsr_rfc5444_send(
 
   return rfc5444_writer_create_message(&target->interface->protocol->writer,
       msgid, _cb_single_target_selector, target);
+}
+
+/**
+ * Trigger the creation of a RFC5444 message for a specific interface
+ * @param target interface for outgoing message
+ * @param msgid id of created message
+ * @return return code of rfc5444 writer
+ */
+enum rfc5444_result
+olsr_rfc5444_send_all(struct olsr_rfc5444_protocol *protocol,
+    uint8_t msgid, rfc5444_writer_targetselector useIf) {
+  /* create message */
+  OLSR_INFO(LOG_RFC5444, "Create message id %d", msgid);
+
+  return rfc5444_writer_create_message(&protocol->writer,
+      msgid, _cb_filtered_targets_selector, useIf);
 }
 
 /**
@@ -981,6 +999,48 @@ _cb_single_target_selector(struct rfc5444_writer *writer __attribute__((unused))
   struct olsr_rfc5444_target *t = ptr;
 
   return &t->rfc5444_target == target;
+}
+
+/**
+ * Selector for outgoing target
+ * @param writer rfc5444 writer
+ * @param target rfc5444 target
+ * @param ptr custom pointer, contains rfc5444 target
+ * @return true if target corresponds to selection
+ */
+static bool
+_cb_filtered_targets_selector(struct rfc5444_writer *writer,
+    struct rfc5444_writer_target *rfc5444_target, void *ptr) {
+  rfc5444_writer_targetselector userUseIf;
+  struct olsr_rfc5444_target *target;
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_INFO
+  struct netaddr_str buf;
+#endif
+
+  userUseIf = ptr;
+  target = container_of(rfc5444_target, struct olsr_rfc5444_target, rfc5444_target);
+
+  /* check if socket can send data */
+  if (!olsr_rfc5444_is_target_active(target)) {
+    return false;
+  }
+
+  /* check if user deselected the target */
+  if (!userUseIf(writer, rfc5444_target, NULL)) {
+    return false;
+  }
+
+  if (!olsr_timer_is_active(&target->_aggregation)) {
+    /* activate aggregation timer */
+    olsr_timer_start(&target->_aggregation, _aggregation_interval);
+  }
+
+  /* create message */
+  OLSR_INFO(LOG_RFC5444, "Send message to protocol %s/target %s on interface %s",
+      target->interface->protocol->name, netaddr_to_string(&buf, &target->dst),
+      target->interface->name);
+
+  return true;
 }
 
 /**
