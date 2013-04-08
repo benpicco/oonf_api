@@ -49,7 +49,7 @@
 #include "core/olsr_netaddr_acl.h"
 
 static int _handle_control_cmd(struct olsr_netaddr_acl *, const char *);
-static bool _is_in_array(struct netaddr *, size_t, struct netaddr *);
+static bool _is_in_array(const struct netaddr *, size_t, const struct netaddr *);
 
 /**
  * Initialize an ACL object. It will contain no addresses on both
@@ -153,7 +153,7 @@ from_entry_error:
  * @return -1 if an error happened, 0 otherwise
  */
 int
-olsr_acl_copy(struct olsr_netaddr_acl *to, struct olsr_netaddr_acl *from) {
+olsr_acl_copy(struct olsr_netaddr_acl *to, const struct olsr_netaddr_acl *from) {
   olsr_acl_remove(to);
   memcpy(to, from, sizeof(*to));
 
@@ -182,7 +182,7 @@ olsr_acl_copy(struct olsr_netaddr_acl *to, struct olsr_netaddr_acl *from) {
  * @return true if accepted, false otherwise
  */
 bool
-olsr_acl_check_accept(struct olsr_netaddr_acl *acl, struct netaddr *addr) {
+olsr_acl_check_accept(const struct olsr_netaddr_acl *acl, const struct netaddr *addr) {
   if (acl->reject_first) {
     if (_is_in_array(acl->reject, acl->reject_count, addr)) {
       return false;
@@ -290,7 +290,7 @@ _handle_control_cmd(struct olsr_netaddr_acl *acl, const char *cmd) {
  * @return true if address is inside list of addresses and networks
  */
 static bool
-_is_in_array(struct netaddr *array, size_t length, struct netaddr *addr) {
+_is_in_array(const struct netaddr *array, size_t length, const struct netaddr *addr) {
   size_t i;
 
   for (i=0; i<length; i++) {
