@@ -449,9 +449,15 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
   }
 
   flags = msg[1];
-  addr_len = flags & RFC5444_MSG_FLAG_ADDRLENMASK;
+  addr_len = (flags & RFC5444_MSG_FLAG_ADDRLENMASK) + 1;
 
-  cnt = 2;
+  size = (msg[2] << 8) + msg[3];
+  if (size != len) {
+    /* bad message size */
+    return RFC5444_FW_BAD_SIZE;
+  }
+
+  cnt = 4;
   if ((flags & RFC5444_MSG_FLAG_ORIGINATOR) != 0) {
     cnt += addr_len;
   }
@@ -463,12 +469,6 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
   }
   if ((flags & RFC5444_MSG_FLAG_SEQNO) != 0) {
     cnt += 2;
-  }
-
-  size = (msg[cnt] << 8) + msg[cnt+1];
-  if (size != len) {
-    /* bad message size */
-    return RFC5444_FW_BAD_SIZE;
   }
 
   if (hoplimit != -1 && msg[hoplimit] <= 1) {
@@ -495,6 +495,7 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
     ptr = &interf->_pkt.buffer[interf->_pkt.header + interf->_pkt.added
                             + interf->_pkt.allocated + interf->_bin_msgs_size];
     memcpy(ptr, msg, len);
+    interf->_bin_msgs_size += len;
 
     /* correct hoplimit if necesssary */
     if (hoplimit != -1) {

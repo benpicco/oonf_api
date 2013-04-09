@@ -1189,11 +1189,9 @@ cleanup_parse_message:
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
       (result == RFC5444_OKAY || result == RFC5444_DROP_MSG_BUT_FORWARD) &&
 #endif
-      parser->forward_message != NULL && tlv_context->has_hopcount) {
-    uint8_t limit = tlv_context->has_hoplimit ? tlv_context->hoplimit : 255;
-
-    /* check hopcount */
-    if (tlv_context->hopcount < limit -1) {
+      parser->forward_message != NULL && tlv_context->has_hoplimit) {
+    /* check limit */
+    if (tlv_context->hoplimit > 1) {
       /* forward message if callback is available */
       tlv_context->type = RFC5444_CONTEXT_MESSAGE;
       parser->forward_message(tlv_context, start, end - start);
