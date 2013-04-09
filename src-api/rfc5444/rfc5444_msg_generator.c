@@ -1060,7 +1060,7 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
   assert(first_addr->_block_end);
 
   addr_start = first_addr;
-  ptr = &writer->_msg.buffer[writer->_msg.header + writer->_msg.added + writer->_msg.set];
+  ptr = &writer->_msg.buffer[writer->_msg.header + writer->_msg.added + writer->_msg.allocated];
 
   /* remember start */
   start = ptr;

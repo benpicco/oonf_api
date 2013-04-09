@@ -165,7 +165,7 @@ olsr_plugins_cleanup(void) {
     return;
 
   OLSR_FOR_ALL_PLUGIN_ENTRIES(plugin, iterator) {
-    olsr_plugins_disable(plugin);
+    _disable_plugin(plugin, true);
     _unload_plugin(plugin, true);
   }
 }
