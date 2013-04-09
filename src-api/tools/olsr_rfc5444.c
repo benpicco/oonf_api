@@ -977,6 +977,10 @@ _cb_forward_message(
 
   /* get protocol to use for forwarding message */
   protocol = container_of(context->reader, struct olsr_rfc5444_protocol, reader);
+
+  /* forward message */
+  OLSR_INFO(LOG_RFC5444, "Forwarding message type %u", buffer[0]);
+
   result = rfc5444_writer_forward_msg(&protocol->writer, buffer, length, context);
   if (result) {
     OLSR_WARN(LOG_RFC5444, "Error while forwarding message: %s (%d)",
