@@ -78,7 +78,6 @@ static void _cb_forward_message(struct rfc5444_reader_tlvblock_context *context,
     uint8_t *buffer, size_t length);
 
 static bool _cb_single_target_selector(struct rfc5444_writer *, struct rfc5444_writer_target *, void *);
-static bool _cb_forward_ifselector(struct rfc5444_writer *, struct rfc5444_writer_target *, void *);
 static bool _cb_filtered_targets_selector(struct rfc5444_writer *writer,
     struct rfc5444_writer_target *rfc5444_target, void *ptr);
 
@@ -978,8 +977,7 @@ _cb_forward_message(
 
   /* get protocol to use for forwarding message */
   protocol = container_of(context->reader, struct olsr_rfc5444_protocol, reader);
-  result = rfc5444_writer_forward_msg(&protocol->writer, buffer, length,
-      context, _cb_forward_ifselector, NULL);
+  result = rfc5444_writer_forward_msg(&protocol->writer, buffer, length, context);
   if (result) {
     OLSR_WARN(LOG_RFC5444, "Error while forwarding message: %s (%d)",
         rfc5444_strerror(result), result);
@@ -1041,24 +1039,6 @@ _cb_filtered_targets_selector(struct rfc5444_writer *writer,
       target->interface->name);
 
   return true;
-}
-
-/**
- * Selector for forwarding targets, only selects multicast targets
- * @param writer rfc5444 writer
- * @param target rfc5444 target
- * @param ptr NULL in this case
- * @return true if ptr is NULL or interface corresponds to custom pointer
- */
-static bool
-_cb_forward_ifselector(struct rfc5444_writer *writer __attribute__((unused)),
-    struct rfc5444_writer_target *target,
-    void *ptr __attribute__((unused))) {
-  struct olsr_rfc5444_target *t;
-
-  t = container_of(target, struct olsr_rfc5444_target, rfc5444_target);
-  return t == t->interface->multicast4
-      || t == t->interface->multicast6;
 }
 
 /**

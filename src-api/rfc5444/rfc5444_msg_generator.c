@@ -398,8 +398,7 @@ bool rfc5444_writer_alltargets_selector(struct rfc5444_writer *writer __attribut
  */
 enum rfc5444_result
 rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t len,
-    struct rfc5444_reader_tlvblock_context *context,
-    rfc5444_writer_targetselector useTarget, void *param) {
+    struct rfc5444_reader_tlvblock_context *context) {
   struct rfc5444_writer_target *interf;
   struct rfc5444_writer_message *rfc5444_msg;
   int cnt, hopcount = -1, hoplimit = -1;
@@ -418,7 +417,7 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
     return RFC5444_NO_MSGCREATOR;
   }
 
-  if (!rfc5444_msg->shall_forward) {
+  if (!rfc5444_msg->shall_forward || !rfc5444_msg->forward_target_selector) {
     /* no forwarding handler, do not forward */
     return RFC5444_OKAY;
   }
@@ -433,7 +432,7 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
   list_for_each_element(&writer->_targets, interf, _target_node) {
     size_t max;
 
-    if (!useTarget(writer, interf, param)) {
+    if (!rfc5444_msg->forward_target_selector(interf)) {
       continue;
     }
 
@@ -477,11 +476,11 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
     return RFC5444_OKAY;
   }
 
+  /* forward message */
   list_for_each_element(&writer->_targets, interf, _target_node) {
-    if (!useTarget(writer, interf, param)) {
+    if (!rfc5444_msg->forward_target_selector(interf)) {
       continue;
     }
-
 
     /* check if we have to flush the message buffer */
     if (interf->_pkt.header + interf->_pkt.added + interf->_pkt.set + interf->_bin_msgs_size + len

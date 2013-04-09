@@ -122,6 +122,7 @@ olsr_duplicate_entry_add(struct olsr_duplicate_set *set, uint8_t msg_type,
     struct netaddr *originator, uint16_t seqno, uint64_t vtime) {
   struct olsr_duplicate_entry *entry;
   struct olsr_duplicate_entry_key key;
+  enum olsr_duplicate_result result;
 
   /* generate combined key */
   memcpy(&key.addr, originator, sizeof(*originator));
@@ -155,7 +156,12 @@ olsr_duplicate_entry_add(struct olsr_duplicate_set *set, uint8_t msg_type,
     return OLSR_DUPSET_NEWEST;
   }
 
-  return _test(entry, seqno, true);
+  result = _test(entry, seqno, true);
+  if (result == OLSR_DUPSET_NEW || result == OLSR_DUPSET_NEWEST) {
+    /* reset validity timer */
+    olsr_timer_set(&entry->_vtime, vtime);
+  }
+  return result;
 }
 
 /**
