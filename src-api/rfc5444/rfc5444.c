@@ -44,6 +44,36 @@
 #include "rfc5444/rfc5444.h"
 
 /**
+ * Retrieve a timetlv value from a vector of hopcount/value sequences.
+ * See RFC 5497, Section 5 for details.
+ * @param vector pointer to timetlv vector
+ * @param vector_length length of vector
+ * @param hopcount hopcount for value lookup
+ * @return timetlv value, 255 (infinite) if an error happened.
+ */
+uint8_t
+rfc5444_timetlv_get_from_vector(
+    uint8_t *vector, size_t vector_length, uint8_t hopcount) {
+  size_t i;
+
+  /* handle illegal vector length */
+  if ((vector_length & 1) == 0) {
+    /* return infinite value */
+    return 255;
+  }
+
+  for (i=1; i<vector_length; i+=2) {
+    /* find our position in the vector */
+    if (hopcount <= vector[i]) {
+      return vector[i-1];
+    }
+  }
+
+  /* use the last field of the vector */
+  return vector[i-1];
+}
+
+/**
  * Converts a relative time value into its RFC 5497 (timetlv)
  * representation.
  * If the time value is larger than the largest timetlv encoding,
@@ -109,7 +139,12 @@ rfc5444_timetlv_decode(uint8_t encoded) {
 
   if (encoded == 0) {
     /* minimum valid time interval */
-    return 1;
+    return 0;
+  }
+
+  if (encoded == 255) {
+    /* return 'infinite' */
+    return UINT64_MAX;
   }
 
   a = encoded & 0x07;
@@ -129,9 +164,9 @@ rfc5444_timetlv_decode(uint8_t encoded) {
    */
 
   if (b <= 10) {
-    return (1000 + 125 * a) >> (10 - b);
+    return (1000ull + 125ull * a) >> (10ull - b);
   }
-  return (1000 + 125 * a) << (b - 10);
+  return (1000ull + 125ull * a) << (b - 10ull);
 }
 
 /**

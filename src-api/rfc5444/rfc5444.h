@@ -44,8 +44,8 @@
 #include "common/common_types.h"
 
 enum {
-  /* timetlv_max = 15 * 2^28 * 1000 / 1024 = 15000 << 18 = 3 932 160 000 ms */
-  RFC5444_TIMETLV_MAX = 0xea600000,
+  /* timetlv_max = 14 * 2^28 * 1000 / 1024 = 14000 << 18 = 3 670 016 000 ms */
+  RFC5444_TIMETLV_MAX = 0xdac00000,
 
   /* timetlv_min = 1000/1024 ms */
   RFC5444_TIMETLV_MIN = 0x00000001,
@@ -60,6 +60,8 @@ enum {
   RFC5444_METRIC_INFINITE = 0xffffff,
 };
 
+EXPORT uint8_t rfc5444_timetlv_get_from_vector(
+    uint8_t *vector, size_t vector_length, uint8_t hopcount);
 EXPORT uint8_t rfc5444_timetlv_encode(uint64_t);
 EXPORT uint64_t rfc5444_timetlv_decode(uint8_t);
 
