@@ -1,0 +1,3 @@
+The OONF-API framework will not be stabilized until the first stable version of OLSRv2 will be released.
+
+Any function could change until this point (suggestions for improving the API structure are welcome).
