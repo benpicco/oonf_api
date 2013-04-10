@@ -436,6 +436,11 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
       continue;
     }
 
+    if (interf->_is_flushed) {
+      /* begin a new packet */
+      _rfc5444_writer_begin_packet(writer,interf);
+    }
+
     max = interf->_pkt.max - (interf->_pkt.header + interf->_pkt.added + interf->_pkt.allocated);
 
     if (max < max_msg_size) {

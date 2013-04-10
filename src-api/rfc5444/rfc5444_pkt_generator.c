@@ -168,8 +168,8 @@ rfc5444_writer_flush(struct rfc5444_writer *writer,
 #endif
 
 #if DEBUG_CLEANUP == true
-  memset(&target->_pkt.buffer[len + target->_pkt.added], 0,
-      target->_pkt.max - len - target->_pkt.added);
+  memset(target->_pkt.buffer, 0,
+      len + target->_pkt.added + target->_pkt.set + target->_bin_msgs_size);
 #endif
 }
 
