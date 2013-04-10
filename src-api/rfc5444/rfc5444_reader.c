@@ -194,10 +194,11 @@ rfc5444_reader_handle_packet(struct rfc5444_reader *parser, uint8_t *buffer, siz
     last_started = consumer;
     /* this one can drop a packet */
     if (consumer->start_callback != NULL) {
+      context.consumer = consumer;
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
       result =
 #endif
-          consumer->start_callback(consumer, &context);
+          consumer->start_callback(&context);
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
       if (result != RFC5444_OKAY) {
         goto cleanup_parse_packet;
@@ -232,7 +233,8 @@ cleanup_parse_packet:
   if (!avl_is_empty(&parser->packet_consumer)) {
     avl_for_first_to_element_reverse(&parser->packet_consumer, last_started, consumer, _node) {
       if (consumer->end_callback) {
-        consumer->end_callback(consumer, &context, result != RFC5444_OKAY);
+        context.consumer = consumer;
+        consumer->end_callback(&context, result != RFC5444_OKAY);
       }
     }
   }
@@ -650,10 +652,11 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
     /* handle tlv_callback first */
     if (index_match && consumer->tlv_callback != NULL) {
       /* call consumer for TLV, can skip tlv, address, message and packet */
+      context->consumer = consumer;
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
       result =
 #endif
-          consumer->tlv_callback(consumer, tlv, context);
+          consumer->tlv_callback(tlv, context);
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
       if (result == RFC5444_DROP_TLV) {
         /* mark dropped tlv */
@@ -736,16 +739,18 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
 
   /* call consumer for tlvblock */
   if (consumer->block_callback != NULL && !constraints_failed) {
+    context->consumer = consumer;
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
     result =
 #endif
-        consumer->block_callback(consumer, context);
+        consumer->block_callback(context);
   }
   else if (consumer->block_callback_failed_constraints != NULL && constraints_failed) {
+    context->consumer = consumer;
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
     result =
 #endif
-        consumer->block_callback_failed_constraints(consumer, context);
+        consumer->block_callback_failed_constraints(context);
   }
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
   if (result == RFC5444_DROP_TLV) {
@@ -887,10 +892,11 @@ schedule_msgtlv_consumer(struct rfc5444_reader_tlvblock_consumer *consumer,
   /* call start-of-context callback */
   if (consumer->start_callback) {
     /* could drop tlv, message or packet */
+    tlv_context->consumer = consumer;
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
     result =
 #endif
-        consumer->start_callback(consumer, tlv_context);
+        consumer->start_callback(tlv_context);
   }
 
   /* call consumer for message tlv block */
@@ -944,10 +950,11 @@ schedule_msgaddr_consumer(struct rfc5444_reader_tlvblock_consumer *consumer,
       /* call start-of-context callback */
       if (consumer->start_callback) {
         /* can drop address, addressblock, message and packet */
+        tlv_context->consumer = consumer;
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
         result =
 #endif
-            consumer->start_callback(consumer, tlv_context);
+            consumer->start_callback(tlv_context);
       }
 
       /* handle tlvblock callbacks */
@@ -958,7 +965,8 @@ schedule_msgaddr_consumer(struct rfc5444_reader_tlvblock_consumer *consumer,
       /* call end-of-context callback */
       if (consumer->end_callback) {
         enum rfc5444_result r;
-        r = consumer->end_callback(consumer, tlv_context, result != RFC5444_OKAY);
+        tlv_context->consumer = consumer;
+        r = consumer->end_callback(tlv_context, result != RFC5444_OKAY);
         if (r > result) {
           result = r;
         }
@@ -999,7 +1007,8 @@ schedule_end_message_cbs(struct rfc5444_reader_tlvblock_context *tlv_context,
   avl_for_element_range_reverse(first, last, consumer, _node) {
     if (consumer->end_callback && !consumer->addrblock_consumer
         && (consumer->default_msg_consumer || consumer->msg_id == tlv_context->msg_type)) {
-      r = consumer->end_callback(consumer, tlv_context, result != RFC5444_OKAY);
+      tlv_context->consumer = consumer;
+      r = consumer->end_callback(tlv_context, result != RFC5444_OKAY);
       if (r > result) {
         result = r;
       }

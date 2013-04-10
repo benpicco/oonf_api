@@ -92,8 +92,7 @@ static bool got_multiple_times[2];
 static bool got_failed_constraints;
 
 static enum rfc5444_result
-cb_blocktlv_packet(struct rfc5444_reader_tlvblock_consumer *cons __attribute__ ((unused)),
-      struct rfc5444_reader_tlvblock_context *cont __attribute__ ((unused)),
+cb_blocktlv_packet(struct rfc5444_reader_tlvblock_context *cont __attribute__ ((unused)),
       bool mandatory_missing) {
   got_tlv[0] = consumer_entries[0].tlv != NULL;
   got_multiple_times[0] = got_tlv[0] && consumer_entries[0].tlv->next_entry != NULL;
@@ -106,15 +105,13 @@ cb_blocktlv_packet(struct rfc5444_reader_tlvblock_consumer *cons __attribute__ (
 }
 
 static enum rfc5444_result
-cb_blocktlv_packet_okay(struct rfc5444_reader_tlvblock_consumer *cons,
-      struct rfc5444_reader_tlvblock_context *cont) {
-  return cb_blocktlv_packet(cons, cont, false);
+cb_blocktlv_packet_okay(struct rfc5444_reader_tlvblock_context *cont) {
+  return cb_blocktlv_packet(cont, false);
 }
 
 static enum rfc5444_result
-cb_blocktlv_packet_failed(struct rfc5444_reader_tlvblock_consumer *cons,
-      struct rfc5444_reader_tlvblock_context *cont) {
-  return cb_blocktlv_packet(cons, cont, true);
+cb_blocktlv_packet_failed(struct rfc5444_reader_tlvblock_context *cont) {
+  return cb_blocktlv_packet(cont, true);
 }
 
 static void clear_elements(void) {

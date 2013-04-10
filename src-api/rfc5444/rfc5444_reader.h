@@ -113,6 +113,9 @@ struct rfc5444_reader_tlvblock_context {
   /* backpointer to reader */
   struct rfc5444_reader *reader;
 
+  /* pointer to tlvblock consumer */
+  struct rfc5444_reader_tlvblock_consumer *consumer;
+
   /* applicable for all TLV blocks */
   enum rfc5444_reader_tlvblock_context_type type;
 
@@ -255,22 +258,17 @@ struct rfc5444_reader_tlvblock_consumer {
   struct list_entity _consumer_list;
 
   /* consumer for TLVblock context start and end*/
-  enum rfc5444_result (*start_callback)(struct rfc5444_reader_tlvblock_consumer *,
-      struct rfc5444_reader_tlvblock_context *context);
-  enum rfc5444_result (*end_callback)(struct rfc5444_reader_tlvblock_consumer *,
+  enum rfc5444_result (*start_callback)(struct rfc5444_reader_tlvblock_context *context);
+  enum rfc5444_result (*end_callback)(
       struct rfc5444_reader_tlvblock_context *context, bool dropped);
 
   /* consumer for single TLV */
-  enum rfc5444_result (*tlv_callback)(struct rfc5444_reader_tlvblock_consumer *,
-      struct rfc5444_reader_tlvblock_entry *,
+  enum rfc5444_result (*tlv_callback)(struct rfc5444_reader_tlvblock_entry *,
       struct rfc5444_reader_tlvblock_context *context);
 
   /* consumer for tlv block and context */
-  enum rfc5444_result (*block_callback)(
-      struct rfc5444_reader_tlvblock_consumer *,
-      struct rfc5444_reader_tlvblock_context *context);
+  enum rfc5444_result (*block_callback)(struct rfc5444_reader_tlvblock_context *context);
   enum rfc5444_result (*block_callback_failed_constraints)(
-      struct rfc5444_reader_tlvblock_consumer *,
       struct rfc5444_reader_tlvblock_context *context);
 
   /* private data pointer for API user */

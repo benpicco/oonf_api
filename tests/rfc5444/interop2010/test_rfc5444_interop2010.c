@@ -50,33 +50,24 @@
 #include "cunit/cunit.h"
 
 static enum rfc5444_result _pkt_start_callback(
-    struct rfc5444_reader_tlvblock_consumer *,
     struct rfc5444_reader_tlvblock_context *context);
 static enum rfc5444_result _pkt_end_callback(
-    struct rfc5444_reader_tlvblock_consumer *,
     struct rfc5444_reader_tlvblock_context *context, bool dropped);
 static enum rfc5444_result _pkt_tlv_callback(
-    struct rfc5444_reader_tlvblock_consumer *,
     struct rfc5444_reader_tlvblock_entry *,
     struct rfc5444_reader_tlvblock_context *context);
 static enum rfc5444_result _msg_start_callback(
-    struct rfc5444_reader_tlvblock_consumer *,
     struct rfc5444_reader_tlvblock_context *context);
 static enum rfc5444_result _msg_end_callback(
-    struct rfc5444_reader_tlvblock_consumer *,
     struct rfc5444_reader_tlvblock_context *context, bool dropped);
 static enum rfc5444_result _msg_tlv_callback(
-    struct rfc5444_reader_tlvblock_consumer *,
     struct rfc5444_reader_tlvblock_entry *,
     struct rfc5444_reader_tlvblock_context *context);
 static enum rfc5444_result _addr_start_callback(
-    struct rfc5444_reader_tlvblock_consumer *,
     struct rfc5444_reader_tlvblock_context *context);
 static enum rfc5444_result _addr_end_callback(
-    struct rfc5444_reader_tlvblock_consumer *,
     struct rfc5444_reader_tlvblock_context *context, bool dropped);
 static enum rfc5444_result _addr_tlv_callback(
-    struct rfc5444_reader_tlvblock_consumer *,
     struct rfc5444_reader_tlvblock_entry *,
     struct rfc5444_reader_tlvblock_context *context);
 
@@ -120,9 +111,7 @@ tostring(char *buffer, uint8_t *ptr, size_t len) {
 }
 
 static enum rfc5444_result
-_pkt_start_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__((unused)),
-    struct rfc5444_reader_tlvblock_context *context) {
-
+_pkt_start_callback(struct rfc5444_reader_tlvblock_context *context) {
   CHECK_TRUE(context->pkt_version == _packet->version,
       "Pkt-version was %x (should be %x)\n", context->pkt_version, _packet->version);
   CHECK_TRUE(context->pkt_flags == _packet->flags,
@@ -142,8 +131,7 @@ _pkt_start_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribut
 }
 
 static enum rfc5444_result
-_pkt_end_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__((unused)),
-    struct rfc5444_reader_tlvblock_context *context __attribute__((unused)),
+_pkt_end_callback(struct rfc5444_reader_tlvblock_context *context __attribute__((unused)),
     bool dropped __attribute__((unused))) {
   char buffer[80];
   struct test_message *msg;
@@ -188,8 +176,7 @@ _pkt_end_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute_
 }
 
 static enum rfc5444_result
-_pkt_tlv_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__((unused)),
-    struct rfc5444_reader_tlvblock_entry *entry,
+_pkt_tlv_callback(struct rfc5444_reader_tlvblock_entry *entry,
     struct rfc5444_reader_tlvblock_context *context __attribute__((unused))) {
   struct test_tlv *tlv;
   size_t i;
@@ -215,8 +202,7 @@ _pkt_tlv_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute_
 }
 
 static enum rfc5444_result
-_msg_start_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__((unused)),
-    struct rfc5444_reader_tlvblock_context *context) {
+_msg_start_callback(struct rfc5444_reader_tlvblock_context *context) {
   struct test_message *msg;
   char buf1[80], buf2[80];
   size_t i;
@@ -291,16 +277,14 @@ _msg_start_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribut
 
 
 static enum rfc5444_result
-_msg_end_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__((unused)),
-    struct rfc5444_reader_tlvblock_context *context __attribute__((unused)),
+_msg_end_callback(struct rfc5444_reader_tlvblock_context *context __attribute__((unused)),
     bool dropped __attribute__((unused))) {
   _current_msg = NULL;
   return RFC5444_OKAY;
 }
 
 static enum rfc5444_result
-_msg_tlv_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__((unused)),
-    struct rfc5444_reader_tlvblock_entry *entry,
+_msg_tlv_callback(struct rfc5444_reader_tlvblock_entry *entry,
     struct rfc5444_reader_tlvblock_context *context __attribute__((unused))) {
   struct test_tlv *tlv;
   size_t i;
@@ -327,8 +311,7 @@ _msg_tlv_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute_
 }
 
 static enum rfc5444_result
-_addr_start_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__((unused)),
-    struct rfc5444_reader_tlvblock_context *context) {
+_addr_start_callback(struct rfc5444_reader_tlvblock_context *context) {
   struct test_address *addr;
   char buf1[80];
   size_t i;
@@ -363,16 +346,14 @@ _addr_start_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribu
 }
 
 static enum rfc5444_result
-_addr_end_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__((unused)),
-    struct rfc5444_reader_tlvblock_context *context __attribute__((unused)),
+_addr_end_callback(struct rfc5444_reader_tlvblock_context *context __attribute__((unused)),
     bool dropped __attribute__((unused))) {
   _current_addr = NULL;
   return RFC5444_OKAY;
 }
 
 static enum rfc5444_result
-_addr_tlv_callback(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__((unused)),
-    struct rfc5444_reader_tlvblock_entry *entry,
+_addr_tlv_callback(struct rfc5444_reader_tlvblock_entry *entry,
     struct rfc5444_reader_tlvblock_context *context __attribute__((unused))) {
   struct test_tlv *tlv;
   char buf[80];

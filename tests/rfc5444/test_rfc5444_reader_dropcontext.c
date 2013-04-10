@@ -129,12 +129,12 @@ static bool droptlv_blocktlv_message[2][2];
 static bool droptlv_blocktlv_address[2][2][2];
 
 static enum rfc5444_result
-cb_blocktlv_packet(struct rfc5444_reader_tlvblock_consumer *consumer,
-      struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
-  int oi = consumer->order - 1;
+cb_blocktlv_packet(struct rfc5444_reader_tlvblock_context *c) {
+  int oi = c->consumer->order - 1;
 
 #ifdef PRINT_CB
-  printf("%s: packet blocktlv (order %d): %d\n", __func__, consumer->order, callback_index);
+  printf("%s: packet blocktlv (order %d): %d\n",
+      __func__, c->consumer->order, callback_index);
 #endif
   idxcb_blocktlv_packet[oi] = callback_index++;
 
@@ -149,12 +149,11 @@ cb_blocktlv_packet(struct rfc5444_reader_tlvblock_consumer *consumer,
 }
 
 static enum rfc5444_result
-cb_blocktlv_message(struct rfc5444_reader_tlvblock_consumer *consumer,
-      struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
-  int oi = consumer->order - 1;
+cb_blocktlv_message(struct rfc5444_reader_tlvblock_context *c) {
+  int oi = c->consumer->order - 1;
 
 #ifdef PRINT_CB
-  printf("%s: message blocktlv (order %d): %d\n", __func__, consumer->order, callback_index);
+  printf("%s: message blocktlv (order %d): %d\n", __func__, c->consumer->order, callback_index);
 #endif
   idxcb_blocktlv_message[oi] = callback_index++;
 
@@ -169,8 +168,7 @@ cb_blocktlv_message(struct rfc5444_reader_tlvblock_consumer *consumer,
 }
 
 static enum rfc5444_result
-cb_blocktlv_message2(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__ ((unused)),
-      struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
+cb_blocktlv_message2(struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
 #ifdef PRINT_CB
   printf("%s: message 2 blocktlv: %d\n", __func__, callback_index);
 #endif
@@ -179,13 +177,13 @@ cb_blocktlv_message2(struct rfc5444_reader_tlvblock_consumer *consumer __attribu
 }
 
 static enum rfc5444_result
-cb_blocktlv_address(struct rfc5444_reader_tlvblock_consumer *consumer,
-      struct rfc5444_reader_tlvblock_context *ctx) {
+cb_blocktlv_address(struct rfc5444_reader_tlvblock_context *ctx) {
   uint8_t ai = ctx->addr[3] - 1;
-  int oi = consumer->order - 1;
+  int oi = ctx->consumer->order - 1;
 
 #ifdef PRINT_CB
-  printf("%s: address %d blocktlv (order %d): %d\n", __func__, ai+1, consumer->order, callback_index);
+  printf("%s: address %d blocktlv (order %d): %d\n",
+      __func__, ai+1, ctx->consumer->order, callback_index);
 #endif
   idxcb_blocktlv_address[oi][ai] = callback_index++;
 
@@ -200,128 +198,123 @@ cb_blocktlv_address(struct rfc5444_reader_tlvblock_consumer *consumer,
 }
 
 static enum rfc5444_result
-cb_start_packet(struct rfc5444_reader_tlvblock_consumer *consumer,
-    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
-  int oi = consumer->order - 1;
+cb_start_packet(struct rfc5444_reader_tlvblock_context *c) {
+  int oi = c->consumer->order - 1;
 
 #ifdef PRINT_CB
-  printf("%s: packet start (order %d): %d\n", __func__, consumer->order, callback_index);
+  printf("%s: packet start (order %d): %d\n", __func__, c->consumer->order, callback_index);
 #endif
   idxcb_start_packet[oi] = callback_index++;
   return result_start_packet[oi];
 }
 
 static enum rfc5444_result
-cb_start_message(struct rfc5444_reader_tlvblock_consumer *consumer,
-    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
-  int oi = consumer->order - 1;
+cb_start_message(struct rfc5444_reader_tlvblock_context *c) {
+  int oi = c->consumer->order - 1;
 
 #ifdef PRINT_CB
-  printf("%s: message start (order %d): %d\n", __func__, consumer->order, callback_index);
+  printf("%s: message start (order %d): %d\n",
+      __func__, c->consumer->order, callback_index);
 #endif
   idxcb_start_message[oi] = callback_index++;
   return result_start_message[oi];
 }
 
 static enum rfc5444_result
-cb_start_addr(struct rfc5444_reader_tlvblock_consumer *consumer,
-    struct rfc5444_reader_tlvblock_context *ctx) {
-  int oi = consumer->order - 1;
+cb_start_addr(struct rfc5444_reader_tlvblock_context *ctx) {
+  int oi = ctx->consumer->order - 1;
   uint8_t ai = ctx->addr[3] - 1;
 
 #ifdef PRINT_CB
-  printf("%s: address %d start (order %d): %d\n", __func__, ai+1, consumer->order, callback_index);
+  printf("%s: address %d start (order %d): %d\n", __func__, ai+1, ctx->consumer->order, callback_index);
 #endif
   idxcb_start_address[oi][ai] = callback_index++;
   return result_start_address[oi][ai];
 }
 
 static enum rfc5444_result
-cb_tlv_packet(struct rfc5444_reader_tlvblock_consumer *consumer,
-    struct rfc5444_reader_tlvblock_entry *tlv,
-    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
-  int oi = consumer->order - 1;
+cb_tlv_packet(struct rfc5444_reader_tlvblock_entry *tlv,
+    struct rfc5444_reader_tlvblock_context *c) {
+  int oi = c->consumer->order - 1;
   int ti = tlv->type - 1;
 
 #ifdef PRINT_CB
-  printf("%s: packet tlv %d (order %d): %d\n", __func__, tlv->type, consumer->order, callback_index);
+  printf("%s: packet tlv %d (order %d): %d\n",
+      __func__, tlv->type, c->consumer->order, callback_index);
 #endif
   idxcb_tlv_packet[oi][ti] = callback_index++;
   return result_tlv_packet[oi][ti];
 }
 
 static enum rfc5444_result
-cb_tlv_message(struct rfc5444_reader_tlvblock_consumer *consumer,
-    struct rfc5444_reader_tlvblock_entry *tlv,
-    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
-  int oi = consumer->order - 1;
+cb_tlv_message(struct rfc5444_reader_tlvblock_entry *tlv,
+    struct rfc5444_reader_tlvblock_context *c) {
+  int oi = c->consumer->order - 1;
   int ti = tlv->type - 1;
 
 #ifdef PRINT_CB
-  printf("%s: message tlv %d (order %d): %d\n", __func__, tlv->type, consumer->order, callback_index);
+  printf("%s: message tlv %d (order %d): %d\n",
+      __func__, tlv->type, c->consumer->order, callback_index);
 #endif
   idxcb_tlv_message[oi][ti] = callback_index++;
   return result_tlv_message[oi][ti];
 }
 
 static enum rfc5444_result
-cb_tlv_address(struct rfc5444_reader_tlvblock_consumer *consumer,
-    struct rfc5444_reader_tlvblock_entry *tlv,
+cb_tlv_address(struct rfc5444_reader_tlvblock_entry *tlv,
     struct rfc5444_reader_tlvblock_context *ctx) {
-  int oi = consumer->order - 1;
+  int oi = ctx->consumer->order - 1;
   uint8_t ai = ctx->addr[3] - 1;
   int ti = tlv->type - 1;
 
 #ifdef PRINT_CB
-  printf("%s: message tlv %d (order %d): %d\n", __func__, tlv->type, consumer->order, callback_index);
+  printf("%s: message tlv %d (order %d): %d\n",
+      __func__, tlv->type, ctx->consumer->order, callback_index);
 #endif
   idxcb_tlv_address[oi][ai][ti] = callback_index++;
   return result_tlv_address[oi][ai][ti];
 }
 
 static enum rfc5444_result
-cb_end_packet(struct rfc5444_reader_tlvblock_consumer *consumer,
-    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused)),
+cb_end_packet(struct rfc5444_reader_tlvblock_context *c,
     bool dropped __attribute__ ((unused))) {
-  int oi = consumer->order - 1;
+  int oi = c->consumer->order - 1;
 
 #ifdef PRINT_CB
-  printf("%s: packet end (order %d): %d\n", __func__, consumer->order, callback_index);
+  printf("%s: packet end (order %d): %d\n", __func__, c->consumer->order, callback_index);
 #endif
   idxcb_end_packet[oi] = callback_index++;
   return result_end_packet[oi];
 }
 
 static enum rfc5444_result
-cb_end_message(struct rfc5444_reader_tlvblock_consumer *consumer,
-    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused)),
+cb_end_message(struct rfc5444_reader_tlvblock_context *c,
     bool dropped __attribute__ ((unused))) {
-  int oi = consumer->order - 1;
+  int oi = c->consumer->order - 1;
 
 #ifdef PRINT_CB
-  printf("%s: message end (order %d): %d\n", __func__, consumer->order, callback_index);
+  printf("%s: message end (order %d): %d\n",
+      __func__, c->consumer->order, callback_index);
 #endif
   idxcb_end_message[oi] = callback_index++;
   return result_end_message[oi];
 }
 
 static enum rfc5444_result
-cb_end_addr(struct rfc5444_reader_tlvblock_consumer *consumer,
-    struct rfc5444_reader_tlvblock_context *ctx,
+cb_end_addr(struct rfc5444_reader_tlvblock_context *ctx,
     bool dropped __attribute__ ((unused))) {
-  int oi = consumer->order - 1;
+  int oi = ctx->consumer->order - 1;
   uint8_t ai = ctx->addr[3] - 1;
 
 #ifdef PRINT_CB
-  printf("%s: address %d end (order %d): %d\n", __func__, ai+1, consumer->order, callback_index);
+  printf("%s: address %d end (order %d): %d\n", __func__, ai+1, ctx->consumer->order, callback_index);
 #endif
   idxcb_end_address[oi][ai] = callback_index++;
   return result_end_address[oi][ai];
 }
 
 static enum rfc5444_result
-cb_start_message2(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__ ((unused)),
-    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
+cb_start_message2(struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused))) {
 #ifdef PRINT_CB
   printf("%s: message 2 start: %d\n", __func__, callback_index);
 #endif
@@ -330,8 +323,7 @@ cb_start_message2(struct rfc5444_reader_tlvblock_consumer *consumer __attribute_
 }
 
 static enum rfc5444_result
-cb_end_message2(struct rfc5444_reader_tlvblock_consumer *consumer __attribute__ ((unused)),
-    struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused)),
+cb_end_message2(struct rfc5444_reader_tlvblock_context *c __attribute__ ((unused)),
     bool dropped __attribute__ ((unused))) {
 #ifdef PRINT_CB
   printf("%s: message 2 end: %d\n", __func__, callback_index);

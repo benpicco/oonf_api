@@ -49,23 +49,24 @@
 
 static void _print_hexline(struct autobuf *out, void *buffer, size_t length);
 
-static enum rfc5444_result _cb_print_pkt_start(struct rfc5444_reader_tlvblock_consumer *c,
+static enum rfc5444_result _cb_print_pkt_start(
     struct rfc5444_reader_tlvblock_context *context);
-static enum rfc5444_result _cb_print_pkt_tlv(struct rfc5444_reader_tlvblock_consumer *c,
-    struct rfc5444_reader_tlvblock_entry *tlv, struct rfc5444_reader_tlvblock_context *context);
-static enum rfc5444_result _cb_print_pkt_end(struct rfc5444_reader_tlvblock_consumer *c,
+static enum rfc5444_result _cb_print_pkt_tlv(
+    struct rfc5444_reader_tlvblock_entry *tlv,
+    struct rfc5444_reader_tlvblock_context *context);
+static enum rfc5444_result _cb_print_pkt_end(
     struct rfc5444_reader_tlvblock_context *context, bool);
-static enum rfc5444_result _cb_print_msg_start(struct rfc5444_reader_tlvblock_consumer *c,
+static enum rfc5444_result _cb_print_msg_start(
     struct rfc5444_reader_tlvblock_context *context);
-static enum rfc5444_result _cb_print_msg_tlv(struct rfc5444_reader_tlvblock_consumer *c,
+static enum rfc5444_result _cb_print_msg_tlv(
     struct rfc5444_reader_tlvblock_entry *tlv, struct rfc5444_reader_tlvblock_context *context) ;
-static enum rfc5444_result _cb_print_msg_end(struct rfc5444_reader_tlvblock_consumer *c,
+static enum rfc5444_result _cb_print_msg_end(
     struct rfc5444_reader_tlvblock_context *context, bool);
-static enum rfc5444_result _cb_print_addr_start(struct rfc5444_reader_tlvblock_consumer *c,
+static enum rfc5444_result _cb_print_addr_start(
     struct rfc5444_reader_tlvblock_context *context);
-static enum rfc5444_result _cb_print_addr_tlv(struct rfc5444_reader_tlvblock_consumer *c,
+static enum rfc5444_result _cb_print_addr_tlv(
     struct rfc5444_reader_tlvblock_entry *tlv, struct rfc5444_reader_tlvblock_context *context);
-static enum rfc5444_result _cb_print_addr_end(struct rfc5444_reader_tlvblock_consumer *c,
+static enum rfc5444_result _cb_print_addr_end(
     struct rfc5444_reader_tlvblock_context *context, bool);
 
 /**
@@ -192,13 +193,12 @@ _print_hexline(struct autobuf *out, void *buffer, size_t length) {
  * @return
  */
 static enum rfc5444_result
-_cb_print_pkt_start(struct rfc5444_reader_tlvblock_consumer *c,
-    struct rfc5444_reader_tlvblock_context *context) {
+_cb_print_pkt_start(struct rfc5444_reader_tlvblock_context *context) {
   struct rfc5444_print_session *session;
 
   assert (context->type == RFC5444_CONTEXT_PACKET);
 
-  session = container_of(c, struct rfc5444_print_session, _pkt);
+  session = container_of(context->consumer, struct rfc5444_print_session, _pkt);
 
   abuf_puts(session->output, "\t,------------------\n");
   abuf_puts(session->output, "\t|  PACKET\n");
@@ -220,14 +220,13 @@ _cb_print_pkt_start(struct rfc5444_reader_tlvblock_consumer *c,
  * @return
  */
 enum rfc5444_result
-_cb_print_pkt_tlv(struct rfc5444_reader_tlvblock_consumer *c,
-    struct rfc5444_reader_tlvblock_entry *tlv,
-    struct rfc5444_reader_tlvblock_context *context __attribute__((unused))) {
+_cb_print_pkt_tlv(struct rfc5444_reader_tlvblock_entry *tlv,
+    struct rfc5444_reader_tlvblock_context *context) {
   struct rfc5444_print_session *session;
 
   assert (context->type == RFC5444_CONTEXT_PACKET);
 
-  session = container_of(c, struct rfc5444_print_session, _pkt);
+  session = container_of(context->consumer, struct rfc5444_print_session, _pkt);
 
   abuf_puts(session->output, "\t|    | - TLV\n");
   abuf_appendf(session->output, "\t|    |     Flags = 0x%02x\n", tlv->flags);
@@ -251,11 +250,10 @@ _cb_print_pkt_tlv(struct rfc5444_reader_tlvblock_consumer *c,
  * @return
  */
 enum rfc5444_result
-_cb_print_pkt_end(struct rfc5444_reader_tlvblock_consumer *c,
-    struct rfc5444_reader_tlvblock_context *context __attribute__ ((unused)),
+_cb_print_pkt_end(struct rfc5444_reader_tlvblock_context *context,
     bool dropped __attribute__ ((unused))) {
   struct rfc5444_print_session *session;
-  session = container_of(c, struct rfc5444_print_session, _pkt);
+  session = container_of(context->consumer, struct rfc5444_print_session, _pkt);
 
   abuf_puts(session->output, "\t`------------------\n");
 
@@ -272,13 +270,12 @@ _cb_print_pkt_end(struct rfc5444_reader_tlvblock_consumer *c,
  * @return
  */
 enum rfc5444_result
-_cb_print_msg_start(struct rfc5444_reader_tlvblock_consumer *c,
-    struct rfc5444_reader_tlvblock_context *context __attribute__((unused))) {
+_cb_print_msg_start(struct rfc5444_reader_tlvblock_context *context) {
   struct rfc5444_print_session *session;
 
   assert (context->type == RFC5444_CONTEXT_MESSAGE);
 
-  session = container_of(c, struct rfc5444_print_session, _msg);
+  session = container_of(context->consumer, struct rfc5444_print_session, _msg);
 
   abuf_puts(session->output, "\t|    ,-------------------\n");
   abuf_puts(session->output, "\t|    |  MESSAGE\n");
@@ -323,14 +320,13 @@ _cb_print_msg_start(struct rfc5444_reader_tlvblock_consumer *c,
  * @return
  */
 enum rfc5444_result
-_cb_print_msg_tlv(struct rfc5444_reader_tlvblock_consumer *c,
-    struct rfc5444_reader_tlvblock_entry *tlv,
-    struct rfc5444_reader_tlvblock_context *context __attribute__((unused))) {
+_cb_print_msg_tlv(struct rfc5444_reader_tlvblock_entry *tlv,
+    struct rfc5444_reader_tlvblock_context *context) {
   struct rfc5444_print_session *session;
 
   assert (context->type == RFC5444_CONTEXT_MESSAGE);
 
-  session = container_of(c, struct rfc5444_print_session, _msg);
+  session = container_of(context->consumer, struct rfc5444_print_session, _msg);
 
   abuf_puts(session->output, "\t|    |    | - TLV\n");
   abuf_appendf(session->output, "\t|    |    |     Flags = 0x%02x\n", tlv->flags);
@@ -354,14 +350,13 @@ _cb_print_msg_tlv(struct rfc5444_reader_tlvblock_consumer *c,
  * @return
  */
 enum rfc5444_result
-_cb_print_msg_end(struct rfc5444_reader_tlvblock_consumer *c,
-    struct rfc5444_reader_tlvblock_context *context __attribute__((unused)),
+_cb_print_msg_end(struct rfc5444_reader_tlvblock_context *context,
     bool dropped __attribute__ ((unused))) {
   struct rfc5444_print_session *session;
 
   assert (context->type == RFC5444_CONTEXT_MESSAGE);
 
-  session = container_of(c, struct rfc5444_print_session, _msg);
+  session = container_of(context->consumer, struct rfc5444_print_session, _msg);
 
   abuf_puts(session->output, "\t|    `-------------------\n");
   return RFC5444_OKAY;
@@ -374,14 +369,13 @@ _cb_print_msg_end(struct rfc5444_reader_tlvblock_consumer *c,
  * @return
  */
 enum rfc5444_result
-_cb_print_addr_start(struct rfc5444_reader_tlvblock_consumer *c,
-    struct rfc5444_reader_tlvblock_context *context __attribute__((unused))) {
+_cb_print_addr_start(struct rfc5444_reader_tlvblock_context *context) {
   char buffer[100];
   struct rfc5444_print_session *session;
 
   assert (context->type == RFC5444_CONTEXT_ADDRESS);
 
-  session = container_of(c, struct rfc5444_print_session, _addr);
+  session = container_of(context->consumer, struct rfc5444_print_session, _addr);
 
   abuf_puts(session->output, "\t|    |    ,-------------------\n");
   abuf_puts(session->output, "\t|    |    |  Address: ");
@@ -406,14 +400,13 @@ _cb_print_addr_start(struct rfc5444_reader_tlvblock_consumer *c,
  * @return
  */
 enum rfc5444_result
-_cb_print_addr_tlv(struct rfc5444_reader_tlvblock_consumer *c __attribute__ ((unused)),
-    struct rfc5444_reader_tlvblock_entry *tlv,
-    struct rfc5444_reader_tlvblock_context *context __attribute__((unused))) {
+_cb_print_addr_tlv(struct rfc5444_reader_tlvblock_entry *tlv,
+    struct rfc5444_reader_tlvblock_context *context) {
   struct rfc5444_print_session *session;
 
   assert (context->type == RFC5444_CONTEXT_ADDRESS);
 
-  session = container_of(c, struct rfc5444_print_session, _addr);
+  session = container_of(context->consumer, struct rfc5444_print_session, _addr);
 
   abuf_puts(session->output, "\t|    |    |    | - TLV\n");
   abuf_appendf(session->output, "\t|    |    |    |     Flags = 0x%02x\n", tlv->flags);
@@ -437,14 +430,13 @@ _cb_print_addr_tlv(struct rfc5444_reader_tlvblock_consumer *c __attribute__ ((un
  * @return
  */
 enum rfc5444_result
-_cb_print_addr_end(struct rfc5444_reader_tlvblock_consumer *c __attribute__ ((unused)),
-    struct rfc5444_reader_tlvblock_context *context __attribute__((unused)),
+_cb_print_addr_end(struct rfc5444_reader_tlvblock_context *context,
     bool dropped __attribute__ ((unused))) {
   struct rfc5444_print_session *session;
 
   assert (context->type == RFC5444_CONTEXT_ADDRESS);
 
-  session = container_of(c, struct rfc5444_print_session, _addr);
+  session = container_of(context->consumer, struct rfc5444_print_session, _addr);
 
   abuf_puts(session->output, "\t|    |    `-------------------\n");
   return RFC5444_OKAY;
