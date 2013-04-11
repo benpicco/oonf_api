@@ -34,11 +34,10 @@ SET(OONF_CORE_SRCS olsr_class.c
                    olsr_timer.c
                    ${GEN_DATA_C})
 
-SET(OONF_CORE_INCLUDES olsr_callbacks.h
+SET(OONF_CORE_INCLUDES olsr_class.h
                        olsr_clock.h
                        olsr_interface.h
                        olsr_logging.h
-                       olsr_memcookie.h
                        olsr_netaddr_acl.h
                        olsr_packet_socket.h
                        olsr_plugins.h
