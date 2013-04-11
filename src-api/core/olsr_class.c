@@ -365,7 +365,9 @@ olsr_class_listener_remove(struct olsr_class_listener *l) {
 void
 olsr_class_event(struct olsr_class *c, void *ptr, enum olsr_class_event evt) {
   struct olsr_class_listener *l;
+#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   struct olsr_objectkey_str buf;
+#endif
 
   OLSR_DEBUG(LOG_CLASS, "Fire '%s' event for %s",
       OLSR_CLASS_EVENT_NAME[evt], c->to_keystring(&buf, c, ptr));
