@@ -146,6 +146,9 @@ struct rfc5444_reader_tlvblock_context {
   uint16_t seqno;
   bool has_seqno;
 
+  /* processing callbacks can set this variable to prevent forwarding */
+  bool _do_not_forward;
+
   /*
    * address context
    * only for address TLV blocks
@@ -314,5 +317,14 @@ EXPORT int rfc5444_reader_handle_packet(
 
 EXPORT uint8_t *rfc5444_reader_get_tlv_value(
     struct rfc5444_reader_tlvblock_entry *tlv);
+
+/**
+ * Call to set the do-not-forward flag in message context
+ * @param context pointer to message context
+ */
+static INLINE void
+rfc5444_reader_prevent_forwarding(struct rfc5444_reader_tlvblock_context *context) {
+  context->_do_not_forward = true;
+}
 
 #endif /* RFC5444_PARSER_H_ */

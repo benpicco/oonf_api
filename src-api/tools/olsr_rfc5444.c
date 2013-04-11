@@ -987,7 +987,7 @@ _cb_forward_message(
   /* forward message */
   OLSR_INFO(LOG_RFC5444, "Forwarding message type %u", buffer[0]);
 
-  result = rfc5444_writer_forward_msg(&protocol->writer, buffer, length, context);
+  result = rfc5444_writer_forward_msg(&protocol->writer, buffer, length);
   if (result) {
     OLSR_WARN(LOG_RFC5444, "Error while forwarding message: %s (%d)",
         rfc5444_strerror(result), result);

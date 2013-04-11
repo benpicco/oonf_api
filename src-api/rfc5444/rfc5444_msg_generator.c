@@ -389,16 +389,11 @@ bool rfc5444_writer_alltargets_selector(struct rfc5444_writer *writer __attribut
  * @param writer pointer to writer context
  * @param msg pointer to message to be forwarded
  * @param len number of bytes of message
- * @param context context of original rfc5444 message
- * @param useTarget function pointer to decide which target is used
- *   for forwarding the message
- * @param param custom attribute of target selector
  * @return RFC5444_OKAY if the message was put into the writer buffer,
  *   RFC5444_... if an error happened
  */
 enum rfc5444_result
-rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t len,
-    struct rfc5444_reader_tlvblock_context *context) {
+rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t len) {
   struct rfc5444_writer_target *interf;
   struct rfc5444_writer_message *rfc5444_msg;
   int cnt, hopcount = -1, hoplimit = -1;
@@ -417,13 +412,8 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
     return RFC5444_NO_MSGCREATOR;
   }
 
-  if (!rfc5444_msg->shall_forward || !rfc5444_msg->forward_target_selector) {
+  if (!!rfc5444_msg->forward_target_selector) {
     /* no forwarding handler, do not forward */
-    return RFC5444_OKAY;
-  }
-
-  if (!rfc5444_msg->shall_forward(context)) {
-    /* forwarding handler declined to forward the message */
     return RFC5444_OKAY;
   }
 

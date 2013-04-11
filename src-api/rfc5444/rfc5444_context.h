@@ -53,6 +53,8 @@
  * RFC5444_DROP_TLV means to drop the current tlv
  * RFC5444_DROP_ADDRESS means to drop the current address
  * RFC5444_DROP_MESSAGE means to drop the current message
+ * RFC5444_DROP_MESSAGE_BUT_FORWARD means to drop the current message
+ *   but forward allow to forward it
  * RFC5444_DROP_PACKET means to drop the whole packet
  *
  * RFC5444_OKAY means everything is okay

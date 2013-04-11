@@ -1045,6 +1045,7 @@ _handle_message(struct rfc5444_reader *parser,
   same_order[0] = same_order[1] = NULL;
   avl_init(&tlv_entries, avl_comp_uint16, true);
   list_init_head(&addr_head);
+  tlv_context->_do_not_forward = false;
 
   /* remember start of message */
   start = *ptr;
@@ -1198,7 +1199,8 @@ cleanup_parse_message:
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
       (result == RFC5444_OKAY || result == RFC5444_DROP_MSG_BUT_FORWARD) &&
 #endif
-      parser->forward_message != NULL && tlv_context->has_hoplimit) {
+      !tlv_context->_do_not_forward
+      && parser->forward_message != NULL && tlv_context->has_hoplimit) {
     /* check limit */
     if (tlv_context->hoplimit > 1) {
       /* forward message if callback is available */
