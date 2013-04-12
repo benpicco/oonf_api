@@ -274,14 +274,16 @@ cfg_schema_validate(struct cfg_db *db,
           error |= warning;
         }
 
-        if (schema_section->cb_validate) {
+        /* check for missing values */
+        warning = _check_missing_entries(schema_section, db, named, section_name, out);
+        error |= warning;
+
+        /* check custom section validation if everything was fine */
+        if (!error && schema_section->cb_validate != NULL) {
           if (schema_section->cb_validate(section_name, named, out)) {
             error = true;
           }
         }
-        /* check for missing values */
-        warning = _check_missing_entries(schema_section, db, named, section_name, out);
-        error |= warning;
       }
     }
     if (cleanup && avl_is_empty(&section->names)) {
@@ -953,6 +955,10 @@ cfg_schema_tobin_stringlist(const struct cfg_schema_entry *s_entry __attribute__
 
   array = (struct strarray *)reference;
 
+  if (!value->value[0]) {
+    strarray_init(array);
+    return 0;
+  }
   return strarray_copy_c(array, value);
 }
 
@@ -1097,7 +1103,7 @@ static bool
 _check_missing_entries(struct cfg_schema_section *schema_section,
     struct cfg_db *db, struct cfg_named_section *named,
     const char *section_name, struct autobuf *out) {
-  struct cfg_schema_entry *schema_entry, *schema_entry_it;
+  struct cfg_schema_entry *first_schema_entry, *schema_entry;
   struct cfg_schema_entry_key key;
   bool warning, error;
 
@@ -1108,9 +1114,9 @@ _check_missing_entries(struct cfg_schema_section *schema_section,
   key.entry = NULL;
 
   /* check for missing values */
-  schema_entry = avl_find_ge_element(&db->schema->entries, &key, schema_entry, _node);
-  avl_for_element_to_last(&db->schema->entries, schema_entry, schema_entry_it, _node) {
-    if (cfg_cmp_keys(schema_entry_it->key.type, schema_section->type) != 0)
+  first_schema_entry = avl_find_ge_element(&db->schema->entries, &key, schema_entry, _node);
+  avl_for_element_to_last(&db->schema->entries, first_schema_entry, schema_entry, _node) {
+    if (cfg_cmp_keys(schema_entry->key.type, schema_section->type) != 0)
       break;
 
     if (!strarray_is_empty_c(&schema_entry->def)) {
