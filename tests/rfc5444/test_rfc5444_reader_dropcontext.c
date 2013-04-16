@@ -178,7 +178,8 @@ cb_blocktlv_message2(struct rfc5444_reader_tlvblock_context *c __attribute__ ((u
 
 static enum rfc5444_result
 cb_blocktlv_address(struct rfc5444_reader_tlvblock_context *ctx) {
-  uint8_t ai = ctx->addr[3] - 1;
+  const uint8_t *addr = netaddr_get_binptr(&ctx->addr);
+  const uint8_t ai = addr[3] - 1;
   int oi = ctx->consumer->order - 1;
 
 #ifdef PRINT_CB
@@ -223,7 +224,8 @@ cb_start_message(struct rfc5444_reader_tlvblock_context *c) {
 static enum rfc5444_result
 cb_start_addr(struct rfc5444_reader_tlvblock_context *ctx) {
   int oi = ctx->consumer->order - 1;
-  uint8_t ai = ctx->addr[3] - 1;
+  const uint8_t *addr = netaddr_get_binptr(&ctx->addr);
+  const uint8_t ai = addr[3] - 1;
 
 #ifdef PRINT_CB
   printf("%s: address %d start (order %d): %d\n", __func__, ai+1, ctx->consumer->order, callback_index);
@@ -264,7 +266,8 @@ static enum rfc5444_result
 cb_tlv_address(struct rfc5444_reader_tlvblock_entry *tlv,
     struct rfc5444_reader_tlvblock_context *ctx) {
   int oi = ctx->consumer->order - 1;
-  uint8_t ai = ctx->addr[3] - 1;
+  const uint8_t *addr = netaddr_get_binptr(&ctx->addr);
+  const uint8_t ai = addr[3] - 1;
   int ti = tlv->type - 1;
 
 #ifdef PRINT_CB
@@ -304,7 +307,8 @@ static enum rfc5444_result
 cb_end_addr(struct rfc5444_reader_tlvblock_context *ctx,
     bool dropped __attribute__ ((unused))) {
   int oi = ctx->consumer->order - 1;
-  uint8_t ai = ctx->addr[3] - 1;
+  const uint8_t *addr = netaddr_get_binptr(&ctx->addr);
+  const uint8_t ai = addr[3] - 1;
 
 #ifdef PRINT_CB
   printf("%s: address %d end (order %d): %d\n", __func__, ai+1, ctx->consumer->order, callback_index);

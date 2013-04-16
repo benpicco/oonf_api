@@ -806,7 +806,7 @@ _parse_addrblock(struct rfc5444_reader_addrblock_entry *addr_entry,
   flags = _rfc5444_get_u8(ptr, eob, &result);
 
   /* initialize head/tail of address */
-  memset(addr_entry->addr, 0, tlv_context->addr_len);
+  memset(&addr_entry->addr, 0, sizeof(addr_entry->addr));
   addr_entry->mid_len = tlv_context->addr_len;
 
   /* check for head flag */
@@ -926,10 +926,10 @@ schedule_msgaddr_consumer(struct rfc5444_reader_tlvblock_consumer *consumer,
   /* consume address tlv block(s) */
   /* iterate over all address blocks */
   list_for_each_element(addr_head, addr, list_node) {
-    uint8_t i;
+    uint8_t i, plen;
 
     /* iterate over all addresses in block */
-    tlv_context->prefixlen = addr->prefixlen;
+    // tlv_context->prefixlen = addr->prefixlen;
     for (i=0; i<addr->num_addr; i++) {
       /* test if we should skip this address */
 #if DISALLOW_CONSUMER_CONTEXT_DROP == false
@@ -939,13 +939,17 @@ schedule_msgaddr_consumer(struct rfc5444_reader_tlvblock_consumer *consumer,
 #endif
 
       /* assemble address for context */
-      tlv_context->addr = addr->addr;
       memcpy(&addr->addr[addr->mid_start], &addr->mid_src[addr->mid_len * i], addr->mid_len);
 
-      /* copy prefixlen if necessary */
+      /* create netaddr */
       if (addr->prefixes) {
-        tlv_context->prefixlen = addr->prefixes[i];
+        plen = addr->prefixes[i];
       }
+      else {
+        plen = addr->prefixlen;
+      }
+      netaddr_from_binary_prefix(&tlv_context->addr, addr->addr,
+          tlv_context->addr_len, 0, plen);
 
       /* call start-of-context callback */
       if (consumer->start_callback) {

@@ -360,7 +360,6 @@ _cb_print_msg_end(struct rfc5444_reader_tlvblock_context *context,
  */
 enum rfc5444_result
 _cb_print_addr_start(struct rfc5444_reader_tlvblock_context *context) {
-  char buffer[100];
   struct rfc5444_print_session *session;
 
   assert (context->type == RFC5444_CONTEXT_ADDRESS);
@@ -369,16 +368,8 @@ _cb_print_addr_start(struct rfc5444_reader_tlvblock_context *context) {
 
   abuf_puts(session->output, "\t|    |    ,-------------------\n");
   abuf_puts(session->output, "\t|    |    |  Address: ");
-  if (context->addr_len == 4) {
-    inet_ntop(AF_INET, context->addr, buffer, sizeof(buffer));
-    abuf_puts(session->output, buffer);
-  } else if (context->addr_len == 16) {
-    inet_ntop(AF_INET6, context->addr, buffer, sizeof(buffer));
-    abuf_puts(session->output, buffer);
-  } else {
-    _print_hexline(session->output, context->addr, context->addr_len);
-  }
-  abuf_appendf(session->output, "/%d\n", context->prefixlen);
+  netaddr_to_autobuf(session->output, &context->addr);
+  abuf_puts(session->output, "\n");
   return RFC5444_OKAY;
 }
 

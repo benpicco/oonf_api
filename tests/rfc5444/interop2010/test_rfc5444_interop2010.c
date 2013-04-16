@@ -316,8 +316,8 @@ _msg_tlv_callback(struct rfc5444_reader_tlvblock_entry *entry,
 static enum rfc5444_result
 _addr_start_callback(struct rfc5444_reader_tlvblock_context *context) {
   struct test_address *addr;
-  char buf1[80];
   size_t i;
+  struct netaddr_str nbuf;
 
   if (_current_msg == NULL) {
     return RFC5444_OKAY;
@@ -325,23 +325,23 @@ _addr_start_callback(struct rfc5444_reader_tlvblock_context *context) {
 
   addr = NULL;
   for (i=0; i<_current_msg->address_count; i++) {
-    if (memcmp(_current_msg->addrs[i].addr, context->addr, _current_msg->addrlen) == 0) {
+    if (memcmp(_current_msg->addrs[i].addr,
+        netaddr_get_binptr(&context->addr), _current_msg->addrlen) == 0) {
       addr = &_current_msg->addrs[i];
       break;
     }
   }
 
   CHECK_TRUE(addr != NULL, "Msg type %u Addr %s unknown\n", context->type,
-      tostring(buf1, context->addr, context->addr_len));
+      netaddr_to_string(&nbuf, &context->addr));
 
   if (addr == NULL) {
     return RFC5444_OKAY;
   }
 
-  CHECK_TRUE(context->prefixlen == addr->plen,
-      "Msg type %u Addr %s has plen %u (should be %u)\n", context->type,
-      tostring(buf1, context->addr, context->addr_len),
-      context->prefixlen, addr->plen);
+  CHECK_TRUE(netaddr_get_prefix_length(&context->addr) == addr->plen,
+      "Msg type %u Addr %s (should have plen %u)\n", context->type,
+      netaddr_to_string(&nbuf, &context->addr), addr->plen);
   addr->okay = true;
   _current_addr = addr;
 
@@ -359,9 +359,8 @@ static enum rfc5444_result
 _addr_tlv_callback(struct rfc5444_reader_tlvblock_entry *entry,
     struct rfc5444_reader_tlvblock_context *context __attribute__((unused))) {
   struct test_tlv *tlv;
-  char buf[80];
   size_t i;
-
+  struct netaddr_str nbuf;
   if (_current_addr == NULL) {
     return RFC5444_OKAY;
   }
@@ -383,7 +382,8 @@ _addr_tlv_callback(struct rfc5444_reader_tlvblock_entry *entry,
   }
 
   CHECK_TRUE(false, "Msg %u Addr %s TLV %u (ext %u) unknown\n",
-      _current_msg->type, tostring(buf, context->addr, context->addr_len),
+      _current_msg->type,
+      netaddr_to_string(&nbuf, &context->addr),
       entry->type, entry->type_ext);
   return RFC5444_OKAY;
 }

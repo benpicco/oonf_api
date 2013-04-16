@@ -154,8 +154,7 @@ struct rfc5444_reader_tlvblock_context {
    * address context
    * only for address TLV blocks
    */
-  uint8_t *addr;
-  uint8_t prefixlen;
+  struct netaddr addr;
 };
 
 /* internal representation of a parsed address block */
