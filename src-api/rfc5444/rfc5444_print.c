@@ -285,18 +285,8 @@ _cb_print_msg_start(struct rfc5444_reader_tlvblock_context *context) {
   abuf_appendf(session->output, "\t|    | * Address length:     %u\n", context->addr_len);
 
   if (context->has_origaddr) {
-    char buffer[100];
-
     abuf_puts(session->output, "\t|    | * Originator address: ");
-    if (context->addr_len == 4) {
-      inet_ntop(AF_INET, context->orig_addr, buffer, sizeof(buffer));
-      abuf_appendf(session->output, "%s/32", buffer);
-    } else if (context->addr_len == 16) {
-      inet_ntop(AF_INET6, context->orig_addr, buffer, sizeof(buffer));
-      abuf_appendf(session->output, "%s/128", buffer);
-    } else {
-      _print_hexline(session->output, context->orig_addr, context->addr_len);
-    }
+    netaddr_to_autobuf(session->output, &context->orig_addr);
     abuf_puts(session->output, "\n");
   }
   if (context->has_hoplimit) {

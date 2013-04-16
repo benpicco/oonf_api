@@ -80,4 +80,9 @@ rfc5444_seqno_is_larger(uint16_t s1, uint16_t s2) {
       || (s2 > s1 && (s2-s1) > (1<<15));
 }
 
+static INLINE int
+rfc5444_seqno_is_smaller(uint16_t s1, uint16_t s2) {
+  return s1 != s2 && !rfc5444_seqno_is_larger(s1, s2);
+}
+
 #endif /* RFC5444_CONVERSION_H_ */

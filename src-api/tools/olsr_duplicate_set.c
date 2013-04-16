@@ -201,6 +201,7 @@ olsr_duplicate_test(struct olsr_duplicate_set *set, uint8_t msg_type,
  *   to leave the entry unchanged.
  * @return OLSR_DUPSET_TOO_OLD if sequence number is more than 32 behind
  *   the current one, OLSR_DUPSET_DUPLICATE if the number is in the set,
+ *   OLSR_DUPSET_CURRENT if the number is exactly the current seqence number,
  *   OLSR_DUPSET_NEW if the number was added to the set and OLSR_DUPSET_NEWEST
  *   if the sequence number is newer than the newest in the set
  */
@@ -210,7 +211,7 @@ _test(struct olsr_duplicate_entry *entry,
   int current;
 
   if (seqno == entry->current) {
-    return OLSR_DUPSET_DUPLICATE;
+    return OLSR_DUPSET_CURRENT;
   }
 
   /* eliminate rollover */

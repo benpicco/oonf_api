@@ -1066,7 +1066,7 @@ _handle_message(struct rfc5444_reader *parser,
       goto cleanup_parse_message;
     }
 
-    memcpy(tlv_context->orig_addr, *ptr, tlv_context->addr_len);
+    netaddr_from_binary(&tlv_context->orig_addr, *ptr, tlv_context->addr_len, 0);
     *ptr += tlv_context->addr_len;
   }
 

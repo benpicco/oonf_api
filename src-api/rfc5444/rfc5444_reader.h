@@ -44,6 +44,7 @@
 
 #include "common/avl.h"
 #include "common/common_types.h"
+#include "common/netaddr.h"
 #include "rfc5444/rfc5444_context.h"
 
 /* Bitarray with 256 elements for skipping addresses/tlvs */
@@ -141,7 +142,7 @@ struct rfc5444_reader_tlvblock_context {
   uint8_t hoplimit;
 
   bool has_origaddr;
-  uint8_t orig_addr[RFC5444_MAX_ADDRLEN];
+  struct netaddr orig_addr;
 
   uint16_t seqno;
   bool has_seqno;

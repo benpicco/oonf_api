@@ -87,51 +87,46 @@ const struct netaddr NETADDR_IPV6_LOOPBACK = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1}
  *     0 to autodetect type from length
  * @param prefix_len prefix length of source,
  *     255 for maximum prefix length depending on type
- * @return 0 if successful read binary data, -1 otherwise
+ * @return 0 if successful recognized the address type
+ *     of the binary data, -1 otherwise
  */
 int
 netaddr_from_binary_prefix(struct netaddr *dst, const void *binary,
     size_t len, uint8_t addr_type, uint8_t prefix_len) {
-  uint32_t addr_len;
+
+  memset(dst->_addr, 0, sizeof(dst->_addr));
 
   if (addr_type == 0) {
     switch (len) {
       case 4:
-        addr_type = AF_INET;
+        dst->_type = AF_INET;
         break;
       case 6:
-        addr_type = AF_MAC48;
+        dst->_type  = AF_MAC48;
         break;
       case 8:
-        addr_type = AF_EUI64;
+        dst->_type  = AF_EUI64;
         break;
       case 16:
-        addr_type = AF_INET6;
+        dst->_type  = AF_INET6;
         break;
       default:
-        dst->_type = AF_UNSPEC;
-        return -1;
+        dst->_type  = AF_UNSPEC;
+        if (len > 16) {
+          len = 16;
+        }
+        break;
     }
   }
 
   if (prefix_len == 255) {
-    prefix_len = netaddr_get_af_maxprefix(addr_type);
+    prefix_len = len << 3;
   }
 
-  addr_len = prefix_len >> 3;
-
-  if (addr_len == 0 || len < addr_len) {
-    /* unknown address type */
-    dst->_type = AF_UNSPEC;
-    return -1;
-  }
-
-  memset(dst->_addr, 0, sizeof(dst->_addr));
-  dst->_type = addr_type;
   dst->_prefix_len = prefix_len;
-  memcpy(dst->_addr, binary, addr_len);
+  memcpy(dst->_addr, binary, len);
 
-  return 0;
+  return dst->_type == AF_UNSPEC ? -1 : 0;
 }
 
 /**

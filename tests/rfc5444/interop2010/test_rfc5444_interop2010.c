@@ -98,7 +98,7 @@ static struct test_address *_current_addr;
 static struct avl_tree _test_tree;
 
 static const char *
-tostring(char *buffer, uint8_t *ptr, size_t len) {
+tostring(char *buffer, const uint8_t *ptr, size_t len) {
   size_t i;
 
   for (i=0; i<len && i<16; i++) {
@@ -233,9 +233,12 @@ _msg_start_callback(struct rfc5444_reader_tlvblock_context *context) {
       msg->type, context->has_origaddr ? "" : "no ",
       msg->has_originator ? "one" : "none");
   if (context->has_origaddr && context->addr_len == msg->addrlen) {
-    CHECK_TRUE(memcmp(context->orig_addr, msg->originator, msg->addrlen) == 0,
+    CHECK_TRUE(memcmp(
+        netaddr_get_binptr(&context->orig_addr),
+        msg->originator, msg->addrlen) == 0,
         "Msg %u originator was %s (should be %s)\n",
-        msg->type, tostring(buf1, context->orig_addr, msg->addrlen),
+        msg->type,
+        tostring(buf1, netaddr_get_binptr(&context->orig_addr), msg->addrlen),
         tostring(buf2, msg->originator, msg->addrlen));
   }
 

@@ -48,8 +48,9 @@
 #include "core/olsr_timer.h"
 
 enum olsr_duplicate_result {
-  OLSR_DUPSET_TOO_OLD   = -2,
-  OLSR_DUPSET_DUPLICATE = -1,
+  OLSR_DUPSET_TOO_OLD   = -3,
+  OLSR_DUPSET_DUPLICATE = -2,
+  OLSR_DUPSET_CURRENT   = -1,
   OLSR_DUPSET_NEW       =  0,
   OLSR_DUPSET_NEWEST    =  1,
 };
@@ -88,5 +89,10 @@ EXPORT enum olsr_duplicate_result olsr_duplicate_entry_add(
 EXPORT enum olsr_duplicate_result olsr_duplicate_test(
     struct olsr_duplicate_set *, uint8_t msg_type,
     struct netaddr *, uint16_t seqno);
+
+static INLINE bool
+olsr_duplicate_is_new(enum olsr_duplicate_result result) {
+  return result == OLSR_DUPSET_NEW || result == OLSR_DUPSET_NEWEST;
+}
 
 #endif /* OLSR_DUPLICATE_SET_H_ */
