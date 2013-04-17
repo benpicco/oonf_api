@@ -59,7 +59,7 @@ static struct olsr_timer_info _vtime_info = {
   .callback = _cb_vtime,
 };
 
-static struct olsr_class _vtime_class = {
+static struct olsr_class _dupset_class = {
   .name = "Duplicate set",
   .size = sizeof(struct olsr_duplicate_entry),
 };
@@ -69,7 +69,7 @@ static struct olsr_class _vtime_class = {
  */
 void
 olsr_duplicate_set_init(void) {
-  olsr_class_add(&_vtime_class);
+  olsr_class_add(&_dupset_class);
   olsr_timer_add(&_vtime_info);
 }
 
@@ -79,7 +79,7 @@ olsr_duplicate_set_init(void) {
 void
 olsr_duplicate_set_cleanup(void) {
   olsr_timer_remove(&_vtime_info);
-  olsr_class_remove(&_vtime_class);
+  olsr_class_remove(&_dupset_class);
 }
 
 /**
@@ -130,7 +130,7 @@ olsr_duplicate_entry_add(struct olsr_duplicate_set *set, uint8_t msg_type,
 
   entry = avl_find_element(&set->_tree, &key, entry, _node);
   if (!entry) {
-    entry = olsr_class_malloc(&_vtime_class);
+    entry = olsr_class_malloc(&_dupset_class);
     if (entry == NULL) {
       return OLSR_DUPSET_TOO_OLD;
     }
@@ -208,28 +208,23 @@ olsr_duplicate_test(struct olsr_duplicate_set *set, uint8_t msg_type,
 enum olsr_duplicate_result
 _test(struct olsr_duplicate_entry *entry,
     uint16_t seqno, bool set) {
-  int current;
+  int diff;
 
   if (seqno == entry->current) {
     return OLSR_DUPSET_CURRENT;
   }
 
   /* eliminate rollover */
-  current = entry->current;
-  if (rfc5444_seqno_is_larger(current, seqno) && current < seqno) {
-    /* eliminate rollover */
-    current += 65536;
-  }
-  else if (rfc5444_seqno_is_larger(seqno, current) && seqno < current) {
-    current -= 65536;
-  }
+  diff = rfc5444_seqno_difference(seqno, entry->current);
 
-  if (current > seqno + 31) {
+  if (diff < -31) {
     return OLSR_DUPSET_TOO_OLD;
   }
 
-  if (current > seqno) {
-    if ((entry->history & (1 << (current - seqno))) != 0) {
+  if (diff <= 0) {
+    uint32_t bitmask = 1 << ((uint32_t) (-diff));
+
+    if ((entry->history & bitmask) != 0) {
       return OLSR_DUPSET_DUPLICATE;
     }
     return OLSR_DUPSET_NEW;
@@ -239,11 +234,11 @@ _test(struct olsr_duplicate_entry *entry,
     /* new sequence number is larger than last one */
     entry->current = seqno;
 
-    if (seqno > current + 31) {
+    if (diff >= 32) {
       entry->history = 1;
     }
     else {
-      entry->history <<= (seqno - current - 1);
+      entry->history <<= diff;
       entry->history |= 1;
     }
   }
@@ -281,5 +276,5 @@ _cb_vtime(void *ptr) {
   olsr_timer_stop(&entry->_vtime);
   avl_remove(&entry->set->_tree, &entry->_node);
 
-  olsr_class_free(&_vtime_class, entry);
+  olsr_class_free(&_dupset_class, entry);
 }

@@ -227,3 +227,17 @@ rfc5444_metric_decode(uint16_t encoded) {
 
   return ((257 + b) << a) - 256;
 }
+
+int
+rfc5444_seqno_difference(uint16_t seqno1, uint16_t seqno2) {
+  int diff = (int)seqno1 - (int)(seqno2);
+
+  // overflow ?
+  if (diff > (1 << 15)) {
+    diff -= (1 << 16);
+  }
+  else if (diff < -(1 << 15)) {
+      diff += (1 << 16);
+  }
+  return diff;
+}

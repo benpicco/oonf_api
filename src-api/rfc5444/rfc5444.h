@@ -68,6 +68,8 @@ EXPORT uint64_t rfc5444_timetlv_decode(uint8_t);
 EXPORT uint16_t rfc5444_metric_encode(uint32_t);
 EXPORT uint32_t rfc5444_metric_decode(uint16_t);
 
+EXPORT int rfc5444_seqno_difference(uint16_t, uint16_t);
+
 static INLINE int
 rfc5444_seqno_is_larger(uint16_t s1, uint16_t s2) {
   /*
