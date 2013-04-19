@@ -45,6 +45,7 @@
 #include "common/netaddr.h"
 #include "rfc5444/rfc5444.h"
 #include "core/olsr_class.h"
+#include "core/olsr_subsystem.h"
 #include "core/olsr_timer.h"
 #include "tools/olsr_duplicate_set.h"
 
@@ -64,11 +65,16 @@ static struct olsr_class _dupset_class = {
   .size = sizeof(struct olsr_duplicate_entry),
 };
 
+OLSR_SUBSYSTEM_STATE(_dupset_state);
+
 /**
  * Initialize duplicate set subsystem
  */
 void
 olsr_duplicate_set_init(void) {
+  if (olsr_subsystem_init(&_dupset_state))
+    return;
+
   olsr_class_add(&_dupset_class);
   olsr_timer_add(&_vtime_info);
 }
@@ -78,6 +84,9 @@ olsr_duplicate_set_init(void) {
  */
 void
 olsr_duplicate_set_cleanup(void) {
+  if (olsr_subsystem_cleanup(&_dupset_state))
+    return;
+
   olsr_timer_remove(&_vtime_info);
   olsr_class_remove(&_dupset_class);
 }
