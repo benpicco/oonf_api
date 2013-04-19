@@ -412,7 +412,7 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
     return RFC5444_NO_MSGCREATOR;
   }
 
-  if (!!rfc5444_msg->forward_target_selector) {
+  if (!rfc5444_msg->forward_target_selector) {
     /* no forwarding handler, do not forward */
     return RFC5444_OKAY;
   }

@@ -227,8 +227,23 @@ _test(struct olsr_duplicate_entry *entry,
   diff = rfc5444_seqno_difference(seqno, entry->current);
 
   if (diff < -31) {
+    entry->too_old_count++;
+    if (entry->too_old_count > OLSR_DUPSET_MAXIMUM_TOO_OLD) {
+      /*
+       * we got a long continuous series of too old messages,
+       * most likely the did reset and changed its sequence number
+       */
+      entry->history = 1;
+      entry->too_old_count = 0;
+      entry->current = seqno;
+
+      return OLSR_DUPSET_NEWEST;
+    }
     return OLSR_DUPSET_TOO_OLD;
   }
+
+  /* reset counter of too old messages */
+  entry->too_old_count = 0;
 
   if (diff <= 0) {
     uint32_t bitmask = 1 << ((uint32_t) (-diff));

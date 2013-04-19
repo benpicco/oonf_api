@@ -47,6 +47,8 @@
 #include "common/netaddr.h"
 #include "core/olsr_timer.h"
 
+enum { OLSR_DUPSET_MAXIMUM_TOO_OLD = 8 };
+
 enum olsr_duplicate_result {
   OLSR_DUPSET_TOO_OLD   = -3,
   OLSR_DUPSET_DUPLICATE = -2,
@@ -69,6 +71,8 @@ struct olsr_duplicate_entry {
 
   uint32_t history;
   uint16_t current;
+
+  uint16_t too_old_count;
 
   struct olsr_duplicate_set *set;
 
