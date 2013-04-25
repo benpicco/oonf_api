@@ -58,6 +58,9 @@ enum {
 
   /* larger than possible metric value */
   RFC5444_METRIC_INFINITE = 0xffffff,
+
+  /* infinite path cost */
+  RFC5444_METRIC_INFINITE_PATH = 0xffffffff,
 };
 
 EXPORT uint8_t rfc5444_timetlv_get_from_vector(
