@@ -1,3 +1,6 @@
 /.cproject
 /.project
 /html
+
+.kdev4/
+olsrd-api.kdev4
