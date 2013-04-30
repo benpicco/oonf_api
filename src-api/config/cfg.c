@@ -128,12 +128,12 @@ cfg_append_printable_line(struct autobuf *autobuf, const char *fmt, ...) {
  *   false otherwise
  */
 bool
-cfg_is_allowed_key(const char *key) {
+cfg_is_allowed_key(const char *key, bool section_name) {
   static const char *valid = "_0123456789"
       "abcdefghijklmnopqrstuvwxyz"
       "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   /* test for [a-zA-Z_][a-zA-Z0-9_]* */
-  if (*key >= '0' && *key <= '9') {
+  if (!section_name && *key >= '0' && *key <= '9') {
     return false;
   }
 

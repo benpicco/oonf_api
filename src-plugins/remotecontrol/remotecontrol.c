@@ -559,7 +559,6 @@ _cb_route_finished(struct os_route *rt, int error) {
     abuf_puts(session->cleanup.data->out, "Command successful\n");
   }
 
-  session->route.cb_finished = NULL;
   olsr_telnet_stop(session->cleanup.data);
 }
 

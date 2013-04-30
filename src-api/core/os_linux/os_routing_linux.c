@@ -372,17 +372,13 @@ os_routing_interrupt(struct os_route *route) {
  */
 static void
 _routing_finished(struct os_route *route, int error) {
-  if (route->cb_finished) {
-    void (*cb_finished)(struct os_route *, int error);
-
-    cb_finished = route->cb_finished;
-    route->cb_finished = NULL;
-
-    cb_finished(route, error);
-  }
-
   if (list_is_node_added(&route->_internal._node)) {
+    /* remove first to prevent any kind of recursive cleanup */
     list_remove(&route->_internal._node);
+
+    if (route->cb_finished) {
+      route->cb_finished(route, error);
+    }
   }
 }
 

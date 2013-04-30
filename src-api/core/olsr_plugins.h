@@ -67,7 +67,8 @@ void hookup_plugin_ ## plg_name (void) { \
 static struct olsr_plugin olsr_internal_plugin_definition =
 
 #define OLSR_PLUGIN7_GET_NAME() _OLSR_PLUGIN7_GET_NAME(PLUGIN_FULLNAME)
-#define _OLSR_PLUGIN7_GET_NAME(plg_name) #plg_name
+#define _OLSR_PLUGIN7_GET_NAME(plg_name) __OLSR_PLUGIN7_GET_NAME(plg_name)
+#define __OLSR_PLUGIN7_GET_NAME(plg_name) #plg_name
 
 /* Representation of a plugin */
 struct olsr_plugin {

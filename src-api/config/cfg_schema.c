@@ -243,7 +243,7 @@ cfg_schema_validate(struct cfg_db *db,
           warning = true;
         }
 
-        if (hasName && !cfg_is_allowed_key(named->name)) {
+        if (hasName && !cfg_is_allowed_key(named->name, true)) {
           cfg_append_printable_line(out, "The section name '%s' for"
               " type '%s' contains illegal characters",
               named->name, section->type);
