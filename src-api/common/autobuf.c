@@ -80,6 +80,7 @@ abuf_init(struct autobuf *autobuf)
     return -1;
   }
   autobuf->_total = getpagesize();
+  autobuf->_error = false;
   return 0;
 }
 

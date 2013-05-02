@@ -62,16 +62,17 @@ IF(LINUX)
                        os_generic/os_net_generic_join_mcast.c
                        os_generic/os_net_generic_sendto.c
                        os_generic/os_net_generic_set_nonblocking.c
+                       os_generic/os_routing_generic.c
                        os_generic/os_syslog_generic.c
                        os_linux/os_net_linux.c
                        os_linux/os_system_linux.c
                        os_linux/os_routing_linux.c
                        os_linux/os_clock_linux.c)
     SET(OONF_CORE_INCLUDES ${OONF_CORE_INCLUDES}
-                           os_linux/os_net_linux.h
-                           os_linux/os_system_linux.h
-                           os_linux/os_routing_linux.h
-                           os_linux/os_clock_linux.h)
+                       os_linux/os_net_linux.h
+                       os_linux/os_system_linux.h
+                       os_linux/os_routing_linux.h
+                       os_linux/os_clock_linux.h)
 ENDIF(LINUX)
 
 oonf_create_library("core" "${OONF_CORE_SRCS}" "${OONF_CORE_INCLUDES}" "rt")

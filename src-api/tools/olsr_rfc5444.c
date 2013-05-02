@@ -1192,8 +1192,6 @@ _cb_cfg_interface_changed(void) {
   struct olsr_rfc5444_interface *interf;
   int result;
 
-  interf = NULL;
-
   interf = avl_find_element(
       &_rfc5444_protocol->_interface_tree,
       _interface_section.section_name, interf, _node);

@@ -47,6 +47,7 @@
 
 #include "common/common_types.h"
 #include "common/list.h"
+#include "common/netaddr.h"
 #include "core/olsr_interface.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_timer.h"
@@ -70,6 +71,25 @@
 #ifndef RT_TABLE_UNSPEC
 #define RT_TABLE_UNSPEC 0
 #endif
+
+struct os_route_str {
+  char buf[
+           /* header */
+           1+
+           /* src */
+           5 + sizeof(struct netaddr_str)
+           /* gw */
+           + 4 + sizeof(struct netaddr_str)
+           /* dst */
+           + 5 + sizeof(struct netaddr_str)
+           /* metric */
+           + 7 +11
+           /* table, protocol */
+           +6+4 +9+4
+           +3 + IF_NAMESIZE + 2 + 10 + 2
+           /* footer and 0-byte */
+           + 2];
+};
 
 struct os_route {
   /* used for delivering feedback about netlink commands */
@@ -109,5 +129,8 @@ EXPORT void os_routing_cleanup_mesh_if(struct olsr_interface *);
 EXPORT int os_routing_set(struct os_route *, bool set, bool del_similar);
 EXPORT int os_routing_query(struct os_route *);
 EXPORT void os_routing_interrupt(struct os_route *);
+
+EXPORT const char *os_routing_to_string(
+    struct os_route_str *buf, struct os_route *route);
 
 #endif /* OS_ROUTING_H_ */

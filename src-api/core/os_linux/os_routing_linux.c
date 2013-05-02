@@ -83,6 +83,11 @@ static void _cb_rtnetlink_timeout(void);
 /* global procfile state before initialization */
 static char _original_rp_filter;
 static char _original_icmp_redirect;
+static char _original_ipv4_forward;
+static char _original_ipv6_forward;
+
+/* counter of mesh interfaces for ip_forward configuration */
+static int _mesh_count = 0;
 
 /* netlink socket for route set/get commands */
 struct os_system_netlink _rtnetlink_socket = {
@@ -169,6 +174,17 @@ os_routing_cleanup(void) {
         PROC_ALL_SPOOF, _original_rp_filter);
   }
 
+  if (_mesh_count > 0) {
+    if (_os_linux_writeToProc(PROC_IPFORWARD_V4, NULL, _original_ipv4_forward)) {
+      OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore %s to %c!",
+          PROC_IPFORWARD_V4, _original_ipv4_forward);
+    }
+    if (_os_linux_writeToProc(PROC_IPFORWARD_V6, NULL, _original_ipv6_forward)) {
+      OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore flag %s to %c",
+          PROC_IPFORWARD_V6, _original_ipv6_forward);
+    }
+  }
+
   os_system_netlink_remove(&_rtnetlink_socket);
 }
 
@@ -185,6 +201,19 @@ os_routing_init_mesh_if(struct olsr_interface *interf) {
   if (!olsr_subsystem_is_initialized(&_os_routing_state)) {
     /* make interface listener work without routing core */
     return 0;
+  }
+
+  /* handle global ip_forward setting */
+  _mesh_count++;
+  if (_mesh_count == 1) {
+    if (_os_linux_writeToProc(PROC_IPFORWARD_V4, &_original_ipv4_forward, '1')) {
+      OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not activate ip_forward for ipv4! "
+          "You should manually ensure that ip_forward for ipv4 is activated!");
+    }
+    if (_os_linux_writeToProc(PROC_IPFORWARD_V6, &_original_ipv6_forward, '1')) {
+      OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not activate ip_forward for ipv6! "
+          "You should manually ensure that ip_forward for ipv6 is activated!");
+    }
   }
 
   /* Generate the procfile name */
@@ -240,6 +269,19 @@ os_routing_cleanup_mesh_if(struct olsr_interface *interf) {
       && _os_linux_writeToProc(procfile, NULL, restore_spoof) != 0) {
     OLSR_WARN(LOG_OS_SYSTEM, "Could not restore IP spoof flag %s to %c",
         procfile, restore_spoof);
+  }
+
+  /* handle global ip_forward setting */
+  _mesh_count--;
+  if (_mesh_count == 0) {
+    if (_os_linux_writeToProc(PROC_IPFORWARD_V4, NULL, _original_ipv4_forward)) {
+      OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore %s to %c!",
+          PROC_IPFORWARD_V4, _original_ipv4_forward);
+    }
+    if (_os_linux_writeToProc(PROC_IPFORWARD_V6, NULL, _original_ipv6_forward)) {
+      OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore flag %s to %c",
+          PROC_IPFORWARD_V6, _original_ipv6_forward);
+    }
   }
 
   interf->_original_state = 0;
@@ -306,10 +348,8 @@ os_routing_set(struct os_route *route, bool set, bool del_similar) {
     return -1;
   }
 
+  /* cannot fail */
   seq = os_system_netlink_send(&_rtnetlink_socket, msg);
-  if (seq < 0) {
-    return -1;
-  }
 
   if (route->cb_finished) {
     list_add_tail(&_rtnetlink_feedback, &route->_internal._node);
