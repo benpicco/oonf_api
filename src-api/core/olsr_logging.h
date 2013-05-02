@@ -166,13 +166,8 @@ struct olsr_appdata {
 #define OLSR_INFO_NH(source, format, args...) do { } while(0)
 #endif
 
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
 #define OLSR_WARN(source, format, args...) _OLSR_LOG(LOG_SEVERITY_WARN, source, false, format, ##args)
 #define OLSR_WARN_NH(source, format, args...) _OLSR_LOG(LOG_SEVERITY_WARN, source, true, format, ##args)
-#else
-#define OLSR_WARN(source, format, args...) do { } while(0)
-#define OLSR_WARN_NH(source, format, args...) do { } while(0)
-#endif
 
 typedef void log_handler_cb(struct log_handler_entry *, struct log_parameters *);
 
