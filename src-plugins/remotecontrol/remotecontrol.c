@@ -125,13 +125,15 @@ OLSR_PLUGIN7 {
 };
 
 /* configuration */
+static struct cfg_schema_entry _remotecontrol_entries[] = {
+  CFG_MAP_ACL(_remotecontrol_cfg, acl, "acl", "+127.0.0.1\0+::1\0default_reject", "acl for remote control commands"),
+};
+
 static struct cfg_schema_section _remotecontrol_section = {
   .type = "remotecontrol",
   .cb_delta_handler = _cb_config_changed,
-};
-
-static struct cfg_schema_entry _remotecontrol_entries[] = {
-  CFG_MAP_ACL(_remotecontrol_cfg, acl, "acl", "+127.0.0.1\0+::1\0default_reject", "acl for remote control commands"),
+  .entries = _remotecontrol_entries,
+  .entry_count = ARRAYSIZE(_remotecontrol_entries),
 };
 
 static struct _remotecontrol_cfg _remotecontrol_config;
@@ -194,8 +196,7 @@ static struct list_entity _remote_sessions;
 static int
 _cb_plugin_load(void)
 {
-  cfg_schema_add_section(olsr_cfg_get_schema(), &_remotecontrol_section,
-      _remotecontrol_entries, ARRAYSIZE(_remotecontrol_entries));
+  cfg_schema_add_section(olsr_cfg_get_schema(), &_remotecontrol_section);
   olsr_acl_add(&_remotecontrol_config.acl);
 
   return 0;

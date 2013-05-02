@@ -65,15 +65,17 @@ static struct autobuf out;
 
 static struct cfg_schema schema;
 
-static struct cfg_schema_section handler_1 = {
-  .type = SECTION_TYPE_1, .mode = CFG_SSMODE_NAMED,
-  .cb_delta_handler = handler_add_section,
-};
-
 static struct cfg_schema_entry entries_1[] = {
   CFG_VALIDATE_STRING(KEY_1, "", "help"),
   CFG_VALIDATE_STRING(KEY_2, "", "help"),
   CFG_VALIDATE_STRING(KEY_3, "", "help"),
+};
+
+static struct cfg_schema_section handler_1 = {
+  .type = SECTION_TYPE_1, .mode = CFG_SSMODE_NAMED,
+  .cb_delta_handler = handler_add_section,
+  .entries = entries_1,
+  .entry_count = ARRAYSIZE(entries_1),
 };
 
 static struct const_strarray value_1 = {
@@ -489,7 +491,7 @@ handler_modify_two_sections(void) {
 int
 main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   cfg_schema_add(&schema);
-  cfg_schema_add_section(&schema, &handler_1, entries_1, ARRAYSIZE(entries_1));
+  cfg_schema_add_section(&schema, &handler_1);
 
   abuf_init(&out);
   BEGIN_TESTING(clear_elements);

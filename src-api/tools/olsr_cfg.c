@@ -74,10 +74,6 @@ static int _argc;
 OLSR_SUBSYSTEM_STATE(_cfg_state);
 
 /* define global configuration template */
-static struct cfg_schema_section global_section = {
-  .type = CFG_SECTION_GLOBAL,
-};
-
 static struct cfg_schema_entry global_entries[] = {
   CFG_MAP_BOOL(olsr_config_global, fork, "fork", "no",
       "Set to true to fork daemon into background."),
@@ -87,6 +83,13 @@ static struct cfg_schema_entry global_entries[] = {
   CFG_MAP_STRINGLIST(olsr_config_global, plugin, CFG_GLOBAL_PLUGIN, "",
       "Set list of plugins to be loaded by daemon. Some might need configuration options."),
 };
+
+static struct cfg_schema_section global_section = {
+  .type = CFG_SECTION_GLOBAL,
+  .entries = global_entries,
+  .entry_count = ARRAYSIZE(global_entries),
+};
+
 
 /**
  * Initializes the olsrd configuration subsystem
@@ -101,8 +104,7 @@ olsr_cfg_init(int argc, char **argv) {
 
   /* initialize schema */
   cfg_schema_add(&_olsr_schema);
-  cfg_schema_add_section(&_olsr_schema, &global_section,
-      global_entries, ARRAYSIZE(global_entries));
+  cfg_schema_add_section(&_olsr_schema, &global_section);
 
   /* initialize database */
   if ((_olsr_raw_db = cfg_db_add()) == NULL) {

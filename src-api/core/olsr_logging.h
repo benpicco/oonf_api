@@ -128,7 +128,7 @@ struct olsr_appdata {
  * #endif
  */
 
-#define OONF_LOGGING_LEVEL_WARN  1
+#define OONF_LOGGING_LEVEL_WARN  0
 #define OONF_LOGGING_LEVEL_INFO  2
 #define OONF_LOGGING_LEVEL_DEBUG 3
 

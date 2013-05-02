@@ -248,8 +248,8 @@ struct cfg_schema_section {
   const char *section_name;
 
   /* list of entries in section */
-  struct cfg_schema_entry *_entries;
-  size_t _entry_count;
+  struct cfg_schema_entry *entries;
+  size_t entry_count;
 };
 
 struct cfg_schema_entry_key {
@@ -313,8 +313,7 @@ EXPORT extern const char *CFG_SCHEMA_SECTIONMODE[CFG_SSMODE_MAX];
 
 EXPORT void cfg_schema_add(struct cfg_schema *schema);
 
-EXPORT void cfg_schema_add_section(struct cfg_schema *schema, struct cfg_schema_section *section,
-    struct cfg_schema_entry *entries, size_t entry_count);
+EXPORT void cfg_schema_add_section(struct cfg_schema *schema, struct cfg_schema_section *section);
 EXPORT void cfg_schema_remove_section(struct cfg_schema *schema, struct cfg_schema_section *section);
 
 EXPORT int cfg_schema_validate(struct cfg_db *db,
@@ -394,9 +393,9 @@ static INLINE struct cfg_schema_entry *
 cfg_schema_find_section_entry(struct cfg_schema_section *section, const char *name) {
   size_t i;
 
-  for (i=0; i<section->_entry_count; i++) {
-    if (strcmp(section->_entries[i].key.entry, name) == 0) {
-      return &section->_entries[i];
+  for (i=0; i<section->entry_count; i++) {
+    if (strcmp(section->entries[i].key.entry, name) == 0) {
+      return &section->entries[i];
     }
   }
   return NULL;

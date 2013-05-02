@@ -59,10 +59,6 @@ static struct autobuf out;
 
 static struct cfg_schema schema;
 
-static struct cfg_schema_section section = {
-  .type = CFG_SEC, .mode = CFG_SSMODE_NAMED
-};
-
 static struct cfg_schema_entry entries[] = {
   CFG_VALIDATE_STRING_LEN("stringarray", "", "help", 5),
   CFG_VALIDATE_PRINTABLE("printable", "", "help"),
@@ -88,12 +84,20 @@ static struct cfg_schema_entry entries[] = {
   CFG_VALIDATE_NETADDR_V46("p_ipv46", "11::0/32", "help", true, false),
 };
 
-static struct cfg_schema_section section2 = {
-  .type = CFG_SEC, .mode = CFG_SSMODE_NAMED
+static struct cfg_schema_section section = {
+  .type = CFG_SEC, .mode = CFG_SSMODE_NAMED,
+  .entries = entries,
+  .entry_count = ARRAYSIZE(entries),
 };
 
 static struct cfg_schema_entry entries2[] = {
   CFG_VALIDATE_INT_MINMAX("stringarray", "", "help", 1, 1000000000),
+};
+
+static struct cfg_schema_section section2 = {
+  .type = CFG_SEC, .mode = CFG_SSMODE_NAMED,
+  .entries = entries2,
+  .entry_count = ARRAYSIZE(entries2),
 };
 
 static void
@@ -979,7 +983,7 @@ test_validate_netaddr_ipv46_prefix_miss(void) {
 static void
 test_validate_double_schema(void) {
   START_TEST();
-  cfg_schema_add_section(&schema, &section2, entries2, ARRAYSIZE(entries2));
+  cfg_schema_add_section(&schema, &section2);
 
   cfg_db_overwrite_entry(db, CFG_SEC, CFG_SECNAME, "stringarray", "123");
   CHECK_TRUE(0 == cfg_schema_validate(db, false, false, &out),
@@ -1000,7 +1004,7 @@ test_validate_double_schema(void) {
 int
 main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   cfg_schema_add(&schema);
-  cfg_schema_add_section(&schema, &section, entries, ARRAYSIZE(entries));
+  cfg_schema_add_section(&schema, &section);
 
   abuf_init(&out);
   BEGIN_TESTING(clear_elements);

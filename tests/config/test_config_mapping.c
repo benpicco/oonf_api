@@ -78,10 +78,6 @@ struct bin_data2 {
 
 static struct cfg_schema schema;
 
-static struct cfg_schema_section section = {
-  .type = CFG_SEC, .mode = CFG_SSMODE_NAMED
-};
-
 static struct cfg_schema_entry entries[] = {
   CFG_MAP_STRING(bin_data, string, "string", "a string", "help string"),
   CFG_MAP_STRING_ARRAY(bin_data, string_array, "string_array", "test", "help string array", 5),
@@ -92,13 +88,21 @@ static struct cfg_schema_entry entries[] = {
   CFG_MAP_BOOL(bin_data, boolean, "boolean", "0", "help bool")
 };
 
-static struct cfg_schema_section section2 = {
-  .type = CFG_SEC, .mode = CFG_SSMODE_NAMED
+static struct cfg_schema_section section = {
+  .type = CFG_SEC, .mode = CFG_SSMODE_NAMED,
+  .entries = entries,
+  .entry_count = ARRAYSIZE(entries),
 };
 
 static struct cfg_schema_entry entries2[] = {
   CFG_MAP_CHOICE(bin_data2, choice, "choice", "choice1", "help choice", choices),
   CFG_MAP_BOOL(bin_data2, boolean, "boolean", "0", "help bool")
+};
+
+static struct cfg_schema_section section2 = {
+  .type = CFG_SEC, .mode = CFG_SSMODE_NAMED,
+  .entries = entries2,
+  .entry_count = ARRAYSIZE(entries2),
 };
 
 const char IP_10_coloncolon_1[16] = {
@@ -222,8 +226,8 @@ test_dual_binary_mapping(void) {
 int
 main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   cfg_schema_add(&schema);
-  cfg_schema_add_section(&schema, &section, entries, ARRAYSIZE(entries));
-  cfg_schema_add_section(&schema, &section2, entries2, ARRAYSIZE(entries2));
+  cfg_schema_add_section(&schema, &section);
+  cfg_schema_add_section(&schema, &section2);
 
   abuf_init(&out);
   BEGIN_TESTING(clear_elements);

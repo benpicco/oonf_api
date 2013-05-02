@@ -98,13 +98,6 @@ static size_t _parse_query_string(char *s,
 static void  _decode_uri(char *src);
 
 /* configuration variables */
-static struct cfg_schema_section _http_section = {
-  .type = "http",
-  .mode = CFG_SSMODE_UNNAMED_OPTIONAL_STARTUP_TRIGGER,
-  .help = "Settings for the http interface",
-  .cb_delta_handler = _cb_config_changed
-};
-
 static struct cfg_schema_entry _http_entries[] = {
   CFG_MAP_ACL_V46(olsr_stream_managed_config,
       acl, "acl", "127.0.0.1", "Access control list for http interface"),
@@ -114,6 +107,15 @@ static struct cfg_schema_entry _http_entries[] = {
       bindto_v6, "bindto_v6", "::1", "Bind http ipv6 socket to this address", false, true),
   CFG_MAP_INT_MINMAX(olsr_stream_managed_config,
       port, "port", "1978", "Network port for http interface", 1, 65535),
+};
+
+static struct cfg_schema_section _http_section = {
+  .type = "http",
+  .mode = CFG_SSMODE_UNNAMED_OPTIONAL_STARTUP_TRIGGER,
+  .entries = _http_entries,
+  .entry_count = ARRAYSIZE(_http_entries),
+  .help = "Settings for the http interface",
+  .cb_delta_handler = _cb_config_changed
 };
 
 /* tree of http sites */
@@ -141,8 +143,7 @@ olsr_http_init(void) {
   if (olsr_subsystem_init(&_http_state))
     return;
 
-  cfg_schema_add_section(olsr_cfg_get_schema(), &_http_section,
-      _http_entries, ARRAYSIZE(_http_entries));
+  cfg_schema_add_section(olsr_cfg_get_schema(), &_http_section);
 
   olsr_stream_add_managed(&_http_managed_socket);
 

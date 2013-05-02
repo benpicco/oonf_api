@@ -88,15 +88,17 @@ OLSR_PLUGIN7 {
 };
 
 /* configuration */
-static struct cfg_schema_section _httptelnet_section = {
-  .type = _CFG_SECTION,
-  .cb_delta_handler = _cb_config_changed,
-};
-
 static struct cfg_schema_entry _httptelnet_entries[] = {
   CFG_MAP_STRING(olsr_http_handler, site, "site", "/telnet", "Path for http2telnet bridge"),
   CFG_MAP_ACL(olsr_http_handler, acl, "acl", "default_accept", "acl for http2telnet bridge"),
   CFG_MAP_STRINGLIST(olsr_http_handler, auth, "auth", "", "TODO"),
+};
+
+static struct cfg_schema_section _httptelnet_section = {
+  .type = _CFG_SECTION,
+  .cb_delta_handler = _cb_config_changed,
+  .entries = _httptelnet_entries,
+  .entry_count = ARRAYSIZE(_httptelnet_entries),
 };
 
 static const char *_last_site;
@@ -114,8 +116,7 @@ _cb_plugin_load(void) {
 
   _last_site = _http_site_handler.site;
 
-  cfg_schema_add_section(olsr_cfg_get_schema(), &_httptelnet_section,
-      _httptelnet_entries, ARRAYSIZE(_httptelnet_entries));
+  cfg_schema_add_section(olsr_cfg_get_schema(), &_httptelnet_section);
 
   olsr_acl_add(&_http_site_handler.acl);
   strarray_init(&_http_site_handler.auth);

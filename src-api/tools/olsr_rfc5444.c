@@ -144,12 +144,6 @@ static struct olsr_timer_info _aggregation_timer = {
 };
 
 /* configuration settings for handler */
-static struct cfg_schema_section _rfc5444_section = {
-  .type = CFG_RFC5444_SECTION,
-  .mode = CFG_SSMODE_UNNAMED,
-  .cb_delta_handler = _cb_cfg_rfc5444_changed,
-};
-
 static struct cfg_schema_entry _rfc5444_entries[] = {
   CFG_MAP_INT_MINMAX(_rfc5444_config, port, "port", RFC5444_MANET_UDP_PORT_TXT,
     "UDP port for RFC5444 interface", 1, 65535),
@@ -157,10 +151,12 @@ static struct cfg_schema_entry _rfc5444_entries[] = {
     "Interval in seconds for message aggregation"),
 };
 
-static struct cfg_schema_section _interface_section = {
-  .type = CFG_INTERFACE_SECTION,
-  .mode = CFG_SSMODE_NAMED,
-  .cb_delta_handler = _cb_cfg_interface_changed,
+static struct cfg_schema_section _rfc5444_section = {
+  .type = CFG_RFC5444_SECTION,
+  .mode = CFG_SSMODE_UNNAMED,
+  .cb_delta_handler = _cb_cfg_rfc5444_changed,
+  .entries = _rfc5444_entries,
+  .entry_count = ARRAYSIZE(_rfc5444_entries),
 };
 
 static struct cfg_schema_entry _interface_entries[] = {
@@ -174,6 +170,14 @@ static struct cfg_schema_entry _interface_entries[] = {
     "ipv4 multicast address of this socket", false, true),
   CFG_MAP_NETADDR_V6(olsr_packet_managed_config, multicast_v6, "multicast_v6", RFC5444_MANET_MULTICAST_V6_TXT,
     "ipv6 multicast address of this socket", false, true),
+};
+
+static struct cfg_schema_section _interface_section = {
+  .type = CFG_INTERFACE_SECTION,
+  .mode = CFG_SSMODE_NAMED,
+  .cb_delta_handler = _cb_cfg_interface_changed,
+  .entries = _interface_entries,
+  .entry_count = ARRAYSIZE(_interface_entries),
 };
 
 static uint64_t _aggregation_interval;
@@ -248,11 +252,8 @@ olsr_rfc5444_init(void) {
 
   olsr_timer_add(&_aggregation_timer);
 
-  cfg_schema_add_section(olsr_cfg_get_schema(), &_rfc5444_section,
-      _rfc5444_entries, ARRAYSIZE(_rfc5444_entries));
-
-  cfg_schema_add_section(olsr_cfg_get_schema(), &_interface_section,
-      _interface_entries, ARRAYSIZE(_interface_entries));
+  cfg_schema_add_section(olsr_cfg_get_schema(), &_rfc5444_section);
+  cfg_schema_add_section(olsr_cfg_get_schema(), &_interface_section);
 
   _rfc5444_protocol = olsr_rfc5444_add_protocol(RFC5444_PROTOCOL, true);
   if (_rfc5444_protocol == NULL) {

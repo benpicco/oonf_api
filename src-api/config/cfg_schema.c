@@ -110,8 +110,7 @@ cfg_schema_add(struct cfg_schema *schema) {
  */
 void
 cfg_schema_add_section(struct cfg_schema *schema,
-    struct cfg_schema_section *section,
-    struct cfg_schema_entry *entries, size_t entry_count) {
+    struct cfg_schema_section *section) {
   struct cfg_schema_entry *entry, *entry_it;
   size_t i;
 
@@ -123,30 +122,27 @@ cfg_schema_add_section(struct cfg_schema *schema,
     avl_insert(&schema->handlers, &section->_delta_node);
   }
 
-  section->_entries = entries;
-  section->_entry_count = entry_count;
-
-  for (i=0; i<entry_count; i++) {
-    entries[i]._parent = section;
-    entries[i].key.type = section->type;
-    entries[i]._node.key = &entries[i].key;
+  for (i=0; i<section->entry_count; i++) {
+    section->entries[i]._parent = section;
+    section->entries[i].key.type = section->type;
+    section->entries[i]._node.key = &section->entries[i].key;
 
     /* make sure all defaults are the same */
     avl_for_each_elements_with_key(&schema->entries, entry_it, _node, entry,
-        &entries[i].key) {
-      if (entries[i].def.value == NULL) {
+        &section->entries[i].key) {
+      if (section->entries[i].def.value == NULL) {
         /* if we have no default, copy the one from the first existing entry */
-        memcpy(&entries[i].def, &entry->def, sizeof(entry->def));
+        memcpy(&section->entries[i].def, &entry->def, sizeof(entry->def));
         break;
       }
       else {
         /* if we have one, overwrite all existing entries */
-        memcpy(&entry->def, &entries[i].def, sizeof(entry->def));
+        memcpy(&entry->def, &section->entries[i].def, sizeof(entry->def));
 
         // TODO: maybe output some logging that we overwrite the default?
       }
     }
-    avl_insert(&schema->entries, &entries[i]._node);
+    avl_insert(&schema->entries, &section->entries[i]._node);
   }
 }
 
@@ -163,9 +159,9 @@ cfg_schema_remove_section(struct cfg_schema *schema, struct cfg_schema_section *
     avl_remove(&schema->sections, &section->_section_node);
     section->_section_node.key = NULL;
 
-    for (i=0; i<section->_entry_count; i++) {
-      avl_remove(&schema->entries, &section->_entries[i]._node);
-      section->_entries[i]._node.key = NULL;
+    for (i=0; i<section->entry_count; i++) {
+      avl_remove(&schema->entries, &section->entries[i]._node);
+      section->entries[i]._node.key = NULL;
     }
   }
   if (section->_delta_node.key) {
@@ -1165,8 +1161,8 @@ _handle_named_section_change(struct cfg_schema_section *s_section,
 
   changed = false;
 
-  for (i=0; i<s_section->_entry_count; i++) {
-    entry = &s_section->_entries[i];
+  for (i=0; i<s_section->entry_count; i++) {
+    entry = &s_section->entries[i];
 
     /* read values */
     entry->pre = cfg_db_get_entry_value(

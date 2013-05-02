@@ -64,13 +64,15 @@ static struct autobuf out;
 
 static struct cfg_schema schema;
 
-static struct cfg_schema_section section = {
-  .type = CFG_SECTION, .mode = CFG_SSMODE_NAMED
-};
-
 static struct cfg_schema_entry entries[] = {
     CFG_VALIDATE_STRING(CFG_ENTRY_DEF, CFG_SCHEMA_DEFAULT, "help string"),
     CFG_VALIDATE_STRING(CFG_ENTRY_NODEF, NULL, "help string"),
+};
+
+static struct cfg_schema_section section = {
+  .type = CFG_SECTION, .mode = CFG_SSMODE_NAMED,
+  .entries = entries,
+  .entry_count = ARRAYSIZE(entries),
 };
 
 static void
@@ -231,7 +233,7 @@ test_default_unnamed_section_set(void) {
 int
 main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   cfg_schema_add(&schema);
-  cfg_schema_add_section(&schema, &section, entries, ARRAYSIZE(entries));
+  cfg_schema_add_section(&schema, &section);
 
   abuf_init(&out);
   BEGIN_TESTING(clear_elements);

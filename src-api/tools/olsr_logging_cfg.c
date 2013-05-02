@@ -71,11 +71,6 @@ static void _apply_log_setting(struct cfg_named_section *named,
     const char *entry_name, enum log_severity severity);
 
 /* define logging configuration template */
-static struct cfg_schema_section logging_section = {
-  .type = LOG_SECTION,
-  .cb_delta_handler = _cb_logcfg_apply,
-};
-
 static struct cfg_schema_entry logging_entries[] = {
   /* the next three parameters are configured to a different list during runtime */
   CFG_VALIDATE_LOGSOURCE(LOG_DEBUG_ENTRY, "",
@@ -92,6 +87,13 @@ static struct cfg_schema_entry logging_entries[] = {
   CFG_VALIDATE_BOOL(LOG_STDERR_ENTRY, "false", "Set to true to activate logging to stderr"),
   CFG_VALIDATE_BOOL(LOG_SYSLOG_ENTRY, "false", "Set to true to activate logging to syslog"),
   CFG_VALIDATE_STRING(LOG_FILE_ENTRY, "", "Set a filename to log to a file"),
+};
+
+static struct cfg_schema_section logging_section = {
+  .type = LOG_SECTION,
+  .entries = logging_entries,
+  .entry_count = ARRAYSIZE(logging_entries),
+  .cb_delta_handler = _cb_logcfg_apply,
 };
 
 static enum log_source *debug_lvl_1 = NULL;
@@ -127,8 +129,7 @@ olsr_logcfg_init(enum log_source *debug_lvl_1_ptr, size_t length) {
 
   memset(logging_cfg, 0, LOG_MAXIMUM_SOURCES);
 
-  cfg_schema_add_section(olsr_cfg_get_schema(), &logging_section,
-      logging_entries, ARRAYSIZE(logging_entries));
+  cfg_schema_add_section(olsr_cfg_get_schema(), &logging_section);
 }
 
 /**

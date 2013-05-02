@@ -80,14 +80,7 @@ static enum olsr_telnet_result _cb_telnet_timeout(struct olsr_telnet_data *data)
 static enum olsr_telnet_result _cb_telnet_version(struct olsr_telnet_data *data);
 static enum olsr_telnet_result _cb_telnet_plugin(struct olsr_telnet_data *data);
 
-/* global and static variables */
-static struct cfg_schema_section telnet_section = {
-  .type = "telnet",
-  .mode = CFG_SSMODE_UNNAMED_OPTIONAL_STARTUP_TRIGGER,
-  .help = "Settings for the telnet interface",
-  .cb_delta_handler = _cb_config_changed,
-};
-
+/* configuration of telnet server */
 static struct cfg_schema_entry telnet_entries[] = {
   CFG_MAP_ACL_V46(olsr_stream_managed_config,
       acl, "acl", "127.0.0.1", "Access control list for telnet interface"),
@@ -97,6 +90,15 @@ static struct cfg_schema_entry telnet_entries[] = {
       bindto_v6, "bindto_v6", "::1", "Bind telnet ipv6 socket to this address", false, true),
   CFG_MAP_INT_MINMAX(olsr_stream_managed_config,
       port, "port", "2006", "Network port for telnet interface", 1, 65535),
+};
+
+static struct cfg_schema_section telnet_section = {
+  .type = "telnet",
+  .mode = CFG_SSMODE_UNNAMED_OPTIONAL_STARTUP_TRIGGER,
+  .help = "Settings for the telnet interface",
+  .cb_delta_handler = _cb_config_changed,
+  .entries = telnet_entries,
+  .entry_count = ARRAYSIZE(telnet_entries),
 };
 
 /* built-in telnet commands */
@@ -159,8 +161,7 @@ olsr_telnet_init(void) {
   olsr_class_add(&_telnet_memcookie);
   olsr_timer_add(&_telnet_repeat_timerinfo );
 
-  cfg_schema_add_section(olsr_cfg_get_schema(), &telnet_section,
-      telnet_entries, ARRAYSIZE(telnet_entries));
+  cfg_schema_add_section(olsr_cfg_get_schema(), &telnet_section);
 
   olsr_stream_add_managed(&_telnet_managed);
 

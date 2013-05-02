@@ -48,12 +48,17 @@
 
 static struct cfg_schema schema;
 
-static struct cfg_schema_section section =
-{ .type = "section1", .mode = CFG_SSMODE_NAMED };
-
 static struct cfg_schema_entry entries[] = {
     CFG_VALIDATE_PRINTABLE("key1", "default", "helptext list", .list = true),
 };
+
+static struct cfg_schema_section section =
+{
+  .type = "section1", .mode = CFG_SSMODE_NAMED,
+  .entries = entries,
+  .entry_count = ARRAYSIZE(entries),
+};
+
 
 static void
 test_list_1(void) {
@@ -256,7 +261,7 @@ test_list_3(void) {
 int
 main(int argc __attribute__ ((unused)), char **argv __attribute__ ((unused))) {
   cfg_schema_add(&schema);
-  cfg_schema_add_section(&schema, &section, entries, ARRAYSIZE(entries));
+  cfg_schema_add_section(&schema, &section);
 
   BEGIN_TESTING(NULL);
 
