@@ -307,6 +307,8 @@ os_routing_set(struct os_route *route, bool set, bool del_similar) {
   int seq;
 
   memset(buffer, 0, sizeof(buffer));
+
+  /* copy route settings */
   memcpy(&os_rt, route, sizeof(os_rt));
 
   /* get pointers for netlink message */
@@ -326,12 +328,12 @@ os_routing_set(struct os_route *route, bool set, bool del_similar) {
   } else {
     msg->nlmsg_type = RTM_DELROUTE;
 
-    os_rt.protocol = -1;
+    os_rt.protocol = 0;
     netaddr_invalidate(&os_rt.src);
 
     if (del_similar) {
       /* no interface necessary */
-      os_rt.if_index = -1;
+      os_rt.if_index = 0;
 
       /* as wildcard for fuzzy deletion */
       scope = RT_SCOPE_NOWHERE;
@@ -644,6 +646,9 @@ _cb_rtnetlink_error(uint32_t seq, int error) {
   struct os_route *route;
 
   OLSR_DEBUG(LOG_OS_ROUTING, "Got feedback: %d %d", seq, error);
+
+  /* transform into errno number */
+  error = -error;
 
   list_for_each_element(&_rtnetlink_feedback, route, _internal._node) {
     if (seq == route->_internal.nl_seq) {
