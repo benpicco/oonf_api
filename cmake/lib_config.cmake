@@ -21,7 +21,7 @@ set (CMAKE_BUILD_TYPE Debug CACHE STRING
 
 # maximum logging level
 set (OONF_LOGGING_LEVEL debug CACHE STRING 
-    "Maximum logging level compiled into OONF API (none, warn, info, debug)")
+    "Maximum logging level compiled into OONF API (warn, info, debug)")
 
 ######################################
 #### Install target configuration ####

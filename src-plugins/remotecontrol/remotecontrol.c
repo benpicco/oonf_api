@@ -63,6 +63,8 @@
 #include "tools/olsr_cfg.h"
 #include "tools/olsr_telnet.h"
 
+#include "remotecontrol/remotecontrol.h"
+
 /* variable definitions */
 struct _remotecontrol_cfg {
   struct olsr_netaddr_acl acl;
@@ -121,7 +123,7 @@ static struct cfg_schema_section _remotecontrol_section = {
 static struct _remotecontrol_cfg _remotecontrol_config;
 
 /* plugin declaration */
-struct oonf_subsystem _remotecontrol_subsystem = {
+struct oonf_subsystem oonf_remotecontrol_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
  .descr = "OLSRD remote control and debug plugin",
   .author = "Henning Rogge",
@@ -131,7 +133,7 @@ struct oonf_subsystem _remotecontrol_subsystem = {
   .init = _init,
   .cleanup = _cleanup,
 };
-DECLARE_OONF_PLUGIN(_remotecontrol_subsystem);
+DECLARE_OONF_PLUGIN(oonf_remotecontrol_subsystem);
 
 /* command callbacks and names */
 static struct olsr_telnet_command _telnet_cmds[] = {

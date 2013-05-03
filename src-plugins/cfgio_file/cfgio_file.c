@@ -54,6 +54,8 @@
 
 #include "tools/olsr_cfg.h"
 
+#include "cfgio_file/cfgio_file.h"
+
 static int _init(void);
 static void _cleanup(void);
 
@@ -62,14 +64,14 @@ static struct cfg_db *_cb_file_load(struct cfg_instance *instance,
 static int _cb_file_save(struct cfg_instance *instance,
     const char *param, const char *parser, struct cfg_db *src, struct autobuf *log);
 
-struct oonf_subsystem _io_file_subsystem = {
+struct oonf_subsystem oonf_io_file_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
   .descr = "OLSRD file io handler for configuration system",
   .author = "Henning Rogge",
   .init = _init,
   .cleanup = _cleanup,
 };
-DECLARE_OONF_PLUGIN(_io_file_subsystem);
+DECLARE_OONF_PLUGIN(oonf_io_file_subsystem);
 
 struct cfg_io cfg_io_file = {
   .name = "file",

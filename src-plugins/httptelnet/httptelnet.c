@@ -84,7 +84,7 @@ static struct cfg_schema_section _httptelnet_section = {
 };
 
 /* plugin declaration */
-struct oonf_subsystem _httptelnet_subsystem = {
+struct oonf_subsystem oonf_httptelnet_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
   .descr = "OLSRD http2telnet bridge plugin",
   .author = "Henning Rogge",
@@ -94,7 +94,7 @@ struct oonf_subsystem _httptelnet_subsystem = {
   .init = _init,
   .cleanup = _cleanup,
 };
-DECLARE_OONF_PLUGIN(_httptelnet_subsystem);
+DECLARE_OONF_PLUGIN(oonf_httptelnet_subsystem);
 
 /**
  * Constructor of plugin
