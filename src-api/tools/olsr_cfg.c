@@ -130,7 +130,6 @@ olsr_cfg_init(int argc, char **argv) {
 
   /* initialize already existing plugins */
   avl_for_each_element(&olsr_plugin_tree, plugin, _node) {
-    fprintf(stderr, "configure %s\n", plugin->name);
     olsr_subsystem_configure(&_olsr_schema, plugin);
   }
   return 0;
@@ -232,7 +231,6 @@ olsr_cfg_loadplugins(void) {
       return -1;
     }
 
-    fprintf(stderr, "configure %s\n", plugin->name);
     olsr_subsystem_configure(&_olsr_schema, plugin);
   }
 
@@ -267,8 +265,6 @@ olsr_cfg_unconfigure_plugins(void) {
   struct oonf_subsystem *plugin, *plugin_it;
   avl_for_each_element_safe(&olsr_plugin_tree, plugin, _node, plugin_it) {
     olsr_subsystem_unconfigure(&_olsr_schema, plugin);
-
-    olsr_plugins_unload(plugin);
   }
 }
 

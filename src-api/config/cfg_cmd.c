@@ -376,7 +376,7 @@ cfg_cmd_handle_schema(struct cfg_db *db,
             s_section->help ? ": " : "",
             s_section->help ? s_section->help : "");
       }
-      if (s_section->help) {
+      else if (s_section->help) {
         cfg_append_printable_line(log, "        %s", s_section->help);
       }
     }
