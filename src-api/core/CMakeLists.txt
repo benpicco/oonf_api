@@ -63,7 +63,7 @@ IF(LINUX)
                        os_generic/os_net_generic_join_mcast.c
                        os_generic/os_net_generic_sendto.c
                        os_generic/os_net_generic_set_nonblocking.c
-                       os_generic/os_routing_generic.c
+                       os_generic/os_routing_generic_rt_to_string.c
                        os_generic/os_syslog_generic.c
                        os_linux/os_net_linux.c
                        os_linux/os_system_linux.c
