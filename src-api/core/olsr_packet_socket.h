@@ -103,8 +103,7 @@ struct olsr_packet_managed {
   struct olsr_interface_listener _if_listener;
 };
 
-EXPORT void olsr_packet_init(void);
-EXPORT void olsr_packet_cleanup(void);
+EXPORT extern struct oonf_subsystem oonf_packet_socket_subsystem;
 
 EXPORT int olsr_packet_add(struct olsr_packet_socket *,
     union netaddr_socket *local, struct olsr_interface_data *);

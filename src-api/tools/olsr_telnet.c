@@ -57,6 +57,9 @@
 #include "tools/olsr_telnet.h"
 
 /* static function prototypes */
+static int _init(void);
+static void _cleanup(void);
+
 static void _call_stop_handler(struct olsr_telnet_data *data);
 static void _cb_config_changed(void);
 static int _cb_telnet_init(struct olsr_stream_session *);
@@ -119,8 +122,12 @@ static struct olsr_telnet_command _builtin[] = {
         "'load <plugin>' and 'unload <plugin>'"),
 };
 
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_telnet_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_telnet_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+  .cfg_section = &telnet_section,
+};
 
 /* telnet session handling */
 static struct olsr_class _telnet_memcookie = {
@@ -150,18 +157,14 @@ struct avl_tree telnet_cmd_tree;
 
 /**
  * Initialize telnet subsystem
+ * @return always returns 0
  */
-void
-olsr_telnet_init(void) {
+static int
+_init(void) {
   size_t i;
-
-  if (olsr_subsystem_init(&_telnet_state))
-    return;
 
   olsr_class_add(&_telnet_memcookie);
   olsr_timer_add(&_telnet_repeat_timerinfo );
-
-  cfg_schema_add_section(olsr_cfg_get_schema(), &telnet_section);
 
   olsr_stream_add_managed(&_telnet_managed);
 
@@ -170,18 +173,15 @@ olsr_telnet_init(void) {
   for (i=0; i<ARRAYSIZE(_builtin); i++) {
     olsr_telnet_add(&_builtin[i]);
   }
+  return 0;
 }
 
 /**
  * Cleanup all allocated data of telnet subsystem
  */
-void
-olsr_telnet_cleanup(void) {
-  if (olsr_subsystem_cleanup(&_telnet_state))
-    return;
-
+static void
+_cleanup(void) {
   olsr_stream_remove_managed(&_telnet_managed, true);
-  cfg_schema_remove_section(olsr_cfg_get_schema(), &telnet_section);
   olsr_class_remove(&_telnet_memcookie);
 }
 

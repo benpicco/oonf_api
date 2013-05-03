@@ -113,11 +113,10 @@ struct olsr_http_handler {
       struct autobuf *out, struct olsr_http_session *);
 };
 
+EXPORT extern struct oonf_subsystem oonf_http_subsystem;
+
 EXPORT extern const char *HTTP_CONTENTTYPE_HTML;
 EXPORT extern const char *HTTP_CONTENTTYPE_TEXT;
-
-EXPORT void olsr_http_init(void);
-EXPORT void olsr_http_cleanup(void);
 
 EXPORT void olsr_http_add(struct olsr_http_handler *);
 EXPORT void olsr_http_remove(struct olsr_http_handler *);

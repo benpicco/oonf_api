@@ -66,10 +66,9 @@ static INLINE int os_system_gettimeofday(struct timeval *tv);
 #error "Unknown operation system"
 #endif
 
-/* prototypes for all os_system functions */
-EXPORT int os_system_init(void);
-EXPORT void os_system_cleanup(void);
+EXPORT extern struct oonf_subsystem oonf_os_system_subsystem;
 
+/* prototypes for all os_system functions */
 EXPORT int os_system_set_interface_state(const char *dev, bool up);
 
 #endif /* OS_SYSTEM_H_ */

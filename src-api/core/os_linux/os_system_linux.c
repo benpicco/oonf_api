@@ -68,6 +68,10 @@
 
 #define OS_SYSTEM_NETLINK_TIMEOUT 100
 
+/* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
 static void _cb_handle_netlink_timeout(void *);
 static void _netlink_handler(int fd, void *data,
     bool event_read, bool event_write);
@@ -129,18 +133,18 @@ const uint32_t _rtnetlink_mcast[] = {
   RTNLGRP_LINK, RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR
 };
 
-OLSR_SUBSYSTEM_STATE(_os_system_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_os_system_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+};
 
 /**
  * Initialize os-specific subsystem
  * @return -1 if an error happened, 0 otherwise
  */
-int
-os_system_init(void) {
-  if (olsr_subsystem_is_initialized(&_os_system_state)) {
-    return 0;
-  }
-
+static int
+_init(void) {
   _ioctl_fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (_ioctl_fd == -1) {
     OLSR_WARN(LOG_OS_SYSTEM, "Cannot open ioctl socket: %s (%d)",
@@ -160,18 +164,14 @@ os_system_init(void) {
   }
   olsr_timer_add(&_netlink_timer);
 
-  olsr_subsystem_init(&_os_system_state);
   return 0;
 }
 
 /**
  * Cleanup os-specific subsystem
  */
-void
-os_system_cleanup(void) {
-  if (olsr_subsystem_cleanup(&_os_system_state))
-    return;
-
+static void
+_cleanup(void) {
   olsr_timer_remove(&_netlink_timer);
   os_system_netlink_remove(&_rtnetlink_receiver);
   close(_ioctl_fd);

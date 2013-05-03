@@ -144,10 +144,9 @@ struct olsr_telnet_command {
   struct avl_node _node;
 };
 
-EXPORT struct avl_tree telnet_cmd_tree;
+EXPORT extern struct oonf_subsystem oonf_telnet_subsystem;
 
-EXPORT void olsr_telnet_init(void);
-EXPORT void olsr_telnet_cleanup(void);
+EXPORT struct avl_tree telnet_cmd_tree;
 
 EXPORT int olsr_telnet_add(struct olsr_telnet_command *command);
 EXPORT void olsr_telnet_remove(struct olsr_telnet_command *command);

@@ -70,9 +70,6 @@ static bool _running = true;
 static char **_argv;
 static int _argc;
 
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_cfg_state);
-
 /* define global configuration template */
 static struct cfg_schema_entry global_entries[] = {
   CFG_MAP_BOOL(olsr_config_global, fork, "fork", "no",
@@ -97,9 +94,6 @@ static struct cfg_schema_section global_section = {
  */
 int
 olsr_cfg_init(int argc, char **argv) {
-  if (olsr_subsystem_is_initialized(&_cfg_state))
-    return 0;
-
   cfg_add(&_olsr_cfg_instance);
 
   /* initialize schema */
@@ -131,8 +125,6 @@ olsr_cfg_init(int argc, char **argv) {
 
   _argc = argc;
   _argv = argv;
-
-  olsr_subsystem_init(&_cfg_state);
   return 0;
 }
 
@@ -141,9 +133,6 @@ olsr_cfg_init(int argc, char **argv) {
  */
 void
 olsr_cfg_cleanup(void) {
-  if (olsr_subsystem_cleanup(&_cfg_state))
-    return;
-
   free(config_global.plugin.value);
 
   cfg_db_remove(_olsr_raw_db);

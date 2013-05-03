@@ -45,24 +45,26 @@
 #include "core/olsr_subsystem.h"
 #include "core/os_clock.h"
 
+/* prototypes */
+static int _init(void);
+
 /* type of clock source to be used */
 #if defined(CLOCK_MONOTONIC_RAW) || defined (CLOCK_MONOTONIC)
 static int _clock_source = 0;
 #endif
 
-OLSR_SUBSYSTEM_STATE(_os_clock_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_os_clock_subsystem = {
+  .init = _init,
+};
 
 /**
  * Initialize os-specific subsystem
  * @return always return 0
  */
-int
-os_clock_init(void) {
+static int
+_init(void) {
   struct timespec ts;
-
-  if (olsr_subsystem_init(&_os_clock_state)) {
-    return 0;
-  }
 
 #ifdef CLOCK_MONOTONIC_RAW
   if (clock_gettime(CLOCK_MONOTONIC_RAW, &ts) == 0) {
@@ -75,15 +77,6 @@ os_clock_init(void) {
   }
 #endif
   return 0;
-}
-
-/**
- * Cleanup os-specific subsystem
- */
-void
-os_clock_cleanup(void) {
-  if (olsr_subsystem_cleanup(&_os_clock_state))
-    return;
 }
 
 /**

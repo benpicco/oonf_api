@@ -58,6 +58,10 @@
 #include "core/olsr_subsystem.h"
 #include "core/olsr_stream_socket.h"
 
+/* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
 static int _apply_managed_socket(struct olsr_stream_managed *managed,
     struct olsr_stream_socket *stream, struct netaddr *bindto, uint16_t port);
 static void _cb_parse_request(int fd, void *data, bool, bool);
@@ -81,31 +85,30 @@ static struct olsr_timer_info connection_timeout = {
   .callback = _cb_timeout_handler,
 };
 
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_stream_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_stream_socket_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+};
 
 /**
  * Initialize the stream socket handlers
+ * @return always returns 0
  */
-void
-olsr_stream_init(void) {
-  if (olsr_subsystem_init(&_stream_state))
-    return;
-
+static int
+_init(void) {
   olsr_class_add(&connection_cookie);
   olsr_timer_add(&connection_timeout);
   list_init_head(&olsr_stream_head);
+  return 0;
 }
 
 /**
  * Cleanup all resources allocated be stream socket handlers
  */
-void
-olsr_stream_cleanup(void) {
+static void
+_cleanup(void) {
   struct olsr_stream_socket *comport;
-
-  if (olsr_subsystem_cleanup(&_stream_state))
-    return;
 
   while (!list_is_empty(&olsr_stream_head)) {
     comport = list_first_element(&olsr_stream_head, comport, node);

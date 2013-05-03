@@ -61,6 +61,7 @@ struct olsr_config_global {
 /* name of parameter in 'global' section to load plugins */
 #define CFG_GLOBAL_PLUGIN    "plugin"
 
+EXPORT extern struct oonf_subsystem oonf_cfg_subsystem;
 EXPORT extern struct olsr_config_global config_global;
 
 EXPORT int olsr_cfg_init(int argc, char **argv) __attribute__((warn_unused_result));

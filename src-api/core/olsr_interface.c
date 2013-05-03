@@ -59,6 +59,10 @@
 /* timeinterval to delay change in interface to trigger actions */
 #define OLSR_INTERFACE_CHANGE_INTERVAL 100
 
+/* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
 static struct olsr_interface *_interface_add(const char *, bool mesh);
 static void _interface_remove(struct olsr_interface *interf, bool mesh);
 static void _cb_change_handler(void *);
@@ -67,8 +71,11 @@ static void _trigger_change_timer(struct olsr_interface *);
 /* global tree of known interfaces */
 struct avl_tree olsr_interface_tree;
 
-/* remember state of subsystem */
-OLSR_SUBSYSTEM_STATE(_interface_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_interface_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+};
 
 static struct list_entity _interface_listener;
 static struct olsr_timer_info _change_timer_info = {
@@ -78,27 +85,23 @@ static struct olsr_timer_info _change_timer_info = {
 
 /**
  * Initialize interface subsystem
+ * @return always returns 0
  */
-void
-olsr_interface_init(void) {
-  if (olsr_subsystem_init(&_interface_state))
-    return;
-
+static int
+_init(void) {
   olsr_timer_add(&_change_timer_info);
 
   avl_init(&olsr_interface_tree, avl_comp_strcasecmp, false);
   list_init_head(&_interface_listener);
+  return 0;
 }
 
 /**
  * Cleanup interface subsystem
  */
-void
-olsr_interface_cleanup(void) {
+static void
+_cleanup(void) {
   struct olsr_interface_listener *listener, *l_it;
-
-  if (olsr_subsystem_cleanup(&_interface_state))
-    return;
 
   list_for_each_element_safe(&_interface_listener, listener, _node, l_it) {
     olsr_interface_remove_listener(listener);

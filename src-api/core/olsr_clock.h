@@ -63,8 +63,8 @@
 #define CFG_MAP_CLOCK_MAX(p_reference, p_field, p_name, p_def, p_help, p_max, args...)           CFG_VALIDATE_CLOCK_MAX(p_name, p_def, p_help, p_max, .cb_to_binary = olsr_clock_tobin, .bin_offset = offsetof(struct p_reference, p_field), ##args)
 #define CFG_MAP_CLOCK_MINMAX(p_reference, p_field, p_name, p_def, p_help, p_min, p_max, args...) CFG_VALIDATE_CLOCK_MINMAX(p_name, p_def, p_help, p_min, p_max, .cb_to_binary = olsr_clock_tobin, .bin_offset = offsetof(struct p_reference, p_field), ##args)
 
-EXPORT int olsr_clock_init(void) __attribute__((warn_unused_result));
-EXPORT void olsr_clock_cleanup(void);
+EXPORT extern struct oonf_subsystem oonf_clock_subsystem;
+
 EXPORT int olsr_clock_update(void) __attribute__((warn_unused_result));
 
 EXPORT uint64_t olsr_clock_getNow(void);

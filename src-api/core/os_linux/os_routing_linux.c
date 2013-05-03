@@ -68,6 +68,10 @@
 #define PROC_IF_SPOOF "/proc/sys/net/ipv4/conf/%s/rp_filter"
 #define PROC_ALL_SPOOF "/proc/sys/net/ipv4/conf/all/rp_filter"
 
+/* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
 static int _routing_set(struct nlmsghdr *msg, struct os_route *route,
     unsigned char rt_type, unsigned char rt_scope);
 
@@ -98,7 +102,11 @@ struct os_system_netlink _rtnetlink_socket = {
 };
 struct list_entity _rtnetlink_feedback;
 
-OLSR_SUBSYSTEM_STATE(_os_routing_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_os_routing_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+};
 
 /* default wildcard route */
 const struct os_route OS_ROUTE_WILDCARD = {
@@ -116,11 +124,8 @@ const struct os_route OS_ROUTE_WILDCARD = {
  * Initialize routing subsystem
  * @return -1 if an error happened, 0 otherwise
  */
-int
-os_routing_init(void) {
-  if (olsr_subsystem_is_initialized(&_os_routing_state))
-    return 0;
-
+static int
+_init(void) {
   if (os_system_netlink_add(&_rtnetlink_socket, NETLINK_ROUTE)) {
     return -1;
   }
@@ -140,20 +145,15 @@ os_routing_init(void) {
   }
 
   list_init_head(&_rtnetlink_feedback);
-
-  olsr_subsystem_init(&_os_routing_state);
   return 0;
 }
 
 /**
  * Cleanup all resources allocated by the routing subsystem
  */
-void
-os_routing_cleanup(void) {
+static void
+_cleanup(void) {
   struct os_route *rt, *rt_it;
-
-  if (olsr_subsystem_cleanup(&_os_routing_state))
-    return;
 
   list_for_each_element_safe(&_rtnetlink_feedback, rt, _internal._node, rt_it) {
     rt->cb_finished(rt, true);
@@ -198,7 +198,7 @@ os_routing_init_mesh_if(struct olsr_interface *interf) {
   char procfile[FILENAME_MAX];
   char old_redirect = 0, old_spoof = 0;
 
-  if (!olsr_subsystem_is_initialized(&_os_routing_state)) {
+  if (!oonf_subsystem_is_active(&oonf_os_routing_subsystem)) {
     /* make interface listener work without routing core */
     return 0;
   }
@@ -245,7 +245,7 @@ os_routing_cleanup_mesh_if(struct olsr_interface *interf) {
   char restore_redirect, restore_spoof;
   char procfile[FILENAME_MAX];
 
-  if (!olsr_subsystem_is_initialized(&_os_routing_state)) {
+  if (!oonf_subsystem_is_active(&oonf_os_routing_subsystem)) {
     /* make interface listener work without routing core */
     return;
   }

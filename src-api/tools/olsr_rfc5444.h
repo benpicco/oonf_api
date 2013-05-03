@@ -226,8 +226,7 @@ struct olsr_rfc5444_target {
   uint8_t _packet_buffer[RFC5444_MAX_PACKET_SIZE];
 };
 
-EXPORT int olsr_rfc5444_init(void)  __attribute__((warn_unused_result));
-EXPORT void olsr_rfc5444_cleanup(void);
+EXPORT extern struct oonf_subsystem oonf_rfc5444_subsystem;
 
 EXPORT struct olsr_rfc5444_protocol *olsr_rfc5444_add_protocol(
     const char *name, bool fixed_local_port);

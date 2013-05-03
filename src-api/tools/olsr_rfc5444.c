@@ -64,6 +64,9 @@ struct _rfc5444_config {
 };
 
 /* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
 static struct olsr_rfc5444_target *_create_target(
     struct olsr_rfc5444_interface *, struct netaddr *dst, bool unicast);
 static void _destroy_target(struct olsr_rfc5444_target *);
@@ -178,6 +181,7 @@ static struct cfg_schema_section _interface_section = {
   .cb_delta_handler = _cb_cfg_interface_changed,
   .entries = _interface_entries,
   .entry_count = ARRAYSIZE(_interface_entries),
+  .next_section = &_rfc5444_section,
 };
 
 static uint64_t _aggregation_interval;
@@ -226,19 +230,21 @@ static struct avl_tree _protocol_tree;
 static struct olsr_rfc5444_protocol *_rfc5444_protocol = NULL;
 static struct olsr_rfc5444_interface *_rfc5444_unicast = NULL;
 
-/* rfc5444 handler state and logging source */
-OLSR_SUBSYSTEM_STATE(_rfc5444_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_rfc5444_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+  .cfg_section = &_interface_section,
+};
+
 static enum log_source LOG_RFC5444;
 
 /**
  * Initialize RFC5444 handling system
  * @return -1 if an error happened, 0 otherwise
  */
-int
-olsr_rfc5444_init(void) {
-  if (olsr_subsystem_init(&_rfc5444_state))
-    return 0;
-
+static int
+_init(void) {
   LOG_RFC5444 = olsr_log_register_source(_LOG_RFC5444_NAME);
 
   avl_init(&_protocol_tree, avl_comp_strcasecmp, false);
@@ -252,12 +258,9 @@ olsr_rfc5444_init(void) {
 
   olsr_timer_add(&_aggregation_timer);
 
-  cfg_schema_add_section(olsr_cfg_get_schema(), &_rfc5444_section);
-  cfg_schema_add_section(olsr_cfg_get_schema(), &_interface_section);
-
   _rfc5444_protocol = olsr_rfc5444_add_protocol(RFC5444_PROTOCOL, true);
   if (_rfc5444_protocol == NULL) {
-    olsr_rfc5444_cleanup();
+    _cleanup();
     return -1;
   }
 
@@ -265,12 +268,12 @@ olsr_rfc5444_init(void) {
   _rfc5444_unicast = olsr_rfc5444_add_interface(
       _rfc5444_protocol, NULL, RFC5444_UNICAST_TARGET);
   if (_rfc5444_unicast == NULL) {
-    olsr_rfc5444_cleanup();
+    _cleanup();
     return -1;
   }
 
   if (abuf_init(&_printer_buffer)) {
-    olsr_rfc5444_cleanup();
+    _cleanup();
     return -1;
   }
 
@@ -287,13 +290,10 @@ olsr_rfc5444_init(void) {
  * Cleanup all allocated resources of RFC5444 handling
  */
 void
-olsr_rfc5444_cleanup(void) {
+_cleanup(void) {
   struct olsr_rfc5444_protocol *protocol, *p_it;
   struct olsr_rfc5444_interface *interf, *i_it;
   struct olsr_rfc5444_target *target, *t_it;
-
-  if (olsr_subsystem_cleanup(&_rfc5444_state))
-    return;
 
   /* cleanup existing instances */
   avl_for_each_element_safe(&_protocol_tree, protocol, _node, p_it) {
@@ -308,8 +308,6 @@ olsr_rfc5444_cleanup(void) {
     protocol->_refcount = 1;
     olsr_rfc5444_remove_protocol(protocol);
   }
-
-  cfg_schema_remove_section(olsr_cfg_get_schema(), &_interface_section);
 
   olsr_timer_remove(&_aggregation_timer);
 

@@ -47,47 +47,75 @@
 #include <stdio.h>
 
 #include "common/common_types.h"
+#include "config/cfg_schema.h"
 
-/* variable for subsystem state */
-#define OLSR_SUBSYSTEM_STATE(var_name) static bool var_name = false
-
-/**
- * Subsystem marker API for 'being initialized' state.
- * Call this function at the beginning of the initialization.
- * @param ptr pointer to initialized state variable of subsystem
- * @return true if initialization should be skipped, false otherwise
+/*
+ * description of a subsystem of the OONF-API.
+ * In theory, ALL fields are optional.
  */
-static INLINE bool
-olsr_subsystem_init(bool *ptr) {
-  if (*ptr)
-    return true;
+struct oonf_subsystem {
+  /* name of the subsystem */
+  const char *name;
 
-  *ptr = true;
-  return false;
+  /* description of the subsystem */
+  const char *descr;
+
+  /* author of the subsystem */
+  const char *author;
+
+  /* First configuration section of subsystem, might be NULL */
+  struct cfg_schema_section *cfg_section;
+
+  /*
+   * Will be called once during the initialization of the subsystem.
+   * Other subsystems may not be initialized during this time.
+   */
+  int (*init) (void);
+
+  /*
+   * Might be called multiple times during the lifetime of the subsystem.
+   * All loaded subsystems will be initialized during this time.
+   *
+   * This will most likely only be used by plugins.
+   */
+  int (*enable) (void);
+
+  /*
+   * Might be called multiple times during the lifetime of the subsystem.
+   * All loaded subsystems will still be initialized.
+   *
+   * This will most likely only be used by plugins.
+   */
+  void (*disable) (void);
+
+  /*
+   * Will be called once during the cleanup of the subsystem.
+   * Other subsystems might already be cleanup up during this time.
+   */
+  void (*cleanup) (void);
+
+  /* true if the subsystem can be disables/enabled during runtime */
+  bool can_disable;
+
+  /* true if the subsystem can be (de)activated during runtime */
+  bool can_cleanup;
+
+  /* true if the subsystem is initialized */
+  bool _initialized;
+
+  /* true if the subsystem is enabled */
+  bool _enabled;
+
+  /* pointer to dlopen handle */
+  void *_dlhandle;
+
+  /* tree for dynamic subsystems */
+  struct avl_node _node;
+};
+
+static INLINE bool
+oonf_subsystem_is_active(struct oonf_subsystem *subsystem) {
+  return subsystem->_enabled;
 }
 
-/**
- * Subsystem marker API for 'being initialized' state.
- * Call this function at the beginning of the cleanup.
- * @param ptr pointer to initialized state variable of subsystem
- * @return true if cleanup should be skipped, false otherwise
- */
-static INLINE bool
-olsr_subsystem_cleanup(bool *ptr) {
-  if (*ptr) {
-    *ptr = false;
-    return false;
-  }
-  return true;
-}
-
-/**
- * Subsystem marker API for 'being initialized' state.
- * @param ptr pointer to initialized state variable of subsystem
- * @return true if the subsystem is initialized
- */
-static INLINE bool
-olsr_subsystem_is_initialized(bool *ptr) {
-  return *ptr;
-}
 #endif /* OLSR_H_ */

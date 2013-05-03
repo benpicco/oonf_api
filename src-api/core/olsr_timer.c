@@ -52,6 +52,13 @@
 #include "core/olsr_timer.h"
 #include "core/olsr_subsystem.h"
 
+/* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
+static void _calc_clock(struct olsr_timer_entry *timer, uint64_t rel_time);
+static int _avlcomp_timer(const void *p1, const void *p2);
+
 /* minimal granularity of the timer system in milliseconds */
 const uint64_t TIMESLICE = 100;
 
@@ -64,56 +71,35 @@ static bool _scheduling_now;
 /* List of timer classes */
 struct list_entity timerinfo_list;
 
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_timer_state);
-
-/* Prototypes */
-static void _calc_clock(struct olsr_timer_entry *timer, uint64_t rel_time);
-
-static int
-_avlcomp_timer(const void *p1, const void *p2) {
-  const struct olsr_timer_entry *t1, *t2;
-
-  t1 = p1;
-  t2 = p2;
-
-  if (t1->_clock > t2->_clock) {
-    return 1;
-  }
-  if (t1->_clock < t2->_clock) {
-    return -1;
-  }
-  return 0;
-}
+/* subsystem definition */
+struct oonf_subsystem oonf_timer_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+};
 
 /**
  * Initialize timer scheduler subsystem
- * @return -1 if an error happened, 0 otherwise
+ * @return always returns 0
  */
-void
-olsr_timer_init(void)
+int
+_init(void)
 {
-  if (olsr_subsystem_init(&_timer_state))
-    return;
-
   OLSR_INFO(LOG_TIMER, "Initializing timer scheduler.\n");
 
   avl_init(&_timer_tree, _avlcomp_timer, true);
   _scheduling_now = false;
 
   list_init_head(&timerinfo_list);
+  return 0;
 }
 
 /**
  * Cleanup timer scheduler, this stops and deletes all timers
  */
-void
-olsr_timer_cleanup(void)
+static void
+_cleanup(void)
 {
   struct olsr_timer_info *ti, *iterator;
-
-  if (olsr_subsystem_cleanup(&_timer_state))
-    return;
 
   /* free all timerinfos */
   OLSR_FOR_ALL_TIMERS(ti, iterator) {
@@ -350,4 +336,26 @@ _calc_clock(struct olsr_timer_entry *timer, uint64_t rel_time)
   /* round up to next timeslice */
   timer->_clock += TIMESLICE;
   timer->_clock -= (timer->_clock % TIMESLICE);
+}
+
+/**
+ * Custom AVL comparator for two timer entries.
+ * @param p1
+ * @param p2
+ * @return
+ */
+static int
+_avlcomp_timer(const void *p1, const void *p2) {
+  const struct olsr_timer_entry *t1, *t2;
+
+  t1 = p1;
+  t2 = p2;
+
+  if (t1->_clock > t2->_clock) {
+    return 1;
+  }
+  if (t1->_clock < t2->_clock) {
+    return -1;
+  }
+  return 0;
 }

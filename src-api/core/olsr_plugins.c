@@ -54,7 +54,6 @@
 #include "core/olsr_libdata.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_plugins.h"
-#include "core/olsr_subsystem.h"
 
 /* constants */
 enum {
@@ -125,17 +124,11 @@ static int _unload_plugin(struct olsr_plugin *plugin, bool cleanup);
 static int _disable_plugin(struct olsr_plugin *plugin, bool cleanup);
 static void *_open_plugin(const char *filename);
 
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_plugins_state);
-
 /**
  * Initialize the plugin loader system
  */
 void
 olsr_plugins_init(void) {
-  if (olsr_subsystem_init(&_plugins_state))
-    return;
-
   _init_plugin_tree();
 
   /* load predefined values for dlopen templates */
@@ -160,9 +153,6 @@ olsr_plugins_init(void) {
 void
 olsr_plugins_cleanup(void) {
   struct olsr_plugin *plugin, *iterator;
-
-  if (olsr_subsystem_cleanup(&_plugins_state))
-    return;
 
   OLSR_FOR_ALL_PLUGIN_ENTRIES(plugin, iterator) {
     _disable_plugin(plugin, true);

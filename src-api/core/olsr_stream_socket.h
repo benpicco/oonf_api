@@ -193,8 +193,7 @@ struct olsr_stream_managed_config {
   uint16_t port;
 };
 
-EXPORT void olsr_stream_init(void);
-EXPORT void olsr_stream_cleanup(void);
+EXPORT extern struct oonf_subsystem oonf_stream_socket_subsystem;
 
 EXPORT int olsr_stream_add(struct olsr_stream_socket *,
     union netaddr_socket *local);

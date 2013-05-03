@@ -54,36 +54,39 @@
 #include "core/olsr_timer.h"
 #include "core/olsr_subsystem.h"
 
+/* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
 /* List of all active sockets in scheduler */
 struct list_entity socket_head;
 
 static bool _stop_scheduler;
 
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_socket_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_socket_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+};
 
 /**
  * Initialize olsr socket scheduler
+ * @return always returns 0
  */
-void
-olsr_socket_init(void) {
-  if (olsr_subsystem_init(&_socket_state))
-    return;
-
+static int
+_init(void) {
   list_init_head(&socket_head);
+  return 0;
 }
 
 /**
  * Cleanup olsr socket scheduler.
  * This will close and free all sockets.
  */
-void
-olsr_socket_cleanup(void)
+static void
+_cleanup(void)
 {
   struct olsr_socket_entry *entry, *iterator;
-
-  if (olsr_subsystem_cleanup(&_socket_state))
-    return;
 
   OLSR_FOR_ALL_SOCKETS(entry, iterator) {
     list_remove(&entry->node);

@@ -136,9 +136,7 @@ struct olsr_interface_listener {
 };
 
 EXPORT extern struct avl_tree olsr_interface_tree;
-
-EXPORT void olsr_interface_init(void);
-EXPORT void olsr_interface_cleanup(void);
+EXPORT extern struct oonf_subsystem oonf_interface_subsystem;
 
 EXPORT int olsr_interface_add_listener(struct olsr_interface_listener *);
 EXPORT void olsr_interface_remove_listener(struct olsr_interface_listener *);

@@ -49,6 +49,10 @@
 #include "core/olsr_timer.h"
 #include "tools/olsr_duplicate_set.h"
 
+/* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
 static enum olsr_duplicate_result _test(struct olsr_duplicate_entry *,
     uint16_t seqno, bool set);
 static int _avl_cmp_dupkey(const void *, const void*);
@@ -65,28 +69,28 @@ static struct olsr_class _dupset_class = {
   .size = sizeof(struct olsr_duplicate_entry),
 };
 
-OLSR_SUBSYSTEM_STATE(_dupset_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_duplicate_set_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+};
 
 /**
  * Initialize duplicate set subsystem
+ * @return always returns 0
  */
-void
-olsr_duplicate_set_init(void) {
-  if (olsr_subsystem_init(&_dupset_state))
-    return;
-
+static int
+_init(void) {
   olsr_class_add(&_dupset_class);
   olsr_timer_add(&_vtime_info);
+  return 0;
 }
 
 /**
  * Cleanup duplicate set subsystem
  */
-void
-olsr_duplicate_set_cleanup(void) {
-  if (olsr_subsystem_cleanup(&_dupset_state))
-    return;
-
+static void
+_cleanup(void) {
   olsr_timer_remove(&_vtime_info);
   olsr_class_remove(&_dupset_class);
 }

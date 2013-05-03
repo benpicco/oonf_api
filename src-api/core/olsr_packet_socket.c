@@ -51,11 +51,9 @@
 #include "core/olsr_packet_socket.h"
 #include "core/olsr_subsystem.h"
 
-static struct list_entity packet_sockets = { NULL, NULL };
-static char input_buffer[65536];
-
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_packet_state);
+/* prototypes */
+static int _init(void);
+static void _cleanup(void);
 
 static int _apply_managed(struct olsr_packet_managed *managed);
 static int _apply_managed_socketpair(struct olsr_packet_managed *managed,
@@ -70,26 +68,32 @@ static void _cb_packet_event_multicast(int fd, void *data, bool r, bool w);
 static void _cb_packet_event(int fd, void *data, bool r, bool w, bool mc);
 static void _cb_interface_listener(struct olsr_interface_listener *l);
 
+/* subsystem definition */
+struct oonf_subsystem oonf_packet_socket_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+};
+
+/* other global variables */
+static struct list_entity packet_sockets = { NULL, NULL };
+static char input_buffer[65536];
+
 /**
  * Initialize packet socket handler
+ * @return always returns 0
  */
-void
-olsr_packet_init(void) {
-  if (olsr_subsystem_init(&_packet_state))
-    return;
-
+static int
+_init(void) {
   list_init_head(&packet_sockets);
+  return 0;
 }
 
 /**
  * Cleanup all resources allocated by packet socket handler
  */
-void
-olsr_packet_cleanup(void) {
+static void
+_cleanup(void) {
   struct olsr_packet_socket *skt;
-
-  if (olsr_subsystem_cleanup(&_packet_state))
-    return;
 
   while (!list_is_empty(&packet_sockets)) {
     skt = list_first_element(&packet_sockets, skt, node);

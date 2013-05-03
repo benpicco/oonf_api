@@ -49,6 +49,9 @@
 #include "core/olsr_subsystem.h"
 
 /* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
 static void _free_freelist(struct olsr_class *);
 static size_t _roundup(size_t);
 static const char *_cb_to_keystring(struct olsr_objectkey_str *,
@@ -64,30 +67,29 @@ const char *OLSR_CLASS_EVENT_NAME[] = {
   [OLSR_OBJECT_CHANGED] = "changed",
 };
 
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_memcookie_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_class_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+};
 
 /**
- * Initialize the memory cookie system
+ * Initialize the class system
+ * @return always returns 0
  */
-void
-olsr_class_init(void) {
-  if (olsr_subsystem_init(&_memcookie_state))
-    return;
-
+static int
+_init(void) {
   avl_init(&olsr_classes, avl_comp_strcasecmp, false);
+  return 0;
 }
 
 /**
  * Cleanup the memory cookie system
  */
-void
-olsr_class_cleanup(void)
+static void
+_cleanup(void)
 {
   struct olsr_class *info, *iterator;
-
-  if (olsr_subsystem_cleanup(&_memcookie_state))
-    return;
 
   /*
    * Walk the full index range and kill 'em all.

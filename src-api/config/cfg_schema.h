@@ -250,6 +250,9 @@ struct cfg_schema_section {
   /* list of entries in section */
   struct cfg_schema_entry *entries;
   size_t entry_count;
+
+  /* pointer to next section for subsystem initialization */
+  struct cfg_schema_section *next_section;
 };
 
 struct cfg_schema_entry_key {

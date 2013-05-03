@@ -53,24 +53,25 @@
 #include "core/olsr_clock.h"
 #include "core/olsr_subsystem.h"
 
+/* prototypes */
+static int _init(void);
+
 /* absolute monotonic clock measured in milliseconds compared to start time */
 static uint64_t now_times;
 
 /* arbitrary timestamp that represents the time olsr_clock_init() was called */
 static uint64_t start_time;
 
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_clock_state);
+struct oonf_subsystem oonf_clock_subsystem = {
+  .init = _init,
+};
 
 /**
  * Initialize olsr clock system
  * @return -1 if an error happened, 0 otherwise
  */
-int
-olsr_clock_init(void) {
-  if (olsr_subsystem_is_initialized(&_clock_state))
-    return 0;
-
+static int
+_init(void) {
   if (os_clock_gettime64(&start_time)) {
     OLSR_WARN(LOG_TIMER, "OS clock is not working: %s (%d)\n", strerror(errno), errno);
     return -1;
@@ -78,16 +79,7 @@ olsr_clock_init(void) {
 
   now_times = 0;
 
-  olsr_subsystem_init(&_clock_state);
   return 0;
-}
-
-/**
- * Cleanup reference counter
- */
-void
-olsr_clock_cleanup(void) {
-  olsr_subsystem_cleanup(&_clock_state);
 }
 
 /**
@@ -97,7 +89,6 @@ olsr_clock_cleanup(void) {
 int
 olsr_clock_update(void)
 {
-
   uint64_t now;
   if (os_clock_gettime64(&now)) {
     OLSR_WARN(LOG_TIMER, "OS clock is not working: %s (%d)\n", strerror(errno), errno);

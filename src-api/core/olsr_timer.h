@@ -113,12 +113,12 @@ struct olsr_timer_entry {
   uint64_t _clock;
 };
 
+EXPORT extern struct oonf_subsystem oonf_timer_subsystem;
+
 /* Timers */
 EXPORT extern struct list_entity timerinfo_list;
 #define OLSR_FOR_ALL_TIMERS(ti, iterator) list_for_each_element_safe(&timerinfo_list, ti, _node, iterator)
 
-EXPORT void olsr_timer_init(void);
-EXPORT void olsr_timer_cleanup(void);
 EXPORT void olsr_timer_walk(void);
 
 EXPORT void olsr_timer_add(struct olsr_timer_info *ti);

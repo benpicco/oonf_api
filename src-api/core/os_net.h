@@ -67,9 +67,9 @@ static INLINE int os_select(
 #error "Unknown operation system"
 #endif
 
+EXPORT extern struct oonf_subsystem oonf_os_net_subsystem;
+
 /* prototypes for all os_net functions */
-EXPORT int os_net_init(void) __attribute__((warn_unused_result));
-EXPORT void os_net_cleanup(void);
 EXPORT int os_net_getsocket(union netaddr_socket *bindto,
     bool tcp, int recvbuf, struct olsr_interface_data *, enum log_source log_src);
 EXPORT int os_net_configsocket(int sock, union netaddr_socket *bindto,

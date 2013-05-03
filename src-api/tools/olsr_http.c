@@ -77,7 +77,10 @@ static const char HTTP_RESPONSE_500[] = "Internal Server Error";
 static const char HTTP_RESPONSE_501[] = "Not Implemented";
 static const char HTTP_RESPONSE_503[] = "Service Unavailable";
 
-/* static function prototypes */
+/* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
 static void _cb_config_changed(void);
 static enum olsr_stream_session_state _cb_receive_data(
     struct olsr_stream_session *session);
@@ -132,35 +135,30 @@ static struct olsr_stream_managed _http_managed_socket = {
   },
 };
 
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_http_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_http_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+  .cfg_section = &_http_section,
+};
 
 /**
  * Initialize http subsystem
+ * @return always returns 0
  */
-void
-olsr_http_init(void) {
-  if (olsr_subsystem_init(&_http_state))
-    return;
-
-  cfg_schema_add_section(olsr_cfg_get_schema(), &_http_section);
-
+static int
+_init(void) {
   olsr_stream_add_managed(&_http_managed_socket);
-
   avl_init(&_http_site_tree, avl_comp_strcasecmp, false);
+  return 0;
 }
 
 /**
  * Free all resources allocated by http subsystem
  */
 void
-olsr_http_cleanup(void) {
-  if (olsr_subsystem_cleanup(&_http_state))
-    return;
-
+_cleanup(void) {
   olsr_stream_remove_managed(&_http_managed_socket, true);
-
-  cfg_schema_remove_section(olsr_cfg_get_schema(), &_http_section);
 }
 
 /**

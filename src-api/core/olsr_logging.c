@@ -51,7 +51,6 @@
 #include "common/string.h"
 #include "core/olsr_libdata.h"
 #include "core/olsr_logging.h"
-#include "core/olsr_subsystem.h"
 #include "core/os_system.h"
 #include "core/os_syslog.h"
 
@@ -93,9 +92,6 @@ const char *LOG_SEVERITY_NAMES[LOG_SEVERITY_MAX+1] = {
   [LOG_SEVERITY_WARN]  = "WARN",
 };
 
-/* remember if initialized or not */
-OLSR_SUBSYSTEM_STATE(_logging_state);
-
 /**
  * Initialize logging system
  * @param data builddata defined by application
@@ -108,9 +104,6 @@ olsr_log_init(const struct olsr_appdata *data, enum log_severity def_severity)
   enum log_severity sev;
   enum log_source src;
   size_t len;
-
-  if (olsr_subsystem_is_initialized(&_logging_state))
-    return 0;
 
   _appdata = data;
   _libdata = olsr_libdata_get();
@@ -152,7 +145,6 @@ olsr_log_init(const struct olsr_appdata *data, enum log_severity def_severity)
   /* clear global mask */
   memset(&log_global_mask, _default_mask, sizeof(log_global_mask));
 
-  olsr_subsystem_init(&_logging_state);
   return 0;
 }
 
@@ -164,9 +156,6 @@ olsr_log_cleanup(void)
 {
   struct log_handler_entry *h, *iterator;
   enum log_source src;
-
-  if (olsr_subsystem_cleanup(&_logging_state))
-    return;
 
   /* remove all handlers */
   FOR_ALL_LOGHANDLERS(h, iterator) {

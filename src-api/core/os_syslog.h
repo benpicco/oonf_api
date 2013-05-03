@@ -44,9 +44,10 @@
 
 #include "common/common_types.h"
 #include "core/olsr_logging.h"
+#include "core/olsr_subsystem.h"
 
-EXPORT void os_syslog_init(void);
-EXPORT void os_syslog_cleanup(void);
+EXPORT extern struct oonf_subsystem oonf_os_syslog_subsystem;
+
 EXPORT void os_syslog_log(enum log_severity, const char *);
 
 #endif /* OS_SYSLOG_H_ */

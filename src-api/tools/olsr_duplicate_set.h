@@ -80,8 +80,7 @@ struct olsr_duplicate_entry {
   struct olsr_timer_entry _vtime;
 };
 
-void olsr_duplicate_set_init(void);
-void olsr_duplicate_set_cleanup(void);
+EXPORT extern struct oonf_subsystem oonf_duplicate_set_subsystem;
 
 EXPORT void olsr_duplicate_set_add(struct olsr_duplicate_set *);
 EXPORT void olsr_duplicate_set_remove(struct olsr_duplicate_set *);

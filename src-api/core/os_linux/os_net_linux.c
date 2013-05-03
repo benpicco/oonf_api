@@ -51,19 +51,25 @@
 #include "core/olsr_subsystem.h"
 #include "core/os_net.h"
 
+/* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
+/* global ioctl sockets for ipv4 and ipv6 */
 static int _ioctl_v4, _ioctl_v6;
 
-OLSR_SUBSYSTEM_STATE(_os_net_state);
+/* subsystem definition */
+struct oonf_subsystem oonf_os_net_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+};
 
 /**
  * Initialize os_net subsystem
  * @return -1 if an error happened, 0 otherwise
  */
-int
-os_net_init(void) {
-  if (olsr_subsystem_is_initialized(&_os_net_state))
-    return 0;
-
+static int
+_init(void) {
   _ioctl_v4 = socket(AF_INET, SOCK_DGRAM, 0);
   if (_ioctl_v4 == -1) {
     OLSR_WARN(LOG_OS_NET, "Cannot open ipv4 ioctl socket: %s (%d)",
@@ -79,18 +85,14 @@ os_net_init(void) {
     /* do not stop here, system might just not support IPv6 */
   }
 
-  olsr_subsystem_init(&_os_net_state);
   return 0;
 }
 
 /**
  * Cleanup os_net subsystem
  */
-void
-os_net_cleanup(void) {
-  if (olsr_subsystem_cleanup(&_os_net_state))
-    return;
-
+static void
+_cleanup(void) {
   close (_ioctl_v4);
   if (_ioctl_v6 != -1) {
     close (_ioctl_v6);

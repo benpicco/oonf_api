@@ -46,32 +46,33 @@
 #include "core/os_syslog.h"
 #include "core/olsr_subsystem.h"
 
-OLSR_SUBSYSTEM_STATE(_os_log_state);
+/* prototypes */
+static int _init(void);
+static void _cleanup(void);
+
+/* subsystem definition */
+struct oonf_subsystem oonf_os_syslog_subsystem = {
+  .init = _init,
+  .cleanup = _cleanup,
+};
 
 /**
  * Initialize syslog system
+ * @return always returns 0
  */
-void
-os_syslog_init(void) {
-  if (olsr_subsystem_init(&_os_log_state)) {
-    return;
-  }
-
+static int
+_init(void) {
   openlog(olsr_log_get_appdata()->app_name, LOG_PID | LOG_ODELAY, LOG_DAEMON);
   setlogmask(LOG_UPTO(LOG_DEBUG));
 
-  return;
+  return 0;
 }
 
 /**
  * Cleanup syslog system
  */
-void
-os_syslog_cleanup(void) {
-  if (olsr_subsystem_cleanup(&_os_log_state)) {
-    return;
-  }
-
+static void
+_cleanup(void) {
   closelog();
 }
 
