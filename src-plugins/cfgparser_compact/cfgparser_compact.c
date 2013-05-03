@@ -53,12 +53,13 @@
 #include "config/cfg_db.h"
 #include "config/cfg_parser.h"
 #include "config/cfg.h"
+#include "core/olsr_subsystem.h"
 #include "core/olsr_plugins.h"
 
 #include "tools/olsr_cfg.h"
 
-static int _cb_plugin_load(void);
-static int _cb_plugin_unload(void);
+static int _init(void);
+static void _cleanup(void);
 
 static struct cfg_db *_cb_compact_parse(
     char *src, size_t len, struct autobuf *log);
@@ -69,12 +70,14 @@ static int _parse_line(struct cfg_db *db, char *line,
     char *name, size_t name_size,
     struct autobuf *log);
 
-OLSR_PLUGIN7 {
+struct oonf_subsystem _compact_parser_subsystem = {
+  .name = OONF_PLUGIN_GET_NAME(),
   .descr = "OLSRD compact configuration format plugin",
   .author = "Henning Rogge",
-  .load = _cb_plugin_load,
-  .unload = _cb_plugin_unload,
+  .init = _init,
+  .cleanup = _cleanup,
 };
+DECLARE_OONF_PLUGIN(_compact_parser_subsystem);
 
 struct cfg_parser cfg_parser_compact = {
   .name = "compact",
@@ -84,11 +87,11 @@ struct cfg_parser cfg_parser_compact = {
 };
 
 /**
- * Constructor of plugin, called before parameters are initialized
+ * Constructor of plugin
  * @return always returns 0 (cannot fail)
  */
 static int
-_cb_plugin_load(void)
+_init(void)
 {
   cfg_parser_add(olsr_cfg_get_instance(), &cfg_parser_compact);
   return 0;
@@ -96,13 +99,11 @@ _cb_plugin_load(void)
 
 /**
  * Destructor of plugin
- * @return always returns 0 (cannot fail)
  */
-static int
-_cb_plugin_unload(void)
+static void
+_cleanup(void)
 {
   cfg_parser_remove(olsr_cfg_get_instance(), &cfg_parser_compact);
-  return 0;
 }
 
 

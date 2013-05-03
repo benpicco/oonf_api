@@ -78,10 +78,8 @@ struct _remotecontrol_session {
 };
 
 /* prototypes */
-static int _cb_plugin_load(void);
-static int _cb_plugin_unload(void);
-static int _cb_plugin_enable(void);
-static int _cb_plugin_disable(void);
+static int _init(void);
+static void _cleanup(void);
 
 static enum olsr_telnet_result _cb_handle_resource(struct olsr_telnet_data *data);
 static enum olsr_telnet_result _cb_handle_route(struct olsr_telnet_data *data);
@@ -108,22 +106,6 @@ static struct _remotecontrol_session *
     _get_remotecontrol_session(struct olsr_telnet_data *data);
 static void _cb_handle_session_cleanup(struct olsr_telnet_cleanup *cleanup);
 
-
-
-/* plugin declaration */
-OLSR_PLUGIN7 {
-  .descr = "OLSRD remote control and debug plugin",
-  .author = "Henning Rogge",
-
-  .load = _cb_plugin_load,
-  .unload = _cb_plugin_unload,
-  .enable = _cb_plugin_enable,
-  .disable = _cb_plugin_disable,
-
-  .can_disable = true,
-  .can_unload = true,
-};
-
 /* configuration */
 static struct cfg_schema_entry _remotecontrol_entries[] = {
   CFG_MAP_ACL(_remotecontrol_cfg, acl, "acl", "+127.0.0.1\0+::1\0default_reject", "acl for remote control commands"),
@@ -137,6 +119,19 @@ static struct cfg_schema_section _remotecontrol_section = {
 };
 
 static struct _remotecontrol_cfg _remotecontrol_config;
+
+/* plugin declaration */
+struct oonf_subsystem _remotecontrol_subsystem = {
+  .name = OONF_PLUGIN_GET_NAME(),
+ .descr = "OLSRD remote control and debug plugin",
+  .author = "Henning Rogge",
+
+  .cfg_section = &_remotecontrol_section,
+
+  .init = _init,
+  .cleanup = _cleanup,
+};
+DECLARE_OONF_PLUGIN(_remotecontrol_subsystem);
 
 /* command callbacks and names */
 static struct olsr_telnet_command _telnet_cmds[] = {
@@ -194,34 +189,11 @@ static struct list_entity _remote_sessions;
  * @return always returns 0 (cannot fail)
  */
 static int
-_cb_plugin_load(void)
-{
-  cfg_schema_add_section(olsr_cfg_get_schema(), &_remotecontrol_section);
-  olsr_acl_add(&_remotecontrol_config.acl);
-
-  return 0;
-}
-
-/**
- * Free all resources of remotecontrol plugin
- * @return always returns 0 (cannot fail)
- */
-static int
-_cb_plugin_unload(void)
-{
-  olsr_acl_remove(&_remotecontrol_config.acl);
-  cfg_schema_remove_section(olsr_cfg_get_schema(), &_remotecontrol_section);
-  return 0;
-}
-
-/**
- * Enable remotecontrol plugin
- * @return always returns 0 (cannot fail)
- */
-static int
-_cb_plugin_enable(void)
+_init(void)
 {
   size_t i;
+
+  olsr_acl_add(&_remotecontrol_config.acl);
   list_init_head(&_remote_sessions);
 
   for (i=0; i<ARRAYSIZE(_telnet_cmds); i++) {
@@ -232,11 +204,10 @@ _cb_plugin_enable(void)
 }
 
 /**
- * Deactivate remotecontrol plugin
- * @return always returns 0 (cannot fail)
+ * Free all resources of remotecontrol plugin
  */
-static int
-_cb_plugin_disable(void)
+static void
+_cleanup(void)
 {
   struct _remotecontrol_session *session, *it;
   size_t i;
@@ -250,7 +221,7 @@ _cb_plugin_disable(void)
     olsr_telnet_remove(&_telnet_cmds[i]);
   }
 
-  return 0;
+  olsr_acl_remove(&_remotecontrol_config.acl);
 }
 
 /**

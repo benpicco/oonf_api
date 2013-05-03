@@ -55,13 +55,9 @@
 /* constants */
 #define _CFG_SECTION "httptelnet"
 
-static const char *_HTTP_PATH = "/telnet";
-
 /* prototypes */
-static int _cb_plugin_load(void);
-static int _cb_plugin_unload(void);
-static int _cb_plugin_enable(void);
-static int _cb_plugin_disable(void);
+static int _init(void);
+static void _cleanup(void);
 
 static enum olsr_http_result _cb_generate_site(
     struct autobuf *out, struct olsr_http_session *);
@@ -71,20 +67,6 @@ static void _cb_config_changed(void);
 /* html handler */
 static struct olsr_http_handler _http_site_handler = {
   .content_handler = _cb_generate_site,
-};
-
-/* plugin declaration */
-OLSR_PLUGIN7 {
-  .descr = "OLSRD http2telnet bridge plugin",
-  .author = "Henning Rogge",
-
-  .load = _cb_plugin_load,
-  .unload = _cb_plugin_unload,
-  .enable = _cb_plugin_enable,
-  .disable = _cb_plugin_disable,
-
-  .can_disable = true,
-  .can_unload = true,
 };
 
 /* configuration */
@@ -101,23 +83,25 @@ static struct cfg_schema_section _httptelnet_section = {
   .entry_count = ARRAYSIZE(_httptelnet_entries),
 };
 
-static const char *_last_site;
+/* plugin declaration */
+struct oonf_subsystem _httptelnet_subsystem = {
+  .name = OONF_PLUGIN_GET_NAME(),
+  .descr = "OLSRD http2telnet bridge plugin",
+  .author = "Henning Rogge",
+
+  .cfg_section = &_httptelnet_section,
+
+  .init = _init,
+  .cleanup = _cleanup,
+};
+DECLARE_OONF_PLUGIN(_httptelnet_subsystem);
 
 /**
  * Constructor of plugin
  * @return 0 if initialization was successful, -1 otherwise
  */
 static int
-_cb_plugin_load(void) {
-  _http_site_handler.site = strdup(_HTTP_PATH);
-  if (_http_site_handler.site == NULL) {
-    return -1;
-  }
-
-  _last_site = _http_site_handler.site;
-
-  cfg_schema_add_section(olsr_cfg_get_schema(), &_httptelnet_section);
-
+_init(void) {
   olsr_acl_add(&_http_site_handler.acl);
   strarray_init(&_http_site_handler.auth);
 
@@ -126,36 +110,12 @@ _cb_plugin_load(void) {
 
 /**
  * Destructor of plugin
- * @return always returns 0 (cannot fail)
  */
-static int
-_cb_plugin_unload(void) {
+static void
+_cleanup(void) {
   strarray_free(&_http_site_handler.auth);
   olsr_acl_remove(&_http_site_handler.acl);
   free((char *)_http_site_handler.site);
-
-  cfg_schema_remove_section(olsr_cfg_get_schema(), &_httptelnet_section);
-  return 0;
-}
-
-/**
- * Enable plugin
- * @return always returns 0 (cannot fail)
- */
-static int
-_cb_plugin_enable(void) {
-  olsr_http_add(&_http_site_handler);
-  return 0;
-}
-
-/**
- * Disable plugin
- * @return always returns 0 (cannot fail)
- */
-static int
-_cb_plugin_disable(void) {
-  olsr_http_remove(&_http_site_handler);
-  return 0;
 }
 
 /**
@@ -201,10 +161,10 @@ _cb_config_changed(void) {
     return;
   }
 
-  if (_http_site_handler.site != _last_site) {
-    _last_site = _http_site_handler.site;
-
-    _cb_plugin_disable();
-    _cb_plugin_enable();
+  if (_httptelnet_section.pre) {
+    olsr_http_remove(&_http_site_handler);
+  }
+  if (_httptelnet_section.post) {
+    olsr_http_add(&_http_site_handler);
   }
 }

@@ -54,20 +54,22 @@
 
 #include "tools/olsr_cfg.h"
 
-static int _cb_plugin_load(void);
-static int _cb_plugin_unload(void);
+static int _init(void);
+static void _cleanup(void);
 
 static struct cfg_db *_cb_file_load(struct cfg_instance *instance,
     const char *param, const char *parser, struct autobuf *log);
 static int _cb_file_save(struct cfg_instance *instance,
     const char *param, const char *parser, struct cfg_db *src, struct autobuf *log);
 
-OLSR_PLUGIN7 {
+struct oonf_subsystem _io_file_subsystem = {
+  .name = OONF_PLUGIN_GET_NAME(),
   .descr = "OLSRD file io handler for configuration system",
   .author = "Henning Rogge",
-  .load = _cb_plugin_load,
-  .unload = _cb_plugin_unload,
+  .init = _init,
+  .cleanup = _cleanup,
 };
+DECLARE_OONF_PLUGIN(_io_file_subsystem);
 
 struct cfg_io cfg_io_file = {
   .name = "file",
@@ -77,11 +79,11 @@ struct cfg_io cfg_io_file = {
 };
 
 /**
- * Constructor of plugin, called before parameters are initialized
+ * Constructor of plugin
  * @return always returns 0 (cannot fail)
  */
 static int
-_cb_plugin_load(void)
+_init(void)
 {
   cfg_io_add(olsr_cfg_get_instance(), &cfg_io_file);
   return 0;
@@ -89,13 +91,11 @@ _cb_plugin_load(void)
 
 /**
  * Destructor of plugin
- * @return always returns 0 (cannot fail)
  */
-static int
-_cb_plugin_unload(void)
+static void
+_cleanup(void)
 {
   cfg_io_remove(olsr_cfg_get_instance(), &cfg_io_file);
-  return 0;
 }
 
 /*

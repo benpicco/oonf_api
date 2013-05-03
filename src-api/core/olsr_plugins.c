@@ -104,8 +104,8 @@ static const char *dlopen_patterns[] = {
 };
 
 /* Local functions */
-struct avl_tree plugin_tree;
-static bool plugin_tree_initialized = false;
+struct avl_tree olsr_plugin_tree;
+static bool _plugin_tree_initialized = false;
 
 /* library loading patterns */
 static struct abuf_template_data _dlopen_data[] = {
@@ -120,8 +120,7 @@ static struct abuf_template_data _dlopen_data[] = {
 };
 
 static void _init_plugin_tree(void);
-static int _unload_plugin(struct olsr_plugin *plugin, bool cleanup);
-static int _disable_plugin(struct olsr_plugin *plugin, bool cleanup);
+static int _unload_plugin(struct oonf_subsystem *plugin, bool cleanup);
 static void *_open_plugin(const char *filename);
 
 /**
@@ -152,10 +151,9 @@ olsr_plugins_init(void) {
  */
 void
 olsr_plugins_cleanup(void) {
-  struct olsr_plugin *plugin, *iterator;
+  struct oonf_subsystem *plugin, *iterator;
 
-  OLSR_FOR_ALL_PLUGIN_ENTRIES(plugin, iterator) {
-    _disable_plugin(plugin, true);
+  avl_for_each_element_safe(&olsr_plugin_tree, plugin, _node, iterator) {
     _unload_plugin(plugin, true);
   }
 }
@@ -164,41 +162,21 @@ olsr_plugins_cleanup(void) {
  * This function is called by the constructor of a plugin to
  * insert the plugin into the global list. It will be called before
  * any subsystem was initialized!
- * @param pl_def pointer to plugin definition
+ * @param plugin pointer to plugin definition
  */
 void
-olsr_plugins_hook(struct olsr_plugin *pl_def) {
-  assert (pl_def->name);
-
+olsr_plugins_hook(struct oonf_subsystem *plugin) {
   /* make sure plugin tree is initialized */
   _init_plugin_tree();
 
   /* check if plugin is already in tree */
-  if (olsr_plugins_get(pl_def->name)) {
+  if (olsr_plugins_get(plugin->name)) {
     return;
   }
 
   /* hook static plugin into avl tree */
-  pl_def->p_node.key = pl_def->name;
-  avl_insert(&plugin_tree, &pl_def->p_node);
-}
-
-/**
- * Initialize all static plugins
- * @return -1 if a static plugin could not be loaded, 0 otherwise
- */
-int
-olsr_plugins_init_static(void) {
-  struct olsr_plugin *p, *it;
-  int error = 0;
-
-  OLSR_FOR_ALL_PLUGIN_ENTRIES(p, it) {
-    if (olsr_plugins_load(p->name) == NULL) {
-      OLSR_WARN(LOG_PLUGINLOADER, "Cannot load plugin '%s'", p->name);
-      error = -1;
-    }
-  }
-  return error;
+  plugin->_node.key = plugin->name;
+  avl_insert(&olsr_plugin_tree, &plugin->_node);
 }
 
 /**
@@ -206,9 +184,9 @@ olsr_plugins_init_static(void) {
  * @param libname name of plugin
  * @return pointer to plugin db entry, NULL if not found
  */
-struct olsr_plugin *
+struct oonf_subsystem *
 olsr_plugins_get(const char *libname) {
-  struct olsr_plugin *plugin;
+  struct oonf_subsystem *plugin;
   char *ptr, memorize = 0;
 
   /* extract only the filename, without path, prefix or suffix */
@@ -225,7 +203,7 @@ olsr_plugins_get(const char *libname) {
     *ptr = 0;
   }
 
-  plugin = avl_find_element(&plugin_tree, libname, plugin, p_node);
+  plugin = avl_find_element(&olsr_plugin_tree, libname, plugin, _node);
 
   if (ptr) {
     /* restore path */
@@ -239,11 +217,11 @@ olsr_plugins_get(const char *libname) {
  * @param libname the name of the library(file)
  * @return plugin db object
  */
-struct olsr_plugin *
+struct oonf_subsystem *
 olsr_plugins_load(const char *libname)
 {
   void *dlhandle;
-  struct olsr_plugin *plugin;
+  struct oonf_subsystem *plugin;
 
   /* see if the plugin is there */
   if ((plugin = olsr_plugins_get(libname)) == NULL) {
@@ -265,67 +243,15 @@ olsr_plugins_load(const char *libname)
     plugin->_dlhandle = dlhandle;
   }
 
-  if (!plugin->_loaded && plugin->load != NULL) {
-    if (plugin->load()) {
-      OLSR_WARN(LOG_PLUGINLOADER, "Load callback failed for plugin %s\n", plugin->name);
+  if (!plugin->_initialized && plugin->init != NULL) {
+    if (plugin->init()) {
+      OLSR_WARN(LOG_PLUGINLOADER, "Init callback failed for plugin %s\n", plugin->name);
       return NULL;
     }
     OLSR_DEBUG(LOG_PLUGINLOADER, "Load callback of plugin %s successful\n", plugin->name);
   }
-  plugin->_loaded = true;
+  plugin->_initialized = true;
   return plugin;
-}
-
-/**
- * Enable a loaded plugin.
- * @param plugin pointer to plugin db object
- * @return 0 if plugin was enabled, -1 otherwise
- */
-int
-olsr_plugins_enable(struct olsr_plugin *plugin) {
-  if (plugin->_enabled) {
-    OLSR_DEBUG(LOG_PLUGINLOADER, "Plugin %s is already active.\n", plugin->name);
-    return 0;
-  }
-
-  if (!plugin->_loaded && plugin->load != NULL) {
-    if (plugin->load()) {
-      OLSR_WARN(LOG_PLUGINLOADER, "Error, pre init failed for plugin %s\n", plugin->name);
-      return -1;
-    }
-    OLSR_DEBUG(LOG_PLUGINLOADER, "Pre initialization of plugin %s successful\n", plugin->name);
-  }
-
-  plugin->_loaded = true;
-
-  if (plugin->enable != NULL) {
-    if (plugin->enable()) {
-      OLSR_WARN(LOG_PLUGINLOADER, "Error, post init failed for plugin %s\n", plugin->name);
-      return -1;
-    }
-    OLSR_DEBUG(LOG_PLUGINLOADER, "Post initialization of plugin %s successful\n", plugin->name);
-  }
-  plugin->_enabled = true;
-
-  if (plugin->author != NULL && plugin->descr != NULL) {
-    OLSR_INFO(LOG_PLUGINLOADER, "Plugin '%s' (%s) by %s activated successfully\n",
-        plugin->descr, plugin->name, plugin->author);
-  }
-  else {
-    OLSR_INFO(LOG_PLUGINLOADER, "Plugin '%s' activated successfully\n", plugin->name);
-  }
-
-  return 0;
-}
-
-/**
- * Disable (but not unload) an active plugin
- * @param plugin pointer to plugin db object
- * @return 0 if plugin was disabled, -1 otherwise
- */
-int
-olsr_plugins_disable(struct olsr_plugin *plugin) {
-  return _disable_plugin(plugin, false);
 }
 
 /**
@@ -335,7 +261,7 @@ olsr_plugins_disable(struct olsr_plugin *plugin) {
  * @return 0 if plugin was removed, -1 otherwise
  */
 int
-olsr_plugins_unload(struct olsr_plugin *plugin) {
+olsr_plugins_unload(struct oonf_subsystem *plugin) {
   return _unload_plugin(plugin, false);
 }
 
@@ -344,43 +270,11 @@ olsr_plugins_unload(struct olsr_plugin *plugin) {
  */
 static void
 _init_plugin_tree(void) {
-  if (plugin_tree_initialized) {
+  if (_plugin_tree_initialized) {
     return;
   }
-  avl_init(&plugin_tree, avl_comp_strcasecmp, false);
-  plugin_tree_initialized = true;
-}
-
-/**
- * Disable (but not unload) an active plugin
- * @param plugin pointer to plugin db object
- * @return 0 if plugin was disabled, -1 otherwise
- */
-static int
-_disable_plugin(struct olsr_plugin *plugin, bool cleanup) {
-  if (!plugin->_enabled) {
-    OLSR_DEBUG(LOG_PLUGINLOADER, "Plugin %s is not active.\n", plugin->name);
-    return 0;
-  }
-
-  if (!plugin->can_disable && !cleanup) {
-    OLSR_WARN(LOG_PLUGINLOADER, "Plugin %s does not support disabling",
-        plugin->name);
-    return -1;
-  }
-
-  OLSR_INFO(LOG_PLUGINLOADER, "Deactivating plugin %s\n", plugin->name);
-
-  if (plugin->disable != NULL) {
-    if (plugin->disable()) {
-      OLSR_WARN(LOG_PLUGINLOADER, "Plugin %s cannot be deactivated, error in pre cleanup\n", plugin->name);
-      return -1;
-    }
-    OLSR_DEBUG(LOG_PLUGINLOADER, "Pre cleanup of plugin %s successful\n", plugin->name);
-  }
-
-  plugin->_enabled = false;
-  return 0;
+  avl_init(&olsr_plugin_tree, avl_comp_strcasecmp, false);
+  _plugin_tree_initialized = true;
 }
 
 /**
@@ -391,36 +285,21 @@ _disable_plugin(struct olsr_plugin *plugin, bool cleanup) {
  * @return 0 if the plugin was removed, -1 otherwise
  */
 static int
-_unload_plugin(struct olsr_plugin *plugin, bool cleanup) {
-  if (!plugin->can_unload && !cleanup) {
+_unload_plugin(struct oonf_subsystem *plugin, bool cleanup) {
+  if (!plugin->can_cleanup && !cleanup) {
     OLSR_WARN(LOG_PLUGINLOADER, "Plugin %s does not support unloading",
         plugin->name);
     return -1;
   }
 
-  if (plugin->_enabled) {
-    /* deactivate first if necessary */
-    if (_disable_plugin(plugin, cleanup)) {
-      return -1;
-    }
-  }
-
-  if (plugin->_dlhandle == NULL && !cleanup) {
-    /*
-     * this is a static plugin and OLSR is not shutting down,
-     * so it cannot be unloaded
-     */
-    return -1;
-  }
-
   OLSR_INFO(LOG_PLUGINLOADER, "Unloading plugin %s\n", plugin->name);
 
-  if (plugin->unload != NULL) {
-    plugin->unload();
+  if (plugin->cleanup != NULL) {
+    plugin->cleanup();
   }
 
   /* remove first from tree */
-  avl_delete(&plugin_tree, &plugin->p_node);
+  avl_delete(&olsr_plugin_tree, &plugin->_node);
 
   /* cleanup */
   if (plugin->_dlhandle) {

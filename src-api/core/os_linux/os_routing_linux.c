@@ -198,7 +198,7 @@ os_routing_init_mesh_if(struct olsr_interface *interf) {
   char procfile[FILENAME_MAX];
   char old_redirect = 0, old_spoof = 0;
 
-  if (!oonf_subsystem_is_active(&oonf_os_routing_subsystem)) {
+  if (!oonf_subsystem_is_initialized(&oonf_os_routing_subsystem)) {
     /* make interface listener work without routing core */
     return 0;
   }
@@ -245,7 +245,7 @@ os_routing_cleanup_mesh_if(struct olsr_interface *interf) {
   char restore_redirect, restore_spoof;
   char procfile[FILENAME_MAX];
 
-  if (!oonf_subsystem_is_active(&oonf_os_routing_subsystem)) {
+  if (!oonf_subsystem_is_initialized(&oonf_os_routing_subsystem)) {
     /* make interface listener work without routing core */
     return;
   }

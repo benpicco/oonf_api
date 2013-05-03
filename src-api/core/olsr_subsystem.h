@@ -73,38 +73,16 @@ struct oonf_subsystem {
   int (*init) (void);
 
   /*
-   * Might be called multiple times during the lifetime of the subsystem.
-   * All loaded subsystems will be initialized during this time.
-   *
-   * This will most likely only be used by plugins.
-   */
-  int (*enable) (void);
-
-  /*
-   * Might be called multiple times during the lifetime of the subsystem.
-   * All loaded subsystems will still be initialized.
-   *
-   * This will most likely only be used by plugins.
-   */
-  void (*disable) (void);
-
-  /*
    * Will be called once during the cleanup of the subsystem.
    * Other subsystems might already be cleanup up during this time.
    */
   void (*cleanup) (void);
-
-  /* true if the subsystem can be disables/enabled during runtime */
-  bool can_disable;
 
   /* true if the subsystem can be (de)activated during runtime */
   bool can_cleanup;
 
   /* true if the subsystem is initialized */
   bool _initialized;
-
-  /* true if the subsystem is enabled */
-  bool _enabled;
 
   /* pointer to dlopen handle */
   void *_dlhandle;
@@ -114,8 +92,18 @@ struct oonf_subsystem {
 };
 
 static INLINE bool
-oonf_subsystem_is_active(struct oonf_subsystem *subsystem) {
-  return subsystem->_enabled;
+oonf_subsystem_is_initialized(struct oonf_subsystem *subsystem) {
+  return subsystem->_initialized;
 }
+
+/**
+ * @param subsystem pointer to subsystem
+ * @return true if its a plugin, false if its a normal subsystem
+ */
+static INLINE bool
+oonf_subsystem_is_plugin(struct oonf_subsystem *subsystem) {
+  return subsystem->_dlhandle == NULL;
+}
+
 
 #endif /* OLSR_H_ */

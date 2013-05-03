@@ -46,93 +46,28 @@
 #include "common/avl.h"
 #include "common/list.h"
 
-/*
- * declare a plugin
- *
- * OLSR_PLUGIN7 {
- *   .descr = "<description of the plugin",
- *   .author = "<author of the plugin",
- *   .....
- * };
- */
-#define OLSR_PLUGIN7 _OLSR_PLUGIN7_DEF(PLUGIN_FULLNAME)
+#include "core/olsr_subsystem.h"
 
-#define _OLSR_PLUGIN7_DEF(param) _OLSR_PLUGIN7_DEF2(param)
-#define _OLSR_PLUGIN7_DEF2(plg_name) static struct olsr_plugin olsr_internal_plugin_definition; \
-EXPORT void hookup_plugin_ ## plg_name (void) __attribute__ ((constructor)); \
-void hookup_plugin_ ## plg_name (void) { \
-  olsr_internal_plugin_definition.name = #plg_name; \
-  olsr_plugins_hook(&olsr_internal_plugin_definition); \
-} \
-static struct olsr_plugin olsr_internal_plugin_definition =
+#define DECLARE_OONF_PLUGIN(subsystem) _OONF_PLUGIN_DEF(PLUGIN_FULLNAME, subsystem)
 
-#define OLSR_PLUGIN7_GET_NAME() _OLSR_PLUGIN7_GET_NAME(PLUGIN_FULLNAME)
-#define _OLSR_PLUGIN7_GET_NAME(plg_name) __OLSR_PLUGIN7_GET_NAME(plg_name)
-#define __OLSR_PLUGIN7_GET_NAME(plg_name) #plg_name
+#define _OONF_PLUGIN_DEF(plg_name, subsystem) _OONF_PLUGIN_DEF2(plg_name, subsystem)
+#define _OONF_PLUGIN_DEF2(plg_name, subsystem) EXPORT void hookup_plugin_ ## plg_name (void) __attribute__ ((constructor)); void hookup_plugin_ ## plg_name (void) { olsr_plugins_hook(&subsystem); }
 
-/* Representation of a plugin */
-struct olsr_plugin {
-  struct avl_node p_node;
+#define OONF_PLUGIN_GET_NAME() _OONF_PLUGIN_GET_NAME(PLUGIN_FULLNAME)
+#define _OONF_PLUGIN_GET_NAME(plg_name) __OONF_PLUGIN_GET_NAME(plg_name)
+#define __OONF_PLUGIN_GET_NAME(plg_name) #plg_name
 
-  /* plugin information */
-  const char *name;
-  const char *descr;
-  const char *author;
-
-  /* true if the plugin can be disables/enabled during runtime */
-  bool can_disable;
-
-  /* true if the plugin can be (de)activated during runtime */
-  bool can_unload;
-
-  /* plugin callbacks for (de)initialization */
-  int (*load) (void);
-  int (*enable) (void);
-  int (*disable) (void);
-  int (*unload) (void);
-
-  /* pointer to dlopen handle */
-  void *_dlhandle;
-
-  /* true if the plugin has been loaded */
-  bool _loaded;
-
-  /* true if the plugin has been enables */
-  bool _enabled;
-};
-
-#define OLSR_FOR_ALL_PLUGIN_ENTRIES(plugin, iterator) avl_for_each_element_safe(&plugin_tree, plugin, p_node, iterator)
-EXPORT extern struct avl_tree plugin_tree;
+EXPORT extern struct avl_tree olsr_plugin_tree;
 
 EXPORT void olsr_plugins_init(void);
 EXPORT void olsr_plugins_cleanup(void);
 
-EXPORT void olsr_plugins_hook(struct olsr_plugin *plugin);
+EXPORT void olsr_plugins_hook(struct oonf_subsystem *subsystem);
 EXPORT int olsr_plugins_init_static(void) __attribute__((warn_unused_result));
 
-EXPORT struct olsr_plugin *olsr_plugins_get(const char *libname);
+EXPORT struct oonf_subsystem *olsr_plugins_get(const char *libname);
 
-EXPORT struct olsr_plugin *olsr_plugins_load(const char *);
-EXPORT int olsr_plugins_unload(struct olsr_plugin *);
-EXPORT int olsr_plugins_enable(struct olsr_plugin *);
-EXPORT int olsr_plugins_disable(struct olsr_plugin *);
-
-/**
- * @param p pointer to plugin
- * @return true if its a static plugin, false otherwise
- */
-static INLINE bool
-olsr_plugins_is_static(struct olsr_plugin *p) {
-  return p->_dlhandle == NULL;
-}
-
-/**
- * @param p pointer to plugin
- * @return true if its a static plugin, false otherwise
- */
-static INLINE bool
-olsr_plugins_is_enabled(struct olsr_plugin *p) {
-  return p->_enabled;
-}
+EXPORT struct oonf_subsystem *olsr_plugins_load(const char *);
+EXPORT int olsr_plugins_unload(struct oonf_subsystem *);
 
 #endif

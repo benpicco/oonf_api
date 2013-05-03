@@ -118,7 +118,6 @@ static struct olsr_telnet_command _builtin[] = {
   TELNET_CMD("version", _cb_telnet_version, "Displays version of the program"),
   TELNET_CMD("plugin", _cb_telnet_plugin,
         "control plugins dynamically, parameters are 'list',"
-        " 'activate <plugin>', 'deactivate <plugin>', "
         "'load <plugin>' and 'unload <plugin>'"),
 };
 
@@ -752,29 +751,21 @@ _cb_telnet_version(struct olsr_telnet_data *data) {
  */
 static enum olsr_telnet_result
 _cb_telnet_plugin(struct olsr_telnet_data *data) {
-  struct olsr_plugin *plugin, *iterator;
+  struct oonf_subsystem *plugin;
   const char *plugin_name = NULL;
 
   if (data->parameter == NULL || strcasecmp(data->parameter, "list") == 0) {
-    if (abuf_puts(data->out, "Plugins:\n") < 0) {
-      return TELNET_RESULT_INTERNAL_ERROR;
-    }
-    OLSR_FOR_ALL_PLUGIN_ENTRIES(plugin, iterator) {
-      if (abuf_appendf(data->out, " %-30s\t%s\t%s\n",
-          plugin->name, olsr_plugins_is_enabled(plugin) ? "enabled" : "",
-          olsr_plugins_is_static(plugin) ? "static" : "") < 0) {
-        return TELNET_RESULT_INTERNAL_ERROR;
-      }
+    abuf_puts(data->out, "Plugins:\n");
+
+    avl_for_each_element(&olsr_plugin_tree, plugin, _node) {
+      abuf_appendf(data->out, "\t%s\n", plugin->name);
     }
     return TELNET_RESULT_ACTIVE;
   }
 
   plugin_name = strchr(data->parameter, ' ');
   if (plugin_name == NULL) {
-    if (abuf_appendf(data->out, "Error, missing or unknown parameter\n") < 0) {
-      return TELNET_RESULT_INTERNAL_ERROR;
-    }
-    return TELNET_RESULT_ACTIVE;
+    abuf_appendf(data->out, "Error, missing or unknown parameter\n");
   }
 
   /* skip whitespaces */
@@ -799,54 +790,21 @@ _cb_telnet_plugin(struct olsr_telnet_data *data) {
   }
 
   if (plugin == NULL) {
-    if (abuf_appendf(data->out,
-        "Error, could not find plugin '%s'.\n", plugin_name) < 0) {
-      return TELNET_RESULT_INTERNAL_ERROR;
+    abuf_appendf(data->out, "Error, could not find plugin '%s'.\n", plugin_name);
+    return TELNET_RESULT_ACTIVE;
+  }
+
+  if (str_hasnextword(data->parameter, "unload") == NULL) {
+    if (olsr_plugins_unload(plugin)) {
+      abuf_appendf(data->out, "Could not unload plugin %s\n", plugin_name);
+    }
+    else {
+      abuf_appendf(data->out, "Plugin %s successfully unloaded\n", plugin_name);
     }
     return TELNET_RESULT_ACTIVE;
   }
-  if (str_hasnextword(data->parameter, "activate") == NULL) {
-    if (olsr_plugins_is_enabled(plugin)) {
-      abuf_appendf(data->out, "Plugin %s already active\n", plugin_name);
-    }
-    else {
-      if (olsr_plugins_enable(plugin)) {
-        abuf_appendf(data->out, "Could not activate plugin %s\n", plugin_name);
-      }
-      else {
-        abuf_appendf(data->out, "Plugin %s successfully activated\n", plugin_name);
-      }
-    }
-  }
-  else if (str_hasnextword(data->parameter, "deactivate") == NULL) {
-    if (!olsr_plugins_is_enabled(plugin)) {
-      abuf_appendf(data->out, "Plugin %s is not active\n", plugin_name);
-    }
-    else {
-      if (olsr_plugins_disable(plugin)) {
-        abuf_appendf(data->out, "Could not deactivate plugin %s\n", plugin_name);
-      }
-      else {
-        abuf_appendf(data->out, "Plugin %s successfully deactivated\n", plugin_name);
-      }
-    }
-  }
-  else if (str_hasnextword(data->parameter, "unload") == NULL) {
-    if (olsr_plugins_is_static(plugin)) {
-      abuf_appendf(data->out, "Plugin %s is static and cannot be unloaded\n", plugin_name);
-    }
-    else {
-      if (olsr_plugins_unload(plugin)) {
-        abuf_appendf(data->out, "Could not unload plugin %s\n", plugin_name);
-      }
-      else {
-        abuf_appendf(data->out, "Plugin %s successfully unloaded\n", plugin_name);
-      }
-    }
-  }
-  else {
-    abuf_appendf(data->out, "Unknown command '%s %s %s'.\n",
-        data->command, data->parameter, plugin_name);
-  }
+
+  abuf_appendf(data->out, "Unknown command '%s %s %s'.\n",
+      data->command, data->parameter, plugin_name);
   return TELNET_RESULT_ACTIVE;
 }

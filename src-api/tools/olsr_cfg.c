@@ -203,7 +203,7 @@ olsr_cfg_is_running(void) {
  */
 int
 olsr_cfg_loadplugins(void) {
-  struct olsr_plugin *plugin, *plugin_it;
+  struct oonf_subsystem *plugin, *plugin_it;
   char *ptr;
   bool found;
 
@@ -220,7 +220,7 @@ olsr_cfg_loadplugins(void) {
   }
 
   /* unload all plugins that are not in use anymore */
-  OLSR_FOR_ALL_PLUGIN_ENTRIES(plugin, plugin_it) {
+  avl_for_each_element_safe(&olsr_plugin_tree, plugin, _node, plugin_it) {
     found = false;
 
     /* search if plugin should still be active */
@@ -231,7 +231,7 @@ olsr_cfg_loadplugins(void) {
       }
     }
 
-    if (!found && !olsr_plugins_is_static(plugin)) {
+    if (!found) {
       /* if not, unload it (if not static) */
       olsr_plugins_unload(plugin);
     }
@@ -246,7 +246,6 @@ olsr_cfg_loadplugins(void) {
  */
 int
 olsr_cfg_apply(void) {
-  struct olsr_plugin *plugin, *plugin_it;
   struct cfg_db *old_db;
   struct autobuf log;
   int result;
@@ -289,16 +288,6 @@ olsr_cfg_apply(void) {
   /* bind schema */
   cfg_db_link_schema(_olsr_work_db, &_olsr_schema);
 
-  /* enable all plugins */
-  OLSR_FOR_ALL_PLUGIN_ENTRIES(plugin, plugin_it) {
-    if (plugin->_enabled)
-      continue;
-    if (olsr_plugins_enable(plugin) != 0
-        && config_global.failfast) {
-      goto apply_failed;
-    }
-  }
-
   /* remove everything not valid */
   cfg_schema_validate(_olsr_work_db, true, false, NULL);
 
@@ -328,13 +317,6 @@ olsr_cfg_apply(void) {
   cfg_db_link_schema(_olsr_raw_db, &_olsr_schema);
 
 apply_failed:
-  /* look for loaded but not enabled plugins and unload them */
-  OLSR_FOR_ALL_PLUGIN_ENTRIES(plugin, plugin_it) {
-    if (plugin->_loaded && !plugin->_enabled) {
-      olsr_plugins_unload(plugin);
-    }
-  }
-
   if (old_db) {
     cfg_db_remove(old_db);
   }
