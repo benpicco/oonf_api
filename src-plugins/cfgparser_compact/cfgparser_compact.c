@@ -59,7 +59,7 @@
 
 #include "cfgparser_compact/cfgparser_compact.h"
 
-static int _init(void);
+static void _early_cfg_init(void);
 static void _cleanup(void);
 
 static struct cfg_db *_cb_compact_parse(
@@ -75,7 +75,8 @@ struct oonf_subsystem oonf_compact_parser_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
   .descr = "OLSRD compact configuration format plugin",
   .author = "Henning Rogge",
-  .init = _init,
+
+  .early_cfg_init = _early_cfg_init,
   .cleanup = _cleanup,
 };
 DECLARE_OONF_PLUGIN(oonf_compact_parser_subsystem);
@@ -88,14 +89,12 @@ struct cfg_parser cfg_parser_compact = {
 };
 
 /**
- * Constructor of plugin
- * @return always returns 0 (cannot fail)
+ * Callback to hook plugin into configuration system.
  */
-static int
-_init(void)
+static void
+_early_cfg_init(void)
 {
   cfg_parser_add(olsr_cfg_get_instance(), &cfg_parser_compact);
-  return 0;
 }
 
 /**

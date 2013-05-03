@@ -78,6 +78,18 @@ struct oonf_subsystem {
    */
   void (*cleanup) (void);
 
+  /*
+   * Will be called early during initialization, even before command
+   * line arguments are parsed and the configuration is loaded. The
+   * callback is meant for cfgio/cfgparser implementations to hook
+   * themselves into the core.
+   *
+   * It is only called for subsystems statically bound to the app,
+   * not for plugins. The configuration subsystem is initialized before
+   * the call, but most other subsystems are still unavailable.
+   */
+  void (*early_cfg_init) (void);
+
   /* true if the subsystem can be (de)activated during runtime */
   bool can_cleanup;
 
@@ -90,6 +102,11 @@ struct oonf_subsystem {
   /* tree for dynamic subsystems */
   struct avl_node _node;
 };
+
+EXPORT void olsr_subsystem_configure(struct cfg_schema *schema,
+    struct oonf_subsystem *subsystem);
+EXPORT void olsr_subsystem_unconfigure(struct cfg_schema *schema,
+    struct oonf_subsystem *subsystem);
 
 static INLINE bool
 oonf_subsystem_is_initialized(struct oonf_subsystem *subsystem) {

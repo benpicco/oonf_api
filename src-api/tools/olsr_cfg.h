@@ -67,6 +67,8 @@ EXPORT extern struct olsr_config_global config_global;
 EXPORT int olsr_cfg_init(int argc, char **argv) __attribute__((warn_unused_result));
 EXPORT void olsr_cfg_cleanup(void);
 EXPORT int olsr_cfg_loadplugins(void) __attribute__((warn_unused_result));
+EXPORT void olsr_cfg_unconfigure_plugins(void);
+EXPORT void olsr_cfg_initplugins(void);
 EXPORT int olsr_cfg_apply(void) __attribute__((warn_unused_result));
 EXPORT int olsr_cfg_rollback(void);
 EXPORT void olsr_cfg_exit(void);

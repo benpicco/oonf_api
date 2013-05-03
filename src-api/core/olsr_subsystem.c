@@ -39,37 +39,35 @@
  *
  */
 
-#ifndef _OLSR_PLUGIN_LOADER
-#define _OLSR_PLUGIN_LOADER
-
 #include "common/common_types.h"
-#include "common/avl.h"
-#include "common/list.h"
+#include "config/cfg_schema.h"
 
 #include "core/olsr_subsystem.h"
 
-#define DECLARE_OONF_PLUGIN(subsystem) _OONF_PLUGIN_DEF(PLUGIN_FULLNAME, subsystem)
+void
+olsr_subsystem_configure(struct cfg_schema *schema,
+    struct oonf_subsystem *subsystem) {
+  struct cfg_schema_section *schema_section;
 
-#define _OONF_PLUGIN_DEF(plg_name, subsystem) _OONF_PLUGIN_DEF2(plg_name, subsystem)
-#define _OONF_PLUGIN_DEF2(plg_name, subsystem) EXPORT void hookup_plugin_ ## plg_name (void) __attribute__ ((constructor)); void hookup_plugin_ ## plg_name (void) { olsr_plugins_hook(&subsystem); }
+  schema_section = subsystem->cfg_section;
+  while (schema_section) {
+    cfg_schema_add_section(schema, schema_section);
+    schema_section = schema_section->next_section;
+  }
 
-#define OONF_PLUGIN_GET_NAME() _OONF_PLUGIN_GET_NAME(PLUGIN_FULLNAME)
-#define _OONF_PLUGIN_GET_NAME(plg_name) __OONF_PLUGIN_GET_NAME(plg_name)
-#define __OONF_PLUGIN_GET_NAME(plg_name) #plg_name
+  if (subsystem->early_cfg_init) {
+    subsystem->early_cfg_init();
+  }
+}
 
-EXPORT extern struct avl_tree olsr_plugin_tree;
+void
+olsr_subsystem_unconfigure(struct cfg_schema *schema,
+    struct oonf_subsystem *subsystem) {
+  struct cfg_schema_section *schema_section;
 
-EXPORT void olsr_plugins_init(void);
-EXPORT void olsr_plugins_cleanup(void);
-
-EXPORT void olsr_plugins_hook(struct oonf_subsystem *subsystem);
-
-EXPORT int olsr_plugins_call_init(struct oonf_subsystem *plugin);
-EXPORT void olsr_plugins_call_cleanup(struct oonf_subsystem *plugin);
-
-EXPORT struct oonf_subsystem *olsr_plugins_get(const char *libname);
-
-EXPORT struct oonf_subsystem *olsr_plugins_load(const char *);
-EXPORT int olsr_plugins_unload(struct oonf_subsystem *);
-
-#endif
+  schema_section = subsystem->cfg_section;
+  while (schema_section) {
+    cfg_schema_remove_section(schema, schema_section);
+    schema_section = schema_section->next_section;
+  }
+}

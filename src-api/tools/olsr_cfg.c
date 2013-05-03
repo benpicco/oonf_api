@@ -94,6 +94,8 @@ static struct cfg_schema_section global_section = {
  */
 int
 olsr_cfg_init(int argc, char **argv) {
+  struct oonf_subsystem *plugin;
+
   cfg_add(&_olsr_cfg_instance);
 
   /* initialize schema */
@@ -125,6 +127,12 @@ olsr_cfg_init(int argc, char **argv) {
 
   _argc = argc;
   _argv = argv;
+
+  /* initialize already existing plugins */
+  avl_for_each_element(&olsr_plugin_tree, plugin, _node) {
+    fprintf(stderr, "configure %s\n", plugin->name);
+    olsr_subsystem_configure(&_olsr_schema, plugin);
+  }
   return 0;
 }
 
@@ -214,13 +222,27 @@ olsr_cfg_loadplugins(void) {
       continue;
     }
 
-    if (olsr_plugins_load(ptr) == NULL && config_global.failfast) {
+    if (olsr_plugins_get(ptr)) {
+      /* already loaded */
+      continue;
+    }
+
+    plugin = olsr_plugins_load(ptr);
+    if (plugin == NULL && config_global.failfast) {
       return -1;
     }
+
+    fprintf(stderr, "configure %s\n", plugin->name);
+    olsr_subsystem_configure(&_olsr_schema, plugin);
   }
 
   /* unload all plugins that are not in use anymore */
   avl_for_each_element_safe(&olsr_plugin_tree, plugin, _node, plugin_it) {
+    if (plugin->_dlhandle == NULL) {
+      /* ignore static plugins */
+      continue;
+    }
+
     found = false;
 
     /* search if plugin should still be active */
@@ -236,7 +258,27 @@ olsr_cfg_loadplugins(void) {
       olsr_plugins_unload(plugin);
     }
   }
+
   return 0;
+}
+
+void
+olsr_cfg_unconfigure_plugins(void) {
+  struct oonf_subsystem *plugin, *plugin_it;
+  avl_for_each_element_safe(&olsr_plugin_tree, plugin, _node, plugin_it) {
+    olsr_subsystem_unconfigure(&_olsr_schema, plugin);
+
+    olsr_plugins_unload(plugin);
+  }
+}
+
+void
+olsr_cfg_initplugins(void) {
+  struct oonf_subsystem *plugin;
+
+  avl_for_each_element(&olsr_plugin_tree, plugin, _node) {
+    olsr_plugins_call_init(plugin);
+  }
 }
 
 /**

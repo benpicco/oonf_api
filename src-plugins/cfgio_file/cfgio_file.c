@@ -56,7 +56,7 @@
 
 #include "cfgio_file/cfgio_file.h"
 
-static int _init(void);
+static void _early_cfg_init(void);
 static void _cleanup(void);
 
 static struct cfg_db *_cb_file_load(struct cfg_instance *instance,
@@ -68,8 +68,9 @@ struct oonf_subsystem oonf_io_file_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
   .descr = "OLSRD file io handler for configuration system",
   .author = "Henning Rogge",
-  .init = _init,
+
   .cleanup = _cleanup,
+  .early_cfg_init = _early_cfg_init,
 };
 DECLARE_OONF_PLUGIN(oonf_io_file_subsystem);
 
@@ -81,14 +82,12 @@ struct cfg_io cfg_io_file = {
 };
 
 /**
- * Constructor of plugin
- * @return always returns 0 (cannot fail)
+ * Callback to hook plugin into configuration system.
  */
-static int
-_init(void)
+static void
+_early_cfg_init(void)
 {
   cfg_io_add(olsr_cfg_get_instance(), &cfg_io_file);
-  return 0;
 }
 
 /**

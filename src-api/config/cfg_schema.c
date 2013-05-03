@@ -114,10 +114,12 @@ cfg_schema_add_section(struct cfg_schema *schema,
   struct cfg_schema_entry *entry, *entry_it;
   size_t i;
 
+  /* hook section into global section tree */
   section->_section_node.key = section->type;
   avl_insert(&schema->sections, &section->_section_node);
 
   if (section->cb_delta_handler) {
+    /* hook callback into global callback handler tree */
     section->_delta_node.key = &section->delta_priority;
     avl_insert(&schema->handlers, &section->_delta_node);
   }
@@ -415,10 +417,10 @@ cfg_avlcmp_schemaentries(const void *p1, const void *p2) {
   }
 
   if (key1->entry == NULL) {
-    return key2->entry == NULL ? 0 : -1;
+    return key2->entry == NULL ? 0 : 1;
   }
   if (key2->entry == NULL) {
-    return 1;
+    return -1;
   }
 
   return cfg_avlcmp_keys(key1->entry, key2->entry);
@@ -1111,6 +1113,10 @@ _check_missing_entries(struct cfg_schema_section *schema_section,
 
   /* check for missing values */
   first_schema_entry = avl_find_ge_element(&db->schema->entries, &key, schema_entry, _node);
+  if (!first_schema_entry) {
+    return 0;
+  }
+
   avl_for_element_to_last(&db->schema->entries, first_schema_entry, schema_entry, _node) {
     if (cfg_cmp_keys(schema_entry->key.type, schema_section->type) != 0)
       break;

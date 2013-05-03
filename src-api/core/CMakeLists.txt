@@ -31,6 +31,7 @@ SET(OONF_CORE_SRCS olsr_class.c
                    olsr_plugins.c
                    olsr_socket.c
                    olsr_stream_socket.c
+                   olsr_subsystem.c
                    olsr_timer.c
                    ${GEN_DATA_C})
 

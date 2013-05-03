@@ -241,17 +241,30 @@ olsr_plugins_load(const char *libname)
     }
 
     plugin->_dlhandle = dlhandle;
-  }
 
+    /* hook into tree */
+    plugin->_node.key = plugin->name;
+    avl_insert(&olsr_plugin_tree, &plugin->_node);
+  }
+  return plugin;
+}
+
+/**
+ * Call the initialization callback of a plugin to activate it
+ * @param plugin pointer to plugin db object
+ * @return -1 if initialization failed, 0 otherwise
+ */
+int
+olsr_plugins_call_init(struct oonf_subsystem *plugin) {
   if (!plugin->_initialized && plugin->init != NULL) {
     if (plugin->init()) {
       OLSR_WARN(LOG_PLUGINLOADER, "Init callback failed for plugin %s\n", plugin->name);
-      return NULL;
+      return -1;
     }
     OLSR_DEBUG(LOG_PLUGINLOADER, "Load callback of plugin %s successful\n", plugin->name);
   }
   plugin->_initialized = true;
-  return plugin;
+  return 0;
 }
 
 /**
@@ -294,14 +307,13 @@ _unload_plugin(struct oonf_subsystem *plugin, bool cleanup) {
 
   OLSR_INFO(LOG_PLUGINLOADER, "Unloading plugin %s\n", plugin->name);
 
-  if (plugin->cleanup != NULL) {
-    plugin->cleanup();
-  }
-
   /* remove first from tree */
   avl_delete(&olsr_plugin_tree, &plugin->_node);
 
   /* cleanup */
+  if (plugin->cleanup) {
+    plugin->cleanup();
+  }
   if (plugin->_dlhandle) {
     dlclose(plugin->_dlhandle);
   }
