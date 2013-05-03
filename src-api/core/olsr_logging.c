@@ -51,7 +51,7 @@
 #include "common/string.h"
 #include "core/olsr_libdata.h"
 #include "core/olsr_logging.h"
-#include "core/os_system.h"
+#include "core/os_clock.h"
 #include "core/os_syslog.h"
 
 #define FOR_ALL_LOGHANDLERS(handler, iterator) list_for_each_element_safe(&_handler_list, handler, node, iterator)
@@ -344,7 +344,7 @@ olsr_log_get_walltime(void) {
   struct timeval now;
   struct tm *tm;
 
-  if (os_system_gettimeofday(&now)) {
+  if (os_clock_gettimeofday(&now)) {
     return NULL;
   }
 

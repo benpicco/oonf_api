@@ -52,6 +52,9 @@
 #define MSEC_PER_SEC 1000
 #define USEC_PER_MSEC 1000
 
+/* pre-decleare inlines */
+static INLINE int os_clock_gettimeofday(struct timeval *tv);
+
 #if defined(__linux__)
 #include "core/os_linux/os_clock_linux.h"
 #elif defined (BSD)
