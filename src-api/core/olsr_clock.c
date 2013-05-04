@@ -48,10 +48,10 @@
 #include "config/cfg_schema.h"
 #include "config/cfg.h"
 
-#include "core/os_clock.h"
-#include "core/olsr_logging.h"
 #include "core/olsr_clock.h"
+#include "core/olsr_logging.h"
 #include "core/olsr_subsystem.h"
+#include "core/os_clock.h"
 
 /* prototypes */
 static int _init(void);

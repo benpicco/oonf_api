@@ -42,12 +42,13 @@
 #include "common/common_types.h"
 #include "common/avl.h"
 #include "common/avl_comp.h"
+#include "common/netaddr.h"
+#include "common/netaddr_acl.h"
 
 #include "config/cfg_schema.h"
 
 #include "core/olsr_logging.h"
 #include "core/olsr_class.h"
-#include "common/netaddr_acl.h"
 #include "core/olsr_plugins.h"
 #include "core/olsr_stream_socket.h"
 #include "core/olsr_timer.h"

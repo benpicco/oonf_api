@@ -46,11 +46,17 @@
 #include <sys/time.h>
 
 #include "common/common_types.h"
+#include "common/list.h"
 #include "core/olsr_logging.h"
-#include "core/olsr_interface.h"
 
 #define MSEC_PER_SEC 1000
 #define USEC_PER_MSEC 1000
+
+struct os_system_if_listener {
+  void (*if_changed)(const char *ifname, bool up);
+
+  struct list_entity _node;
+};
 
 /* include os-specific headers */
 #if defined(__linux__)
@@ -66,6 +72,8 @@
 EXPORT extern struct oonf_subsystem oonf_os_system_subsystem;
 
 /* prototypes for all os_system functions */
+EXPORT void os_system_iflistener_add(struct os_system_if_listener *);
+EXPORT void os_system_iflistener_remove(struct os_system_if_listener *);
 EXPORT int os_system_set_interface_state(const char *dev, bool up);
 
 #endif /* OS_SYSTEM_H_ */

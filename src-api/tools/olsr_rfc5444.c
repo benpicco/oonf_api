@@ -50,9 +50,10 @@
 #include "rfc5444/rfc5444_writer.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_class.h"
+#include "core/olsr_packet_socket.h"
 #include "core/olsr_subsystem.h"
 #include "core/olsr_timer.h"
-#include "tools/olsr_cfg.h"
+#include "tools/olsr_duplicate_set.h"
 #include "tools/olsr_rfc5444.h"
 
 /* constants and definitions */

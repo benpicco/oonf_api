@@ -46,7 +46,7 @@
 #include <unistd.h>
 #include <ifaddrs.h>
 
-#include "core/olsr_interface.h"
+#include "core/os_net.h"
 
 /* name of the loopback interface */
 #define IF_LOOPBACK_NAME "lo"

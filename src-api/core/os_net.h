@@ -48,7 +48,30 @@
 #include "common/common_types.h"
 #include "common/netaddr.h"
 #include "core/olsr_logging.h"
-#include "core/olsr_interface.h"
+
+struct olsr_interface_data {
+  /* Interface addresses with mesh-wide scope (at least) */
+  struct netaddr *if_v4, *if_v6;
+
+  /* IPv6 Interface address with global scope */
+  struct netaddr *linklocal_v6_ptr;
+
+  /* mac address of interface */
+  struct netaddr mac;
+
+  /* list of all addresses of the interface */
+  struct netaddr *addresses;
+  size_t addrcount;
+
+  /* interface name */
+  char name[IF_NAMESIZE];
+
+  /* interface index */
+  unsigned index;
+
+  /* true if the interface exists and is up */
+  bool up;
+};
 
 /* pre-declare inlines */
 static INLINE int os_net_bindto_interface(int, struct olsr_interface_data *data);

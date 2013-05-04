@@ -57,7 +57,6 @@
 
 #include "common/common_types.h"
 #include "common/string.h"
-#include "core/olsr_interface.h"
 #include "core/olsr_socket.h"
 #include "core/olsr_subsystem.h"
 #include "core/os_system.h"
@@ -133,6 +132,9 @@ const uint32_t _rtnetlink_mcast[] = {
   RTNLGRP_LINK, RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR
 };
 
+/* list of interface change listeners */
+struct list_entity _ifchange_listener;
+
 /* subsystem definition */
 struct oonf_subsystem oonf_os_system_subsystem = {
   .init = _init,
@@ -162,8 +164,9 @@ _init(void) {
     close(_ioctl_fd);
     return -1;
   }
-  olsr_timer_add(&_netlink_timer);
 
+  olsr_timer_add(&_netlink_timer);
+  list_init_head(&_ifchange_listener);
   return 0;
 }
 
@@ -218,6 +221,16 @@ os_system_set_interface_state(const char *dev, bool up) {
     return -1;
   }
   return 0;
+}
+
+void
+os_system_iflistener_add(struct os_system_if_listener *listener) {
+  list_add_tail(&_ifchange_listener, &listener->_node);
+}
+
+void
+os_system_iflistener_remove(struct os_system_if_listener *listener) {
+  list_remove(&listener->_node);
 }
 
 /**
@@ -565,6 +578,7 @@ _handle_rtnetlink(struct nlmsghdr *hdr) {
   struct ifinfomsg *ifi;
   struct ifaddrmsg *ifa;
 
+  struct os_system_if_listener *listener;
   char if_name[IF_NAMESIZE];
 
   if (hdr->nlmsg_type == RTM_NEWLINK || hdr->nlmsg_type == RTM_DELLINK) {
@@ -577,7 +591,9 @@ _handle_rtnetlink(struct nlmsghdr *hdr) {
     }
 
     OLSR_DEBUG(LOG_OS_SYSTEM, "Linkstatus of interface '%s' changed", if_name);
-    olsr_interface_trigger_change(if_name, (ifi->ifi_flags & IFF_UP) == 0);
+    list_for_each_element(&_ifchange_listener, listener, _node) {
+      listener->if_changed(if_name, (ifi->ifi_flags & IFF_UP) == 0);
+    }
   }
 
   else if (hdr->nlmsg_type == RTM_NEWADDR || hdr->nlmsg_type == RTM_DELADDR) {
@@ -590,7 +606,9 @@ _handle_rtnetlink(struct nlmsghdr *hdr) {
     }
 
     OLSR_DEBUG(LOG_OS_SYSTEM, "Address of interface '%s' changed", if_name);
-    olsr_interface_trigger_change(if_name, false);
+    list_for_each_element(&_ifchange_listener, listener, _node) {
+      listener->if_changed(if_name, false);
+    }
   }
 }
 

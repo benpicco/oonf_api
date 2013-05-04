@@ -46,6 +46,7 @@
 
 #include "common/netaddr.h"
 #include "core/olsr_socket.h"
+#include "core/olsr_timer.h"
 
 struct os_system_netlink {
   struct olsr_socket_entry socket;

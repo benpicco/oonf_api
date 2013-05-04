@@ -50,7 +50,6 @@
 #include "config/cfg.h"
 
 #include "core/olsr_logging.h"
-#include "core/os_syslog.h"
 
 #include "tools/olsr_logging_cfg.h"
 #include "tools/olsr_cfg.h"
@@ -355,6 +354,6 @@ _apply_log_setting(struct cfg_named_section *named,
 static void
 _cb_logcfg_apply(void) {
   if (olsr_logcfg_apply(olsr_cfg_get_db())) {
-    os_syslog_log(LOG_SEVERITY_WARN, "Could not open logging file");
+    OLSR_WARN(LOG_MAIN, "Could not open logging file");
   }
 }

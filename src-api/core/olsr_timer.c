@@ -48,7 +48,6 @@
 #include "common/common_types.h"
 #include "core/olsr_clock.h"
 #include "core/olsr_logging.h"
-#include "core/olsr_class.h"
 #include "core/olsr_timer.h"
 #include "core/olsr_subsystem.h"
 

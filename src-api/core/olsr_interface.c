@@ -83,6 +83,10 @@ static struct olsr_timer_info _change_timer_info = {
   .callback = _cb_change_handler,
 };
 
+static struct os_system_if_listener _iflistener = {
+  .if_changed = olsr_interface_trigger_change,
+};
+
 /**
  * Initialize interface subsystem
  * @return always returns 0
@@ -93,6 +97,8 @@ _init(void) {
 
   avl_init(&olsr_interface_tree, avl_comp_strcasecmp, false);
   list_init_head(&_interface_listener);
+
+  os_system_iflistener_add(&_iflistener);
   return 0;
 }
 
@@ -107,6 +113,7 @@ _cleanup(void) {
     olsr_interface_remove_listener(listener);
   }
 
+  os_system_iflistener_remove(&_iflistener);
   olsr_timer_remove(&_change_timer_info);
 }
 

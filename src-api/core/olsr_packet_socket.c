@@ -49,6 +49,8 @@
 #include "core/os_net.h"
 #include "core/olsr_logging.h"
 #include "core/olsr_packet_socket.h"
+#include "core/olsr_interface.h"
+#include "core/olsr_socket.h"
 #include "core/olsr_subsystem.h"
 
 /* prototypes */
