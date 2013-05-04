@@ -128,6 +128,7 @@ olsr_socket_remove(struct olsr_socket_entry *entry)
  */
 void
 olsr_socket_stop_scheduler(void) {
+  // TODO: invert, lets call olsr_cfg function instead of setting the variable here
   _stop_scheduler = true;
 }
 

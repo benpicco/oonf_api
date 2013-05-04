@@ -41,13 +41,12 @@
 
 #include "common/common_types.h"
 #include "common/autobuf.h"
-
+#include "common/netaddr.h"
+#include "common/netaddr_acl.h"
 #include "config/cfg_schema.h"
-
 #include "core/olsr_logging.h"
 #include "core/olsr_plugins.h"
 #include "core/olsr_subsystem.h"
-
 #include "tools/olsr_cfg.h"
 #include "tools/olsr_http.h"
 #include "tools/olsr_telnet.h"

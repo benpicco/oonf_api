@@ -49,12 +49,10 @@
 
 #include "core/olsr_logging.h"
 #include "core/olsr_class.h"
-#include "core/olsr_plugins.h"
 #include "core/olsr_stream_socket.h"
 #include "core/olsr_timer.h"
 #include "core/olsr_subsystem.h"
 
-#include "tools/olsr_cfg.h"
 #include "tools/olsr_telnet.h"
 
 /* static function prototypes */
@@ -82,7 +80,6 @@ static enum olsr_telnet_result _cb_telnet_echo(struct olsr_telnet_data *data);
 static enum olsr_telnet_result _cb_telnet_repeat(struct olsr_telnet_data *data);
 static enum olsr_telnet_result _cb_telnet_timeout(struct olsr_telnet_data *data);
 static enum olsr_telnet_result _cb_telnet_version(struct olsr_telnet_data *data);
-static enum olsr_telnet_result _cb_telnet_plugin(struct olsr_telnet_data *data);
 
 /* configuration of telnet server */
 static struct cfg_schema_entry telnet_entries[] = {
@@ -117,9 +114,7 @@ static struct olsr_telnet_command _builtin[] = {
   TELNET_CMD("timeout", _cb_telnet_timeout,
       "timeout <seconds> :Sets telnet session timeout"),
   TELNET_CMD("version", _cb_telnet_version, "Displays version of the program"),
-  TELNET_CMD("plugin", _cb_telnet_plugin,
-        "control plugins dynamically, parameters are 'list',"
-        "'load <plugin>' and 'unload <plugin>'"),
+
 };
 
 /* subsystem definition */
@@ -742,70 +737,5 @@ _cb_telnet_repeat(struct olsr_telnet_data *data) {
 static enum olsr_telnet_result
 _cb_telnet_version(struct olsr_telnet_data *data) {
   olsr_log_printversion(data->out);
-  return TELNET_RESULT_ACTIVE;
-}
-
-/**
- * Telnet command 'plugin'
- * @param data pointer to telnet data
- * @return telnet command result
- */
-static enum olsr_telnet_result
-_cb_telnet_plugin(struct olsr_telnet_data *data) {
-  struct oonf_subsystem *plugin;
-  const char *plugin_name = NULL;
-
-  if (data->parameter == NULL || strcasecmp(data->parameter, "list") == 0) {
-    abuf_puts(data->out, "Plugins:\n");
-
-    avl_for_each_element(&olsr_plugin_tree, plugin, _node) {
-      abuf_appendf(data->out, "\t%s\n", plugin->name);
-    }
-    return TELNET_RESULT_ACTIVE;
-  }
-
-  plugin_name = strchr(data->parameter, ' ');
-  if (plugin_name == NULL) {
-    abuf_appendf(data->out, "Error, missing or unknown parameter\n");
-  }
-
-  /* skip whitespaces */
-  while (isspace(*plugin_name)) {
-    plugin_name++;
-  }
-
-  plugin = olsr_plugins_get(plugin_name);
-  if (str_hasnextword(data->parameter, "load") == NULL) {
-    if (plugin != NULL) {
-      abuf_appendf(data->out, "Plugin %s already loaded\n", plugin_name);
-      return TELNET_RESULT_ACTIVE;
-    }
-    plugin = olsr_plugins_load(plugin_name);
-    if (plugin != NULL) {
-      abuf_appendf(data->out, "Plugin %s successfully loaded\n", plugin_name);
-    }
-    else {
-      abuf_appendf(data->out, "Could not load plugin %s\n", plugin_name);
-    }
-    return TELNET_RESULT_ACTIVE;
-  }
-
-  if (plugin == NULL) {
-    abuf_appendf(data->out, "Error, could not find plugin '%s'.\n", plugin_name);
-    return TELNET_RESULT_ACTIVE;
-  }
-
-  if (str_hasnextword(data->parameter, "unload") == NULL) {
-    if (olsr_plugins_unload(plugin)) {
-      abuf_appendf(data->out, "Could not unload plugin %s\n", plugin_name);
-    }
-    else {
-      abuf_appendf(data->out, "Plugin %s successfully unloaded\n", plugin_name);
-    }
-    return TELNET_RESULT_ACTIVE;
-  }
-
-  abuf_appendf(data->out, "Unknown command '%s %s %s'.\n",
-      data->command, data->parameter, plugin_name);
   return TELNET_RESULT_ACTIVE;
 }

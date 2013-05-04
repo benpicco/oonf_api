@@ -45,6 +45,7 @@
 #include "common/common_types.h"
 #include "common/avl.h"
 #include "common/list.h"
+#include "common/netaddr.h"
 #include "common/netaddr_acl.h"
 #include "core/olsr_stream_socket.h"
 
