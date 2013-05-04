@@ -61,8 +61,6 @@ static void _cleanup(void);
 /* List of all active sockets in scheduler */
 struct list_entity socket_head;
 
-static bool _stop_scheduler;
-
 /* subsystem definition */
 struct oonf_subsystem oonf_socket_subsystem = {
   .init = _init,
@@ -124,22 +122,15 @@ olsr_socket_remove(struct olsr_socket_entry *entry)
 }
 
 /**
- * Prevent the scheduler from waiting until timeout.
- */
-void
-olsr_socket_stop_scheduler(void) {
-  // TODO: invert, lets call olsr_cfg function instead of setting the variable here
-  _stop_scheduler = true;
-}
-
-/**
  * Handle all incoming socket events until a certain time
+ * @param pointer to a callback function that tells the scheduler if
+ *   it should return to the mainloop. Might be NULL.
  * @param stop_time timestamp when the handler should stop,
  *   0 if it should keep running
  * @return -1 if an error happened, 0 otherwise
  */
 int
-olsr_socket_handle(uint64_t stop_time)
+olsr_socket_handle(bool (*stop_scheduler)(void), uint64_t stop_time)
 {
   struct olsr_socket_entry *entry, *iterator;
   uint64_t next_event;
@@ -151,8 +142,6 @@ olsr_socket_handle(uint64_t stop_time)
   if (stop_time == 0) {
     stop_time = ~0ull;
   }
-
-  _stop_scheduler = false;
 
   while (true) {
     fd_set ibits, obits;
@@ -167,11 +156,9 @@ olsr_socket_handle(uint64_t stop_time)
       return 0;
     }
 
-    if (olsr_timer_getNextEvent() <= olsr_clock_getNow()) {
-      olsr_timer_walk();
-    }
+    olsr_timer_walk();
 
-    if (_stop_scheduler) {
+    if (stop_scheduler != NULL && stop_scheduler()) {
       return 0;
     }
 
@@ -220,7 +207,7 @@ olsr_socket_handle(uint64_t stop_time)
     }
 
     do {
-      if (_stop_scheduler) {
+      if (stop_scheduler != NULL && stop_scheduler()) {
         return 0;
       }
       n = os_select(hfd,

@@ -74,8 +74,7 @@ EXPORT extern struct list_entity socket_head;
 /* deletion safe macro for socket list traversal */
 #define OLSR_FOR_ALL_SOCKETS(socket, iterator) list_for_each_element_safe(&socket_head, socket, node, iterator)
 
-EXPORT int olsr_socket_handle(uint64_t) __attribute__((warn_unused_result));
-EXPORT void olsr_socket_stop_scheduler(void);
+EXPORT int olsr_socket_handle(bool (*stop_scheduler)(void), uint64_t) __attribute__((warn_unused_result));
 
 EXPORT void olsr_socket_add(struct olsr_socket_entry *);
 EXPORT void olsr_socket_remove(struct olsr_socket_entry *);
