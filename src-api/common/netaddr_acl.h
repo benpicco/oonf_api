@@ -59,13 +59,21 @@
 
 /* represents an netaddr access control list with white/blacklist */
 struct netaddr_acl {
+  /* array of prefixes that will be accepted by the ACL */
   struct netaddr *accept;
   size_t accept_count;
 
+  /* array of prefixes that will be rejected by the ACL */
   struct netaddr *reject;
   size_t reject_count;
 
+  /*
+   * true if the reject array will be parsed first,
+   * false if the accept array will be parsed first.
+   */
   bool reject_first;
+
+  /* result of the check if neither of the arrays have a match */
   bool accept_default;
 };
 

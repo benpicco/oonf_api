@@ -56,6 +56,10 @@ netaddr_acl_add(struct netaddr_acl *acl) {
   memset(acl, 0, sizeof(*acl));
 }
 
+/**
+ * Cleanup an ACL object and free its resources.
+ * @param acl pointer to ACL
+ */
 void
 netaddr_acl_remove(struct netaddr_acl *acl) {
   free(acl->accept);
