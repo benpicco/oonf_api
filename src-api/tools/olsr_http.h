@@ -47,7 +47,7 @@
 #include "common/string.h"
 
 #include "core/olsr_stream_socket.h"
-#include "core/olsr_netaddr_acl.h"
+#include "common/netaddr_acl.h"
 
 /* built in parameters for header parser */
 enum {
@@ -102,7 +102,7 @@ struct olsr_http_handler {
   struct strarray auth;
 
   /* list of IP addresses/ranges this site can be accessed from */
-  struct olsr_netaddr_acl acl;
+  struct netaddr_acl acl;
 
   /* pointer to static content and length in bytes */
   const char *content;

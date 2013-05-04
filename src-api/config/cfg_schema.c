@@ -45,12 +45,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common/netaddr.h"
-
 #include "common/avl.h"
 #include "common/avl_comp.h"
+#include "common/netaddr.h"
+#include "common/netaddr_acl.h"
 #include "common/string.h"
-
 #include "config/cfg.h"
 #include "config/cfg_db.h"
 #include "config/cfg_schema.h"
@@ -623,6 +622,37 @@ cfg_schema_validate_netaddr(const struct cfg_schema_entry *entry,
 }
 
 /**
+ * Schema entry validator for access control lists.
+ * See CFG_VALIDATE_ACL_*() macros.
+ * @param entry pointer to schema entry
+ * @param section_name name of section type and name
+ * @param value value of schema entry
+ * @param out pointer to autobuffer for validator output
+ * @return 0 if validation found no problems, -1 otherwise
+ */
+int
+cfg_schema_validate_acl(const struct cfg_schema_entry *entry,
+    const char *section_name, const char *value, struct autobuf *out) {
+  struct netaddr_acl dummy;
+
+  if (value == NULL) {
+    cfg_schema_validate_netaddr(entry, section_name, value, out);
+    cfg_append_printable_line(out, "    Additional keywords are %s, %s, %s and %s",
+        ACL_FIRST_ACCEPT, ACL_FIRST_REJECT, ACL_DEFAULT_ACCEPT, ACL_DEFAULT_REJECT);
+    return 0;
+  }
+
+  if (netaddr_acl_handle_keywords(&dummy, value) == 0) {
+    return 0;
+  }
+
+  if (*value == '+' || *value == '-') {
+    return cfg_schema_validate_netaddr(entry, section_name, value+1, out);
+  }
+  return cfg_schema_validate_netaddr(entry, section_name, value, out);
+}
+
+/**
  * Help generator for string maximum length validator.
  * See CFG_VALIDATE_STRING_LEN macro in cfg_schema.h
  * @param entry pointer to schema entry
@@ -918,6 +948,28 @@ cfg_schema_tobin_netaddr(const struct cfg_schema_entry *s_entry __attribute__((u
   }
   return netaddr_from_string(ptr, strarray_get_first_c(value));
 }
+
+/**
+ * Schema entry binary converter for ACL entries.
+ * See CFG_MAP_ACL_*() macros.
+ * @param s_entry pointer to schema entry.
+ * @param value pointer to value to configuration entry
+ * @param reference pointer to binary target
+ * @return -1 if an error happened, 0 otherwise
+ */
+int
+cfg_schema_tobin_acl(const struct cfg_schema_entry *s_entry __attribute__((unused)),
+     const struct const_strarray *value, void *reference) {
+  struct netaddr_acl *ptr;
+
+  ptr = (struct netaddr_acl *)reference;
+
+  free(ptr->accept);
+  free(ptr->reject);
+
+  return netaddr_acl_from_strarray(ptr, value);
+}
+
 
  /**
   * Binary converter for booleans.

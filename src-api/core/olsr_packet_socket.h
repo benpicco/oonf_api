@@ -47,7 +47,7 @@
 #include "common/autobuf.h"
 #include "common/netaddr.h"
 #include "core/olsr_interface.h"
-#include "core/olsr_netaddr_acl.h"
+#include "common/netaddr_acl.h"
 #include "core/olsr_socket.h"
 
 #ifndef _WIN32
@@ -81,7 +81,7 @@ struct olsr_packet_socket {
 };
 
 struct olsr_packet_managed_config {
-  struct olsr_netaddr_acl acl;
+  struct netaddr_acl acl;
   char interface[IF_NAMESIZE];
   struct netaddr bindto_v4, multicast_v4;
   struct netaddr bindto_v6, multicast_v6;

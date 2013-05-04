@@ -240,7 +240,7 @@ olsr_packet_remove_managed(struct olsr_packet_managed *managed, bool forced) {
   olsr_packet_remove(&managed->multicast_v6, forced);
 
   olsr_interface_remove_listener(&managed->_if_listener);
-  olsr_acl_remove(&managed->_managed_config.acl);
+  netaddr_acl_remove(&managed->_managed_config.acl);
 }
 
 /**
@@ -263,7 +263,7 @@ olsr_packet_apply_managed(struct olsr_packet_managed *managed,
 
   /* copy acl */
   memset(&managed->_managed_config.acl, 0, sizeof(managed->_managed_config.acl));
-  olsr_acl_copy(&managed->_managed_config.acl, &config->acl);
+  netaddr_acl_copy(&managed->_managed_config.acl, &config->acl);
 
   /* handle change in interface listener */
   if (if_changed) {

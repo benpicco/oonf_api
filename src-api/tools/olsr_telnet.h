@@ -45,7 +45,7 @@
 #include "common/common_types.h"
 #include "common/avl.h"
 #include "common/list.h"
-#include "core/olsr_netaddr_acl.h"
+#include "common/netaddr_acl.h"
 #include "core/olsr_stream_socket.h"
 
 enum olsr_telnet_result {
@@ -132,7 +132,7 @@ struct olsr_telnet_command {
   const char *help;
 
   /* access control list for telnet command, NULL if not used */
-  struct olsr_netaddr_acl *acl;
+  struct netaddr_acl *acl;
 
   /* handler for telnet command */
   olsr_telnethandler handler;

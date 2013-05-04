@@ -67,7 +67,7 @@
 
 /* variable definitions */
 struct _remotecontrol_cfg {
-  struct olsr_netaddr_acl acl;
+  struct netaddr_acl acl;
 };
 
 struct _remotecontrol_session {
@@ -195,7 +195,7 @@ _init(void)
 {
   size_t i;
 
-  olsr_acl_add(&_remotecontrol_config.acl);
+  netaddr_acl_add(&_remotecontrol_config.acl);
   list_init_head(&_remote_sessions);
 
   for (i=0; i<ARRAYSIZE(_telnet_cmds); i++) {
@@ -223,7 +223,7 @@ _cleanup(void)
     olsr_telnet_remove(&_telnet_cmds[i]);
   }
 
-  olsr_acl_remove(&_remotecontrol_config.acl);
+  netaddr_acl_remove(&_remotecontrol_config.acl);
 }
 
 /**

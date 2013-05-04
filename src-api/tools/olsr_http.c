@@ -48,7 +48,7 @@
 #include "core/olsr_subsystem.h"
 #include "core/olsr_libdata.h"
 #include "core/olsr_logging.h"
-#include "core/olsr_netaddr_acl.h"
+#include "common/netaddr_acl.h"
 #include "core/olsr_stream_socket.h"
 #include "core/os_clock.h"
 
@@ -230,7 +230,7 @@ _cb_config_changed(void) {
 
   /* fall through */
 apply_config_failed:
-  olsr_acl_remove(&config.acl);
+  netaddr_acl_remove(&config.acl);
 }
 
 /**
@@ -342,7 +342,7 @@ _cb_receive_data(struct olsr_stream_session *session) {
   else {
     enum olsr_http_result result;
     /* check acl */
-    if (!olsr_acl_check_accept(&handler->acl, &session->remote_address)) {
+    if (!netaddr_acl_check_accept(&handler->acl, &session->remote_address)) {
       _create_http_error(session, HTTP_403_FORBIDDEN);
       return STREAM_SESSION_SEND_AND_QUIT;
     }

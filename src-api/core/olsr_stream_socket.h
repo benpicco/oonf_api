@@ -48,7 +48,7 @@
 #include "common/netaddr.h"
 
 #include "core/olsr_class.h"
-#include "core/olsr_netaddr_acl.h"
+#include "common/netaddr_acl.h"
 #include "core/olsr_socket.h"
 #include "core/olsr_timer.h"
 
@@ -138,7 +138,7 @@ struct olsr_stream_config {
   bool send_first;
 
   /* only clients that match the acl (if set) can connect */
-  struct olsr_netaddr_acl *acl;
+  struct netaddr_acl *acl;
 
   /* Called when a new session is created */
   int (*init)(struct olsr_stream_session *);
@@ -181,13 +181,13 @@ struct olsr_stream_socket {
 struct olsr_stream_managed {
   struct olsr_stream_socket socket_v4;
   struct olsr_stream_socket socket_v6;
-  struct olsr_netaddr_acl acl;
+  struct netaddr_acl acl;
 
   struct olsr_stream_config config;
 };
 
 struct olsr_stream_managed_config {
-  struct olsr_netaddr_acl acl;
+  struct netaddr_acl acl;
   struct netaddr bindto_v4;
   struct netaddr bindto_v6;
   uint16_t port;

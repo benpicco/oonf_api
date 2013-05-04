@@ -47,7 +47,7 @@
 
 #include "core/olsr_logging.h"
 #include "core/olsr_class.h"
-#include "core/olsr_netaddr_acl.h"
+#include "common/netaddr_acl.h"
 #include "core/olsr_plugins.h"
 #include "core/olsr_stream_socket.h"
 #include "core/olsr_timer.h"
@@ -267,7 +267,7 @@ _cb_config_changed(void) {
 
   /* fall through */
 apply_config_failed:
-  olsr_acl_remove(&config.acl);
+  netaddr_acl_remove(&config.acl);
 }
 
 /**
@@ -539,7 +539,7 @@ _check_telnet_command(struct olsr_telnet_data *data,
     return cmd;
   }
 
-  if (!olsr_acl_check_accept(cmd->acl, data->remote)) {
+  if (!netaddr_acl_check_accept(cmd->acl, data->remote)) {
     OLSR_DEBUG(LOG_TELNET, "Blocked telnet command '%s' to '%s' because of acl",
         cmd->command, netaddr_to_string(&buf, data->remote));
     return NULL;

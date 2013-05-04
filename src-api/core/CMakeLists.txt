@@ -26,7 +26,6 @@ SET(OONF_CORE_SRCS olsr_class.c
                    olsr_clock.c
                    olsr_interface.c
                    olsr_logging.c
-                   olsr_netaddr_acl.c
                    olsr_packet_socket.c
                    olsr_plugins.c
                    olsr_socket.c

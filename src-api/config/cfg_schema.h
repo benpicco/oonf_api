@@ -111,6 +111,13 @@ struct cfg_schema_entry;
 #define CFG_VALIDATE_NETADDR_V4(p_name, p_def, p_help, prefix, unspec, args...)            _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_netaddr, .cb_valhelp = cfg_schema_help_netaddr, .validate_param = {{.i8 = {AF_INET, -1,-1,-1, !!(unspec) ? AF_UNSPEC : -1}}, {.b = !!(prefix)}}, ##args )
 #define CFG_VALIDATE_NETADDR_V6(p_name, p_def, p_help, prefix, unspec, args...)            _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_netaddr, .cb_valhelp = cfg_schema_help_netaddr, .validate_param = {{.i8 = {AF_INET6, -1,-1,-1, !!(unspec) ? AF_UNSPEC : -1}}, {.b = !!(prefix)}}, ##args )
 #define CFG_VALIDATE_NETADDR_V46(p_name, p_def, p_help, prefix, unspec, args...)           _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_netaddr, .cb_valhelp = cfg_schema_help_netaddr, .validate_param = {{.i8 = {AF_INET, AF_INET6, -1,-1, !!(unspec) ? AF_UNSPEC : -1}}, {.b = !!(prefix)}}, ##args )
+#define CFG_VALIDATE_ACL(p_name, p_def, p_help, args...)                                   _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {-1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_HWADDR(p_name, p_def, p_help, args...)                            _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_MAC48, AF_EUI64, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_MAC48(p_name, p_def, p_help, args...)                             _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_MAC48, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_EUI64(p_name, p_def, p_help, args...)                             _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_EUI64, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_V4(p_name, p_def, p_help, args...)                                _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_INET, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_V6(p_name, p_def, p_help, args...)                                _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_INET6, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_V46(p_name, p_def, p_help, args...)                               _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_INET, AF_INET6, -1}}, {.b = true}}, ##args )
 
 #define CFG_VALIDATE_BOOL(p_name, p_def, p_help, args...)                                  CFG_VALIDATE_CHOICE(p_name, p_def, p_help, CFGLIST_BOOL, ##args)
 
@@ -158,6 +165,13 @@ struct cfg_schema_entry;
 #define CFG_MAP_NETADDR_V4(p_reference, p_field, p_name, p_def, p_help, prefix, unspec, args...)            CFG_VALIDATE_NETADDR_V4(p_name, p_def, p_help, prefix, unspec, .cb_to_binary = cfg_schema_tobin_netaddr, .bin_offset = offsetof(struct p_reference, p_field), ##args)
 #define CFG_MAP_NETADDR_V6(p_reference, p_field, p_name, p_def, p_help, prefix, unspec, args...)            CFG_VALIDATE_NETADDR_V6(p_name, p_def, p_help, prefix, unspec, .cb_to_binary = cfg_schema_tobin_netaddr, .bin_offset = offsetof(struct p_reference, p_field), ##args)
 #define CFG_MAP_NETADDR_V46(p_reference, p_field, p_name, p_def, p_help, prefix, unspec, args...)           CFG_VALIDATE_NETADDR_V46(p_name, p_def, p_help, prefix, unspec, .cb_to_binary = cfg_schema_tobin_netaddr, .bin_offset = offsetof(struct p_reference, p_field), ##args)
+#define CFG_MAP_ACL(p_reference, p_field, p_name, p_def, p_help, args...)                                   CFG_VALIDATE_ACL(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_acl, .bin_offset = offsetof(struct p_reference, p_field), ##args)
+#define CFG_MAP_ACL_HWADDR(p_reference, p_field, p_name, p_def, p_help, args...)                            CFG_VALIDATE_ACL_HWADDR(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_acl, .bin_offset = offsetof(struct p_reference, p_field), ##args)
+#define CFG_MAP_ACL_MAC48(p_reference, p_field, p_name, p_def, p_help, args...)                             CFG_VALIDATE_ACL_MAC48(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_acl, .bin_offset = offsetof(struct p_reference, p_field), ##args)
+#define CFG_MAP_ACL_EUI64(p_reference, p_field, p_name, p_def, p_help, args...)                             CFG_VALIDATE_ACL_EUI64(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_acl, .bin_offset = offsetof(struct p_reference, p_field), ##args)
+#define CFG_MAP_ACL_V4(p_reference, p_field, p_name, p_def, p_help, args...)                                CFG_VALIDATE_ACL_V4(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_acl, .bin_offset = offsetof(struct p_reference, p_field), ##args)
+#define CFG_MAP_ACL_V6(p_reference, p_field, p_name, p_def, p_help, args...)                                CFG_VALIDATE_ACL_V6(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_acl, .bin_offset = offsetof(struct p_reference, p_field), ##args)
+#define CFG_MAP_ACL_V46(p_reference, p_field, p_name, p_def, p_help, args...)                               CFG_VALIDATE_ACL_V46(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_acl, .bin_offset = offsetof(struct p_reference, p_field), ##args)
 
 #define CFG_MAP_BOOL(p_reference, p_field, p_name, p_def, p_help, args...)                    CFG_VALIDATE_BOOL(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_bool, .bin_offset = offsetof(struct p_reference, p_field), ##args)
 #define CFG_MAP_STRINGLIST(p_reference, p_field, p_name, p_def, p_help, args...)              _CFG_VALIDATE(p_name, p_def, p_help, .cb_to_binary = cfg_schema_tobin_stringlist, .bin_offset = offsetof(struct p_reference, p_field), .list = true, ##args )
@@ -342,6 +356,8 @@ EXPORT int cfg_schema_validate_fractional(const struct cfg_schema_entry *entry,
     const char *section_name, const char *value, struct autobuf *out);
 EXPORT int cfg_schema_validate_netaddr(const struct cfg_schema_entry *entry,
     const char *section_name, const char *value, struct autobuf *out);
+EXPORT int cfg_schema_validate_acl(const struct cfg_schema_entry *entry,
+    const char *section_name, const char *value, struct autobuf *out);
 
 EXPORT void cfg_schema_help_printable(
     const struct cfg_schema_entry *entry, struct autobuf *out);
@@ -372,6 +388,9 @@ EXPORT int cfg_schema_tobin_bool(const struct cfg_schema_entry *s_entry,
     const struct const_strarray *value, void *reference);
 EXPORT int cfg_schema_tobin_stringlist(const struct cfg_schema_entry *s_entry,
     const struct const_strarray *value, void *reference);
+EXPORT int cfg_schema_tobin_acl(const struct cfg_schema_entry *s_entry,
+    const struct const_strarray *value, void *reference);
+
 
 /**
  * Finds a section in a schema

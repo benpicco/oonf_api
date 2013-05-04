@@ -41,14 +41,9 @@
 
 #include "common/common_types.h"
 #include "common/netaddr.h"
+#include "common/netaddr_acl.h"
+#include "common/string.h"
 
-#include "config/cfg_db.h"
-#include "config/cfg_schema.h"
-#include "config/cfg.h"
-
-#include "core/olsr_netaddr_acl.h"
-
-static int _handle_control_cmd(struct olsr_netaddr_acl *, const char *);
 static bool _is_in_array(const struct netaddr *, size_t, const struct netaddr *);
 
 /**
@@ -57,12 +52,12 @@ static bool _is_in_array(const struct netaddr *, size_t, const struct netaddr *)
  * @param acl pointer to ACL
  */
 void
-olsr_acl_add(struct olsr_netaddr_acl *acl) {
+netaddr_acl_add(struct netaddr_acl *acl) {
   memset(acl, 0, sizeof(*acl));
 }
 
 void
-olsr_acl_remove(struct olsr_netaddr_acl *acl) {
+netaddr_acl_remove(struct netaddr_acl *acl) {
   free(acl->accept);
   free(acl->reject);
 
@@ -76,7 +71,7 @@ olsr_acl_remove(struct olsr_netaddr_acl *acl) {
  * @return -1 if an error happened, 0 otherwise
  */
 int
-olsr_acl_from_strarray(struct olsr_netaddr_acl *acl,
+netaddr_acl_from_strarray(struct netaddr_acl *acl,
     const struct const_strarray *value) {
   size_t accept_count, reject_count;
   const char *ptr;
@@ -88,7 +83,7 @@ olsr_acl_from_strarray(struct olsr_netaddr_acl *acl,
 
   /* count number of address entries */
   FOR_ALL_STRINGS(value, ptr) {
-    if (_handle_control_cmd(acl, ptr) == 0) {
+    if (netaddr_acl_handle_keywords(acl, ptr) == 0) {
       continue;
     }
 
@@ -117,7 +112,7 @@ olsr_acl_from_strarray(struct olsr_netaddr_acl *acl,
   /* read netaddr strings into buffers */
   FOR_ALL_STRINGS(value, ptr) {
     const char *addr;
-    if (_handle_control_cmd(acl, ptr) == 0) {
+    if (netaddr_acl_handle_keywords(acl, ptr) == 0) {
       continue;
     }
 
@@ -142,7 +137,7 @@ olsr_acl_from_strarray(struct olsr_netaddr_acl *acl,
   return 0;
 
 from_entry_error:
-  olsr_acl_remove(acl);
+  netaddr_acl_remove(acl);
   return -1;
 }
 
@@ -153,8 +148,8 @@ from_entry_error:
  * @return -1 if an error happened, 0 otherwise
  */
 int
-olsr_acl_copy(struct olsr_netaddr_acl *to, const struct olsr_netaddr_acl *from) {
-  olsr_acl_remove(to);
+netaddr_acl_copy(struct netaddr_acl *to, const struct netaddr_acl *from) {
+  netaddr_acl_remove(to);
   memcpy(to, from, sizeof(*to));
 
   if (to->accept_count) {
@@ -182,7 +177,7 @@ olsr_acl_copy(struct olsr_netaddr_acl *to, const struct olsr_netaddr_acl *from) 
  * @return true if accepted, false otherwise
  */
 bool
-olsr_acl_check_accept(const struct olsr_netaddr_acl *acl, const struct netaddr *addr) {
+netaddr_acl_check_accept(const struct netaddr_acl *acl, const struct netaddr *addr) {
   if (acl->reject_first) {
     if (_is_in_array(acl->reject, acl->reject_count, addr)) {
       return false;
@@ -203,65 +198,13 @@ olsr_acl_check_accept(const struct olsr_netaddr_acl *acl, const struct netaddr *
 }
 
 /**
- * Schema entry validator for access control lists.
- * See CFG_VALIDATE_ACL_*() macros.
- * @param entry pointer to schema entry
- * @param section_name name of section type and name
- * @param value value of schema entry
- * @param out pointer to autobuffer for validator output
- * @return 0 if validation found no problems, -1 otherwise
- */
-int
-olsr_acl_validate(const struct cfg_schema_entry *entry,
-    const char *section_name, const char *value, struct autobuf *out) {
-  struct olsr_netaddr_acl dummy;
-
-  if (value == NULL) {
-    cfg_schema_validate_netaddr(entry, section_name, value, out);
-    cfg_append_printable_line(out, "    Additional keywords are %s, %s, %s and %s",
-        ACL_FIRST_ACCEPT, ACL_FIRST_REJECT, ACL_DEFAULT_ACCEPT, ACL_DEFAULT_REJECT);
-    return 0;
-  }
-
-  if (_handle_control_cmd(&dummy, value) == 0) {
-    return 0;
-  }
-
-  if (*value == '+' || *value == '-') {
-    return cfg_schema_validate_netaddr(entry, section_name, value+1, out);
-  }
-  return cfg_schema_validate_netaddr(entry, section_name, value, out);
-}
-
-/**
- * Schema entry binary converter for ACL entries.
- * See CFG_MAP_ACL_*() macros.
- * @param s_entry pointer to schema entry.
- * @param value pointer to value to configuration entry
- * @param reference pointer to binary target
- * @return -1 if an error happened, 0 otherwise
- */
-int
-olsr_acl_tobin(const struct cfg_schema_entry *s_entry __attribute__((unused)),
-    const struct const_strarray *value, void *reference) {
-  struct olsr_netaddr_acl *ptr;
-
-  ptr = (struct olsr_netaddr_acl *)reference;
-
-  free(ptr->accept);
-  free(ptr->reject);
-
-  return olsr_acl_from_strarray(ptr, value);
-}
-
-/**
  * Handle the four control text blocks for ACL initialization.
  * @param acl pointer to ACL
  * @param cmd pointer to control word
  * @return -1 if not a control word, 0 if control world was applied
  */
-static int
-_handle_control_cmd(struct olsr_netaddr_acl *acl, const char *cmd) {
+int
+netaddr_acl_handle_keywords(struct netaddr_acl *acl, const char *cmd) {
   if (strcasecmp(cmd, ACL_DEFAULT_ACCEPT) == 0) {
     acl->accept_default = true;
   }

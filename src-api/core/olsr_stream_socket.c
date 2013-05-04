@@ -354,7 +354,7 @@ olsr_stream_add_managed(struct olsr_stream_managed *managed) {
 int
 olsr_stream_apply_managed(struct olsr_stream_managed *managed,
     struct olsr_stream_managed_config *config) {
-  olsr_acl_copy(&managed->acl, &config->acl);
+  netaddr_acl_copy(&managed->acl, &config->acl);
 
   if (_apply_managed_socket(managed,
       &managed->socket_v4, &config->bindto_v4, config->port)) {
@@ -379,7 +379,7 @@ olsr_stream_remove_managed(struct olsr_stream_managed *managed, bool force) {
   olsr_stream_remove(&managed->socket_v4, force);
   olsr_stream_remove(&managed->socket_v6, force);
 
-  olsr_acl_remove(&managed->acl);
+  netaddr_acl_remove(&managed->acl);
 }
 
 /**
@@ -463,7 +463,7 @@ _cb_parse_request(int fd, void *data, bool event_read,
 
   netaddr_from_socket(&remote_addr, &remote_socket);
   if (comport->config.acl) {
-    if (!olsr_acl_check_accept(comport->config.acl, &remote_addr)) {
+    if (!netaddr_acl_check_accept(comport->config.acl, &remote_addr)) {
       OLSR_DEBUG(LOG_SOCKET_STREAM, "Access from %s to socket %s blocked because of ACL",
           netaddr_to_string(&buf1, &remote_addr),
           netaddr_socket_to_string(&buf2, &comport->local_socket));

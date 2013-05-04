@@ -102,7 +102,7 @@ DECLARE_OONF_PLUGIN(oonf_httptelnet_subsystem);
  */
 static int
 _init(void) {
-  olsr_acl_add(&_http_site_handler.acl);
+  netaddr_acl_add(&_http_site_handler.acl);
   strarray_init(&_http_site_handler.auth);
 
   return 0;
@@ -114,7 +114,7 @@ _init(void) {
 static void
 _cleanup(void) {
   strarray_free(&_http_site_handler.auth);
-  olsr_acl_remove(&_http_site_handler.acl);
+  netaddr_acl_remove(&_http_site_handler.acl);
   free((char *)_http_site_handler.site);
 }
 
