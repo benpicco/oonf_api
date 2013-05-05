@@ -73,6 +73,17 @@ struct oonf_subsystem {
   int (*init) (void);
 
   /*
+   * Will be called when the routing agent begins to shut down.
+   * Subsystems should stop sending normal network traffic and begin
+   * to shutdown, but they will run for a few more hundred milliseconds
+   * until the cleanup() callback tells them to finally shut down.
+   *
+   * This allows a subsystem to send out a couple of network events
+   * to shut down properly.
+   */
+  void (*initiate_shutdown) (void);
+
+  /*
    * Will be called once during the cleanup of the subsystem.
    * Other subsystems might already be cleanup up during this time.
    */
