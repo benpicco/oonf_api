@@ -156,8 +156,7 @@ _cleanup(void) {
   struct os_route *rt, *rt_it;
 
   list_for_each_element_safe(&_rtnetlink_feedback, rt, _internal._node, rt_it) {
-    rt->cb_finished(rt, true);
-    list_remove(&rt->_internal._node);
+    _routing_finished(rt, 1);
   }
 
   if (_original_icmp_redirect != 0
@@ -478,7 +477,7 @@ _routing_set(struct nlmsghdr *msg, struct os_route *route,
   }
 
   if (netaddr_get_address_family(&route->gw) != AF_UNSPEC) {
-    rt_msg->rtm_flags = RTNH_F_ONLINK;
+    rt_msg->rtm_flags |= RTNH_F_ONLINK;
 
     /* add gateway */
     if (os_system_netlink_addnetaddr(msg, RTA_GATEWAY, &route->gw)) {
