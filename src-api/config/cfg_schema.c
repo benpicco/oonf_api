@@ -416,13 +416,6 @@ cfg_avlcmp_schemaentries(const void *p1, const void *p2) {
     return result;
   }
 
-  if (key1->entry == NULL) {
-    return key2->entry == NULL ? 0 : 1;
-  }
-  if (key2->entry == NULL) {
-    return -1;
-  }
-
   return cfg_avlcmp_keys(key1->entry, key2->entry);
 }
 

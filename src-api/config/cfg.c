@@ -144,7 +144,7 @@ cfg_is_allowed_key(const char *key, bool section_name) {
 
 /**
  * Null-pointer safe avl compare function for keys implementation.
- * NULL is considered a string greater than all normal strings.
+ * NULL is considered a string smaller than all normal strings.
  * @param p1 pointer to key 1
  * @param p2 pointer to key 2
  * @return similar to strcmp()
@@ -155,10 +155,10 @@ cfg_avlcmp_keys(const void *p1, const void *p2) {
   const char *str2 = p2;
 
   if (str1 == NULL) {
-    return str2 == NULL ? 0 : 1;
+    return str2 == NULL ? 0 : -1;
   }
   if (str2 == NULL) {
-    return -1;
+    return 1;
   }
 
   return strcasecmp(str1, str2);

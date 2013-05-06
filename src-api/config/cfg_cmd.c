@@ -398,6 +398,7 @@ cfg_cmd_handle_schema(struct cfg_db *db,
     /* show all schema entries for a section */
     key.type = copy;
     key.entry = NULL;
+
     s_entry = avl_find_ge_element(&db->schema->entries, &key, s_entry, _node);
     if (s_entry == NULL || cfg_cmp_keys(s_entry->key.type, copy) != 0) {
       cfg_append_printable_line(log, "Unknown section type '%s'", copy);
