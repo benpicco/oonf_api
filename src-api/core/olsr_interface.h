@@ -52,36 +52,6 @@
 #include "core/olsr_timer.h"
 #include "core/os_net.h"
 
-struct olsr_interface {
-  /* data of interface */
-  struct olsr_interface_data data;
-
-  /*
-   * usage counter to allow multiple instances to add the same
-   * interface
-   */
-  int usage_counter;
-
-  /*
-   * usage counter to keep track of the number of users on
-   * this interface who want to send mesh traffic
-   */
-  int mesh_counter;
-
-  /*
-   * used to store internal state of interfaces before
-   * configuring them for manet data forwarding.
-   * Only used by os_specific code.
-   */
-  uint32_t _original_state;
-
-  /* hook interfaces into tree */
-  struct avl_node _node;
-
-  /* timer for lazy interface change handling */
-  struct olsr_timer_entry _change_timer;
-};
-
 struct olsr_interface_listener {
   /* name of interface */
   const char *name;

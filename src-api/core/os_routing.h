@@ -121,9 +121,6 @@ EXPORT extern struct oonf_subsystem oonf_os_routing_subsystem;
 EXPORT extern const struct os_route OS_ROUTE_WILDCARD;
 
 /* prototypes for all os_routing functions */
-EXPORT int os_routing_init_mesh_if(struct olsr_interface *);
-EXPORT void os_routing_cleanup_mesh_if(struct olsr_interface *);
-
 EXPORT int os_routing_set(struct os_route *, bool set, bool del_similar);
 EXPORT int os_routing_query(struct os_route *);
 EXPORT void os_routing_interrupt(struct os_route *);

@@ -45,9 +45,12 @@
 #include <unistd.h>
 #include <sys/select.h>
 
+#include "common/avl.h"
 #include "common/common_types.h"
+#include "common/list.h"
 #include "common/netaddr.h"
 #include "core/olsr_logging.h"
+#include "core/olsr_timer.h"
 
 struct olsr_interface_data {
   /* Interface addresses with mesh-wide scope (at least) */
@@ -71,6 +74,36 @@ struct olsr_interface_data {
 
   /* true if the interface exists and is up */
   bool up;
+};
+
+struct olsr_interface {
+  /* data of interface */
+  struct olsr_interface_data data;
+
+  /*
+   * usage counter to allow multiple instances to add the same
+   * interface
+   */
+  int usage_counter;
+
+  /*
+   * usage counter to keep track of the number of users on
+   * this interface who want to send mesh traffic
+   */
+  int mesh_counter;
+
+  /*
+   * used to store internal state of interfaces before
+   * configuring them for manet data forwarding.
+   * Only used by os_specific code.
+   */
+  uint32_t _original_state;
+
+  /* hook interfaces into tree */
+  struct avl_node _node;
+
+  /* timer for lazy interface change handling */
+  struct olsr_timer_entry _change_timer;
 };
 
 /* pre-declare inlines */
@@ -107,5 +140,8 @@ EXPORT int os_recvfrom(int fd, void *buf, size_t length,
     union netaddr_socket *source, struct olsr_interface_data *);
 EXPORT int os_sendto(
     int fd, const void *buf, size_t length, union netaddr_socket *dst);
+
+EXPORT int os_net_init_mesh_if(struct olsr_interface *);
+EXPORT void os_net_cleanup_mesh_if(struct olsr_interface *);
 
 #endif /* OS_NET_H_ */
