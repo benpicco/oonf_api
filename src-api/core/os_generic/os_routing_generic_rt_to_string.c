@@ -44,8 +44,8 @@
 
 /**
  * Print OS route to string buffer
- * @param pointer to string buffer
- * @param pointer to route
+ * @param buf pointer to string buffer
+ * @param route pointer to route
  * @return pointer to string buffer, NULL if an error happened
  */
 const char *

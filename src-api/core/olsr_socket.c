@@ -123,8 +123,8 @@ olsr_socket_remove(struct olsr_socket_entry *entry)
 
 /**
  * Handle all incoming socket events until a certain time
- * @param pointer to a callback function that tells the scheduler if
- *   it should return to the mainloop. Might be NULL.
+ * @param stop_scheduler pointer to a callback function that tells
+ *   the scheduler if it should return to the mainloop. Might be NULL.
  * @param stop_time timestamp when the handler should stop,
  *   0 if it should keep running
  * @return -1 if an error happened, 0 otherwise

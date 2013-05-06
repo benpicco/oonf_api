@@ -104,8 +104,6 @@ cfg_schema_add(struct cfg_schema *schema) {
  * Add a section to a schema
  * @param schema pointer to configuration schema
  * @param section pointer to section
- * @param entries pointer to array of schema entries
- * @param entry_count number of schema entries in array
  */
 void
 cfg_schema_add_section(struct cfg_schema *schema,

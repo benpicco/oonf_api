@@ -361,8 +361,9 @@ enum rfc5444_result olsr_rfc5444_send_if(
 
 /**
  * Trigger the creation of a RFC5444 message for a specific interface
- * @param target interface for outgoing message
+ * @param protocol protocol for outgoing message
  * @param msgid id of created message
+ * @param useIf callback to selector for interfaces
  * @return return code of rfc5444 writer
  */
 enum rfc5444_result

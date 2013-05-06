@@ -566,7 +566,6 @@ netaddr_socket_to_string(struct netaddr_str *dst, const union netaddr_socket *sr
  * prototype.
  * @param k1 address 1
  * @param k2 address 2
- * @param unused not used in this comparator
  * @return >0 if k1>k2, <0 if k1<k2, 0 otherwise
  */
 int
@@ -581,7 +580,6 @@ netaddr_avlcmp(const void *k1, const void *k2) {
  * prototype.
  * @param k1 address 1
  * @param k2 address 2
- * @param unused not used in this comparator
  * @return >0 if k1>k2, <0 if k1<k2, 0 otherwise
  */
 int

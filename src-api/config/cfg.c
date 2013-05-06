@@ -124,6 +124,8 @@ cfg_append_printable_line(struct autobuf *autobuf, const char *fmt, ...) {
 /**
  * Tests on the pattern [a-zA-Z_][a-zA-Z0-9_]*
  * @param key section_type/name or entry name
+ * @param section_name true if testing a section name, false if testing
+ *   a section type or a key
  * @return true if input string is valid for this parser,
  *   false otherwise
  */
