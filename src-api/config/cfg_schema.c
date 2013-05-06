@@ -63,7 +63,9 @@ static bool _check_missing_entries(struct cfg_schema_section *schema_section,
     const char *section_name, struct autobuf *out);
 static void _handle_named_section_change(struct cfg_schema_section *s_section,
     struct cfg_db *pre_change, struct cfg_db *post_change,
-    const char *name, bool startup);
+    const char *name, bool startup,
+    struct cfg_named_section *pre_defnamed,
+    struct cfg_named_section *post_defnamed);
 static int _handle_db_changes(struct cfg_db *pre_change,
     struct cfg_db *post_change, bool startup);
 static int _get_known_prefix(struct netaddr *dst, const char *name);
@@ -108,7 +110,7 @@ cfg_schema_add(struct cfg_schema *schema) {
 void
 cfg_schema_add_section(struct cfg_schema *schema,
     struct cfg_schema_section *section) {
-  struct cfg_schema_entry *entry, *entry_it;
+//  struct cfg_schema_entry *entry, *entry_it;
   size_t i;
 
   /* hook section into global section tree */
@@ -125,7 +127,7 @@ cfg_schema_add_section(struct cfg_schema *schema,
     section->entries[i]._parent = section;
     section->entries[i].key.type = section->type;
     section->entries[i]._node.key = &section->entries[i].key;
-
+#if 0
     /* make sure all defaults are the same */
     avl_for_each_elements_with_key(&schema->entries, entry_it, _node, entry,
         &section->entries[i].key) {
@@ -141,6 +143,7 @@ cfg_schema_add_section(struct cfg_schema *schema,
         // TODO: maybe output some logging that we overwrite the default?
       }
     }
+#endif
     avl_insert(&schema->entries, &section->entries[i]._node);
   }
 }
@@ -1021,31 +1024,77 @@ cfg_schema_tobin_stringlist(const struct cfg_schema_entry *s_entry __attribute__
  */
 static int
 _handle_db_changes(struct cfg_db *pre_change, struct cfg_db *post_change, bool startup) {
+  struct cfg_section_type default_section_type[2];
+  struct cfg_named_section default_named_section[2];
   struct cfg_schema_section *s_section;
   struct cfg_section_type *pre_type, *post_type;
   struct cfg_named_section *pre_named, *post_named, *named_it;
+  struct cfg_named_section * pre_defnamed, *post_defnamed;
 
   if (pre_change->schema == NULL || pre_change->schema != post_change->schema) {
     /* no valid schema found */
     return -1;
   }
 
-  avl_for_each_element(&pre_change->schema->handlers, s_section, _delta_node) {
-    /* look over all schemas in the order of their delta priority */
+  /* initialize default named section mechanism */
+  memset(default_named_section, 0, sizeof(default_named_section));
+  memset(default_section_type, 0, sizeof(default_section_type));
 
+  avl_init(&default_named_section[0].entries, cfg_avlcmp_keys, false);
+  avl_init(&default_named_section[1].entries, cfg_avlcmp_keys, false);
+  default_named_section[0].section_type = &default_section_type[0];
+  default_named_section[1].section_type = &default_section_type[1];
+
+  default_section_type[0].db = pre_change;
+  default_section_type[1].db = post_change;
+
+  avl_for_each_element(&pre_change->schema->handlers, s_section, _delta_node) {
+    /* get section types in both databases */
     pre_type = cfg_db_find_sectiontype(pre_change, s_section->type);
     post_type = cfg_db_find_sectiontype(post_change, s_section->type);
 
+    /* prepare for default named section */
+    pre_defnamed = NULL;
+    post_defnamed = NULL;
+
+    if (s_section->mode == CFG_SSMODE_NAMED_WITH_DEFAULT) {
+      /* check if pre_change db has a named section with the default name */
+      if (pre_type == NULL || !avl_find_element(
+            &pre_type->names, s_section->def_name, pre_named, node)) {
+        /* initialize dummy section type for pre-change db */
+        default_section_type[0].type = s_section->type;
+
+        /* initialize dummy named section for pre-change */
+        default_named_section[0].name = s_section->def_name;
+
+        /* remember decision */
+        pre_defnamed = &default_named_section[0];
+      }
+
+      /* check if post_change db has a named section with the default name */
+      if (post_type == NULL || !avl_find_element(
+            &post_type->names, s_section->def_name, post_named, node)) {
+        /* initialize dummy section type for post-change db */
+        default_section_type[1].type = s_section->type;
+
+        /* initialize dummy named section for post-change */
+        default_named_section[1].name = s_section->def_name;
+
+        /* remember decision */
+        post_defnamed = &default_named_section[1];
+      }
+    }
+
     if (post_type) {
-      /* handle new sections and changes */
+      /* handle new named sections and changes */
       pre_named = NULL;
       CFG_FOR_ALL_SECTION_NAMES(post_type, post_named, named_it) {
-        _handle_named_section_change(s_section,
-            pre_change, post_change, post_named->name, startup);
+        _handle_named_section_change(s_section, pre_change, post_change,
+            post_named->name, startup, pre_defnamed, post_defnamed);
       }
     }
     if (pre_type) {
-      /* handle removed sections */
+      /* handle removed named sections */
       post_named = NULL;
       CFG_FOR_ALL_SECTION_NAMES(pre_type, pre_named, named_it) {
         if (post_type) {
@@ -1053,14 +1102,22 @@ _handle_db_changes(struct cfg_db *pre_change, struct cfg_db *post_change, bool s
         }
 
         if (!post_named) {
-          _handle_named_section_change(s_section,
-              pre_change, post_change, pre_named->name, startup);
+          _handle_named_section_change(s_section, pre_change, post_change,
+              pre_named->name, startup, pre_defnamed, post_defnamed);
         }
       }
     }
     if (startup && s_section->mode == CFG_SSMODE_UNNAMED
         && pre_type == NULL && post_type == NULL) {
-      _handle_named_section_change(s_section, pre_change, post_change, NULL, true);
+      /* send change signal on startup for unnamed section */
+      _handle_named_section_change(s_section, pre_change, post_change, NULL, true,
+          pre_defnamed, post_defnamed);
+    }
+    if (startup && s_section->mode == CFG_SSMODE_NAMED_WITH_DEFAULT
+        && pre_defnamed != NULL && post_defnamed != NULL) {
+      /* send change signal on startup for default named section */
+      _handle_named_section_change(s_section, pre_change, post_change,
+          s_section->def_name, true, NULL, post_defnamed);
     }
   }
   return 0;
@@ -1197,13 +1254,16 @@ _check_missing_entries(struct cfg_schema_section *schema_section,
 static void
 _handle_named_section_change(struct cfg_schema_section *s_section,
     struct cfg_db *pre_change, struct cfg_db *post_change,
-    const char *name, bool startup) {
+    const char *name, bool startup,
+    struct cfg_named_section *pre_defnamed,
+    struct cfg_named_section *post_defnamed) {
   struct cfg_schema_entry *entry;
   bool changed;
   size_t i;
 
   if ((s_section->mode == CFG_SSMODE_NAMED
-       || s_section->mode == CFG_SSMODE_NAMED_MANDATORY)
+       || s_section->mode == CFG_SSMODE_NAMED_MANDATORY
+       || s_section->mode == CFG_SSMODE_NAMED_WITH_DEFAULT)
       && name == NULL) {
     /*
      * ignore unnamed data entry for named sections, they are only
@@ -1215,6 +1275,16 @@ _handle_named_section_change(struct cfg_schema_section *s_section,
   s_section->pre = cfg_db_find_namedsection(pre_change, s_section->type, name);
   s_section->post = cfg_db_find_namedsection(post_change, s_section->type, name);
 
+  if (s_section->mode == CFG_SSMODE_NAMED_WITH_DEFAULT
+      && strcasecmp(s_section->def_name, name) == 0) {
+    /* use the default named sections if necessary */
+    if (s_section->pre == NULL && !startup) {
+      s_section->pre = pre_defnamed;
+    }
+    if (s_section->post == NULL) {
+      s_section->post = post_defnamed;
+    }
+  }
   changed = false;
 
   for (i=0; i<s_section->entry_count; i++) {

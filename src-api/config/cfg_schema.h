@@ -214,6 +214,12 @@ enum cfg_schema_section_mode {
    */
   CFG_SSMODE_NAMED_MANDATORY,
 
+  /*
+   * named section, if none exists the configuration will create
+   * a temporary (and empty) section with the defined default name.
+   */
+  CFG_SSMODE_NAMED_WITH_DEFAULT,
+
   /* always last */
   CFG_SSMODE_MAX,
 };
@@ -229,6 +235,9 @@ struct cfg_schema_section {
 
   /* name of section type, key for section_node */
   const char *type;
+
+  /* name of default section if mode is CFG_SSMODE_NAMED_WITH_DEFAULT */
+  const char *def_name;
 
   /* mode of this section, see above */
   enum cfg_schema_section_mode mode;

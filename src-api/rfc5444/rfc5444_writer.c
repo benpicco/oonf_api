@@ -419,7 +419,7 @@ rfc5444_writer_unregister_content_provider(
  */
 struct rfc5444_writer_message *
 rfc5444_writer_register_message(struct rfc5444_writer *writer, uint8_t msgid,
-    bool target_specific, uint8_t addr_len) {
+    bool if_specific, uint8_t addr_len) {
   struct rfc5444_writer_message *msg;
 
 #if WRITER_STATE_MACHINE == true
@@ -442,7 +442,7 @@ rfc5444_writer_register_message(struct rfc5444_writer *writer, uint8_t msgid,
 
   /* set real address length and target_specific flag */
   msg->addr_len = addr_len;
-  msg->target_specific = target_specific;
+  msg->target_specific = if_specific;
   return msg;
 }
 

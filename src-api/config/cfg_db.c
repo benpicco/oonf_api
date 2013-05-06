@@ -492,7 +492,7 @@ _free_sectiontype(struct cfg_section_type *section) {
   }
 
   avl_remove(&section->db->sectiontypes, &section->node);
-  free(section->type);
+  free((void *)section->type);
   free(section);
 }
 
@@ -540,7 +540,7 @@ _free_namedsection(struct cfg_named_section *named) {
   }
 
   avl_remove(&named->section_type->names, &named->node);
-  free (named->name);
+  free ((void *)named->name);
   free (named);
 }
 

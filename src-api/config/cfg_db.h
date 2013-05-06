@@ -69,7 +69,7 @@ struct cfg_section_type {
   struct avl_node node;
 
   /* name of type */
-  char *type;
+  const char *type;
 
   /* backpointer to database */
   struct cfg_db *db;
@@ -84,7 +84,7 @@ struct cfg_named_section {
   struct avl_node node;
 
   /* name of named section */
-  char *name;
+  const char *name;
 
   /* backpointer to section type */
   struct cfg_section_type *section_type;
