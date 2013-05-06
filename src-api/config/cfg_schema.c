@@ -73,10 +73,11 @@ static int _get_known_prefix(struct netaddr *dst, const char *name);
 const char *CFGLIST_BOOL_TRUE[] = { "true", "1", "on", "yes" };
 const char *CFGLIST_BOOL[] = { "true", "1", "on", "yes", "false", "0", "off", "no" };
 const char *CFG_SCHEMA_SECTIONMODE[CFG_SSMODE_MAX] = {
-    "unnamed",
-    "unnamed, optional",
-    "named",
-    "named, mandatory"
+  [CFG_SSMODE_UNNAMED] = "unnamed",
+  [CFG_SSMODE_UNNAMED_OPTIONAL_STARTUP_TRIGGER] = "unnamed, optional",
+  [CFG_SSMODE_NAMED] = "named",
+  [CFG_SSMODE_NAMED_MANDATORY] = "named, mandatory",
+  [CFG_SSMODE_NAMED_WITH_DEFAULT] = "named, default name",
 };
 
 /* List of predefined address prefixes */

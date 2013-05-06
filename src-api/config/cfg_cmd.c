@@ -405,6 +405,10 @@ cfg_cmd_handle_schema(struct cfg_db *db,
       goto handle_schema_cleanup;
     }
 
+    if (s_entry->_parent->mode == CFG_SSMODE_NAMED_WITH_DEFAULT) {
+      cfg_append_printable_line(log, "Section '%s' has default name '%s'",
+          s_entry->_parent->type, s_entry->_parent->def_name);
+    }
     cfg_append_printable_line(log, "List of entries in section type '%s':", copy);
     abuf_puts(log, "(use this command with 'type.name' as parameter for more information)\n");
 
