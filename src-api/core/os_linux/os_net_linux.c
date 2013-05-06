@@ -312,8 +312,7 @@ os_net_cleanup_mesh_if(struct olsr_interface *interf) {
   /* Generate the procfile name */
   snprintf(procfile, sizeof(procfile), PROC_IF_REDIRECT, interf->data.name);
 
-  if (restore_redirect != 0
-      && _os_linux_writeToProc(procfile, NULL, restore_redirect) != 0) {
+  if (_os_linux_writeToProc(procfile, NULL, restore_redirect) != 0) {
     OLSR_WARN(LOG_OS_SYSTEM, "Could not restore ICMP redirect flag %s to %c",
         procfile, restore_redirect);
   }
@@ -321,8 +320,7 @@ os_net_cleanup_mesh_if(struct olsr_interface *interf) {
   /* Generate the procfile name */
   snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, interf->data.name);
 
-  if (restore_spoof != 0
-      && _os_linux_writeToProc(procfile, NULL, restore_spoof) != 0) {
+  if (_os_linux_writeToProc(procfile, NULL, restore_spoof) != 0) {
     OLSR_WARN(LOG_OS_SYSTEM, "Could not restore IP spoof flag %s to %c",
         procfile, restore_spoof);
   }
@@ -365,15 +363,13 @@ _activate_if_routing(void) {
 
 static void
 _deactivate_if_routing(void) {
-  if (_original_icmp_redirect != 0
-      && _os_linux_writeToProc(PROC_ALL_REDIRECT, &_original_icmp_redirect, '0') != 0) {
+  if (_os_linux_writeToProc(PROC_ALL_REDIRECT, NULL, _original_icmp_redirect) != 0) {
     OLSR_WARN(LOG_OS_SYSTEM,
         "WARNING! Could not restore ICMP redirect flag %s to %c!",
         PROC_ALL_REDIRECT, _original_icmp_redirect);
   }
 
-  /* check kernel version and disable global rp_filter */
-  if (_os_linux_writeToProc(PROC_ALL_SPOOF, &_original_rp_filter, '0')) {
+  if (_os_linux_writeToProc(PROC_ALL_SPOOF, NULL, _original_rp_filter)) {
     OLSR_WARN(LOG_OS_SYSTEM,
         "WARNING! Could not restore global rp_filter flag %s to %c!",
         PROC_ALL_SPOOF, _original_rp_filter);
@@ -384,7 +380,7 @@ _deactivate_if_routing(void) {
         PROC_IPFORWARD_V4, _original_ipv4_forward);
   }
   if (_os_linux_writeToProc(PROC_IPFORWARD_V6, NULL, _original_ipv6_forward)) {
-    OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore flag %s to %c",
+    OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore %s to %c",
         PROC_IPFORWARD_V6, _original_ipv6_forward);
   }
 }
@@ -403,41 +399,49 @@ _os_linux_writeToProc(const char *file, char *old, char value) {
   int fd;
   char rv;
 
+  if (value == 0) {
+    /* ignore */
+    return 0;
+  }
+
   if ((fd = open(file, O_RDWR)) < 0) {
-    goto writetoproc_error;
+    OLSR_WARN(LOG_OS_SYSTEM,
+      "Error, cannot open proc entry %s: %s (%d)\n",
+      file, strerror(errno), errno);
+    return -1;
   }
 
   if (read(fd, &rv, 1) != 1) {
-    goto writetoproc_error;
+    OLSR_WARN(LOG_OS_SYSTEM,
+      "Error, cannot read proc entry %s: %s (%d)\n",
+      file, strerror(errno), errno);
+    return -1;
   }
 
   if (rv != value) {
     if (lseek(fd, SEEK_SET, 0) == -1) {
-      goto writetoproc_error;
+      OLSR_WARN(LOG_OS_SYSTEM,
+        "Error, cannot rewind to start on proc entry %s: %s (%d)\n",
+        file, strerror(errno), errno);
+      return -1;
     }
 
     if (write(fd, &value, 1) != 1) {
-      goto writetoproc_error;
+      OLSR_WARN(LOG_OS_SYSTEM,
+        "Error, cannot write '%c' to proc entry %s: %s (%d)\n",
+        value, file, strerror(errno), errno);
     }
 
     OLSR_DEBUG(LOG_OS_SYSTEM, "Writing '%c' (was %c) to %s", value, rv, file);
   }
 
-  if (close(fd) != 0) {
-    goto writetoproc_error;
-  }
+  close(fd);
 
   if (old && rv != value) {
     *old = rv;
   }
 
   return 0;
-
-writetoproc_error:
-  OLSR_WARN(LOG_OS_SYSTEM,
-    "Error, cannot read proc entry %s: %s (%d)\n",
-    file, strerror(errno), errno);
-  return -1;
 }
 
 /**
