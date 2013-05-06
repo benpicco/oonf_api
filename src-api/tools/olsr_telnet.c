@@ -95,7 +95,7 @@ static struct cfg_schema_entry telnet_entries[] = {
 
 static struct cfg_schema_section telnet_section = {
   .type = "telnet",
-  .mode = CFG_SSMODE_UNNAMED_OPTIONAL_STARTUP_TRIGGER,
+  .mode = CFG_SSMODE_UNNAMED,
   .help = "Settings for the telnet interface",
   .cb_delta_handler = _cb_config_changed,
   .entries = telnet_entries,
