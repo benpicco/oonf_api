@@ -79,10 +79,6 @@ EXPORT bool olsr_cfg_is_reload_set(void);
 EXPORT void olsr_cfg_trigger_commit(void);
 EXPORT bool olsr_cfg_is_commit_set(void);
 
-/* do not use this in plugins */
-EXPORT int olsr_cfg_update_globalcfg(bool) __attribute__((warn_unused_result));
-EXPORT int olsr_cfg_clear_rawdb(void) __attribute__((warn_unused_result));
-
 EXPORT struct cfg_instance *olsr_cfg_get_instance(void);
 EXPORT struct cfg_db *olsr_cfg_get_db(void);
 EXPORT struct cfg_db *olsr_cfg_get_rawdb(void);
@@ -90,5 +86,9 @@ EXPORT struct cfg_schema *olsr_cfg_get_schema(void);
 
 EXPORT int olsr_cfg_get_argc(void);
 EXPORT const char **olsr_cfg_get_argv(void);
+
+/* do not use this in plugins */
+EXPORT int olsr_cfg_update_globalcfg(bool) __attribute__((warn_unused_result));
+EXPORT int olsr_cfg_clear_rawdb(void) __attribute__((warn_unused_result));
 
 #endif /* OLSR_CFG_H_ */

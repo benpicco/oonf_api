@@ -126,12 +126,12 @@ oonf_subsystem_is_initialized(struct oonf_subsystem *subsystem) {
 
 /**
  * @param subsystem pointer to subsystem
- * @return true if its a plugin, false if its a normal subsystem
+ * @return true if its a plugin loaded at runtime through dlopen(),
+ *   false otherwise.
  */
 static INLINE bool
-oonf_subsystem_is_plugin(struct oonf_subsystem *subsystem) {
-  return subsystem->_dlhandle == NULL;
+oonf_subsystem_is_dynamic(struct oonf_subsystem *subsystem) {
+  return subsystem->_dlhandle != NULL;
 }
-
 
 #endif /* OLSR_H_ */

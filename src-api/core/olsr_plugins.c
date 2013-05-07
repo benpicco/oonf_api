@@ -305,19 +305,20 @@ _unload_plugin(struct oonf_subsystem *plugin, bool cleanup) {
     return -1;
   }
 
-  OLSR_INFO(LOG_PLUGINLOADER, "Unloading plugin %s\n", plugin->name);
+  if (plugin->_initialized) {
+    OLSR_INFO(LOG_PLUGINLOADER, "Unloading plugin %s\n", plugin->name);
 
-  /* remove first from tree */
-  avl_delete(&olsr_plugin_tree, &plugin->_node);
+    /* remove first from tree */
+    avl_delete(&olsr_plugin_tree, &plugin->_node);
 
-  /* cleanup */
-  if (plugin->cleanup) {
-    plugin->cleanup();
+    /* cleanup */
+    if (plugin->cleanup) {
+      plugin->cleanup();
+    }
+    if (plugin->_dlhandle) {
+      dlclose(plugin->_dlhandle);
+    }
   }
-  if (plugin->_dlhandle) {
-    dlclose(plugin->_dlhandle);
-  }
-
   return 0;
 }
 
