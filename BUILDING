@@ -1,5 +1,10 @@
-To build:
+To build the OLSR.org Network Framework open a shell:
 
-cd build
-cmake ..
-make
+> cd build
+> cmake ..
+> make
+
+There are some build variables you can choose to configure building. We suggest to use ccmake to do this:
+
+> cd build
+> ccmake ..
