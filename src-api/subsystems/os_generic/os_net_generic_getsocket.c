@@ -39,34 +39,41 @@
  *
  */
 
-#ifndef OS_CLOCK_H_
-#define OS_CLOCK_H_
-
-#include <stdio.h>
-#include <sys/time.h>
+#include <errno.h>
+#include <fcntl.h>
 
 #include "common/common_types.h"
-#include "core/olsr_subsystem.h"
+#include "common/netaddr.h"
+#include "core/olsr_logging.h"
+#include "subsystems/os_net.h"
 
-#define MSEC_PER_SEC 1000
-#define USEC_PER_MSEC 1000
+/**
+ * Creates a new socket and configures it
+ * @param bind_to address to bind the socket to
+ * @param tcp true for a TCP socket, false for UDP
+ * @param recvbuf size of input buffer for socket
+ * @param interf pointer to interface to bind socket on,
+ *   NULL if socket should not be bound to an interface
+ * @param log_src logging source for error messages
+ * @return socket filedescriptor, -1 if an error happened
+ */
+int
+os_net_getsocket(union netaddr_socket *bind_to,
+    bool tcp, int recvbuf, struct olsr_interface_data *interf,
+    enum log_source log_src __attribute__((unused))) {
 
-/* pre-decleare inlines */
-static INLINE int os_clock_gettimeofday(struct timeval *tv);
+  int sock;
 
-#if defined(__linux__)
-#include "core/os_linux/os_clock_linux.h"
-#elif defined (BSD)
-#include "core/os_bsd/os_clock_bsd.h"
-#elif defined (_WIN32)
-#include "core/os_win32/os_clock_win32.h"
-#else
-#error "Unknown operation system"
-#endif
+  sock = socket(bind_to->std.sa_family,
+      tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
+  if (sock < 0) {
+    OLSR_WARN(log_src, "Cannot open socket: %s (%d)", strerror(errno), errno);
+    return -1;
+  }
 
-EXPORT extern struct oonf_subsystem oonf_os_clock_subsystem;
-
-/* prototypes for all os_system functions */
-EXPORT int os_clock_gettime64(uint64_t *t64);
-
-#endif /* OS_CLOCK_H_ */
+  if (os_net_configsocket(sock, bind_to, recvbuf, interf, log_src)) {
+    os_close(sock);
+    return -1;
+  }
+  return sock;
+}

@@ -39,34 +39,41 @@
  *
  */
 
-#ifndef OS_CLOCK_H_
-#define OS_CLOCK_H_
+#ifndef OS_SYSTEM_H_
+#define OS_SYSTEM_H_
 
 #include <stdio.h>
 #include <sys/time.h>
 
 #include "common/common_types.h"
-#include "core/olsr_subsystem.h"
+#include "common/list.h"
+#include "core/olsr_logging.h"
 
 #define MSEC_PER_SEC 1000
 #define USEC_PER_MSEC 1000
 
-/* pre-decleare inlines */
-static INLINE int os_clock_gettimeofday(struct timeval *tv);
+struct os_system_if_listener {
+  void (*if_changed)(const char *ifname, bool up);
 
+  struct list_entity _node;
+};
+
+/* include os-specific headers */
 #if defined(__linux__)
-#include "core/os_linux/os_clock_linux.h"
+#include "subsystems/os_linux/os_system_linux.h"
 #elif defined (BSD)
-#include "core/os_bsd/os_clock_bsd.h"
+#include "subsystems/os_bsd/os_system_bsd.h"
 #elif defined (_WIN32)
-#include "core/os_win32/os_clock_win32.h"
+#include "subsystems/os_win32/os_system_win32.h"
 #else
 #error "Unknown operation system"
 #endif
 
-EXPORT extern struct oonf_subsystem oonf_os_clock_subsystem;
+EXPORT extern struct oonf_subsystem oonf_os_system_subsystem;
 
 /* prototypes for all os_system functions */
-EXPORT int os_clock_gettime64(uint64_t *t64);
+EXPORT void os_system_iflistener_add(struct os_system_if_listener *);
+EXPORT void os_system_iflistener_remove(struct os_system_if_listener *);
+EXPORT int os_system_set_interface_state(const char *dev, bool up);
 
-#endif /* OS_CLOCK_H_ */
+#endif /* OS_SYSTEM_H_ */

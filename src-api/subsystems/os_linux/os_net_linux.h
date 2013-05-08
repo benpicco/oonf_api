@@ -39,34 +39,53 @@
  *
  */
 
-#ifndef OS_CLOCK_H_
-#define OS_CLOCK_H_
+#ifndef OS_NET_LINUX_H_
+#define OS_NET_LINUX_H_
 
-#include <stdio.h>
-#include <sys/time.h>
+#include <sys/select.h>
+#include <unistd.h>
+#include <ifaddrs.h>
 
-#include "common/common_types.h"
-#include "core/olsr_subsystem.h"
+#include "subsystems/os_net.h"
 
-#define MSEC_PER_SEC 1000
-#define USEC_PER_MSEC 1000
+/* name of the loopback interface */
+#define IF_LOOPBACK_NAME "lo"
 
-/* pre-decleare inlines */
-static INLINE int os_clock_gettimeofday(struct timeval *tv);
+/**
+ * Close a file descriptor
+ * @param fd filedescriptor
+ */
+static INLINE int
+os_close(int fd) {
+  return close(fd);
+}
 
-#if defined(__linux__)
-#include "core/os_linux/os_clock_linux.h"
-#elif defined (BSD)
-#include "core/os_bsd/os_clock_bsd.h"
-#elif defined (_WIN32)
-#include "core/os_win32/os_clock_win32.h"
-#else
-#error "Unknown operation system"
-#endif
+/**
+ * polls a number of sockets for network events. If no even happens or
+ * already has happened, function will return after timeout time.
+ * see 'man select' for more details
+ * @param num
+ * @param r
+ * @param w
+ * @param e
+ * @param timeout
+ * @return
+ */
+static INLINE int
+os_select(int num, fd_set *r,fd_set *w,fd_set *e, struct timeval *timeout) {
+  return select(num, r, w, e, timeout);
+}
 
-EXPORT extern struct oonf_subsystem oonf_os_clock_subsystem;
 
-/* prototypes for all os_system functions */
-EXPORT int os_clock_gettime64(uint64_t *t64);
+/**
+ * Binds a socket to a certain interface
+ * @param sock filedescriptor of socket
+ * @param interf name of interface
+ * @return -1 if an error happened, 0 otherwise
+ */
+static INLINE int
+os_net_bindto_interface(int sock, struct olsr_interface_data *data) {
+  return setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, data->name, strlen(data->name) + 1);
+}
 
-#endif /* OS_CLOCK_H_ */
+#endif /* OS_NET_LINUX_H_ */

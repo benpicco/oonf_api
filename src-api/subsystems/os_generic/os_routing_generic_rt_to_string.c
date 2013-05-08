@@ -39,34 +39,33 @@
  *
  */
 
-#ifndef OS_CLOCK_H_
-#define OS_CLOCK_H_
+#include "common/netaddr.h"
+#include "subsystems/os_routing.h"
 
-#include <stdio.h>
-#include <sys/time.h>
+/**
+ * Print OS route to string buffer
+ * @param buf pointer to string buffer
+ * @param route pointer to route
+ * @return pointer to string buffer, NULL if an error happened
+ */
+const char *
+os_routing_to_string(struct os_route_str *buf, struct os_route *route) {
+  struct netaddr_str buf1, buf2, buf3;
+  char ifbuf[IF_NAMESIZE];
+  int result;
+  result = snprintf(buf->buf, sizeof(*buf),
+      "'src %s gw %s dst %s metric %u table %u protocol %u if %s (%u)'",
+      netaddr_to_string(&buf1, &route->src),
+      netaddr_to_string(&buf2, &route->gw),
+      netaddr_to_string(&buf3, &route->dst),
+      route->metric,
+      (unsigned int)(route->table),
+      (unsigned int)(route->protocol),
+      if_indextoname(route->if_index, ifbuf),
+      route->if_index);
 
-#include "common/common_types.h"
-#include "core/olsr_subsystem.h"
-
-#define MSEC_PER_SEC 1000
-#define USEC_PER_MSEC 1000
-
-/* pre-decleare inlines */
-static INLINE int os_clock_gettimeofday(struct timeval *tv);
-
-#if defined(__linux__)
-#include "core/os_linux/os_clock_linux.h"
-#elif defined (BSD)
-#include "core/os_bsd/os_clock_bsd.h"
-#elif defined (_WIN32)
-#include "core/os_win32/os_clock_win32.h"
-#else
-#error "Unknown operation system"
-#endif
-
-EXPORT extern struct oonf_subsystem oonf_os_clock_subsystem;
-
-/* prototypes for all os_system functions */
-EXPORT int os_clock_gettime64(uint64_t *t64);
-
-#endif /* OS_CLOCK_H_ */
+  if (result < 0 || result > (int)sizeof(*buf)) {
+    return NULL;
+  }
+  return buf->buf;
+}

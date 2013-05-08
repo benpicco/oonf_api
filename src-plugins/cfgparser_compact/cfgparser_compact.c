@@ -55,7 +55,7 @@
 #include "config/cfg.h"
 #include "core/olsr_subsystem.h"
 #include "core/olsr_plugins.h"
-#include "tools/olsr_cfg.h"
+#include "core/olsr_cfg.h"
 
 #include "cfgparser_compact/cfgparser_compact.h"
 

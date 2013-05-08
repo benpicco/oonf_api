@@ -39,34 +39,51 @@
  *
  */
 
-#ifndef OS_CLOCK_H_
-#define OS_CLOCK_H_
+#ifndef OS_SYSTEM_LINUX_H_
+#define OS_SYSTEM_LINUX_H_
 
-#include <stdio.h>
-#include <sys/time.h>
+#include <linux/netlink.h>
 
-#include "common/common_types.h"
-#include "core/olsr_subsystem.h"
+#include "common/netaddr.h"
+#include "subsystems/olsr_socket.h"
+#include "subsystems/olsr_timer.h"
 
-#define MSEC_PER_SEC 1000
-#define USEC_PER_MSEC 1000
+struct os_system_netlink {
+  struct olsr_socket_entry socket;
+  struct autobuf out;
 
-/* pre-decleare inlines */
-static INLINE int os_clock_gettimeofday(struct timeval *tv);
+  struct nlmsghdr *in;
+  size_t in_len;
 
-#if defined(__linux__)
-#include "core/os_linux/os_clock_linux.h"
-#elif defined (BSD)
-#include "core/os_bsd/os_clock_bsd.h"
-#elif defined (_WIN32)
-#include "core/os_win32/os_clock_win32.h"
-#else
-#error "Unknown operation system"
-#endif
+  uint32_t seq_used;
+  uint32_t seq_sent;
 
-EXPORT extern struct oonf_subsystem oonf_os_clock_subsystem;
+  int msg_in_transit;
 
-/* prototypes for all os_system functions */
-EXPORT int os_clock_gettime64(uint64_t *t64);
+  void (*cb_message)(struct nlmsghdr *hdr);
+  void (*cb_error)(uint32_t seq, int error);
+  void (*cb_timeout)(void);
+  void (*cb_done)(uint32_t seq);
 
-#endif /* OS_CLOCK_H_ */
+  struct olsr_timer_entry timeout;
+};
+
+EXPORT int os_system_netlink_add(struct os_system_netlink *,
+    int protocol);
+EXPORT void os_system_netlink_remove(struct os_system_netlink *);
+EXPORT int os_system_netlink_send(struct os_system_netlink *fd,
+    struct nlmsghdr *nl_hdr);
+EXPORT int os_system_netlink_add_mc(struct os_system_netlink *,
+    const uint32_t *groups, size_t groupcount);
+EXPORT int os_system_netlink_drop_mc(struct os_system_netlink *,
+    const int *groups, size_t groupcount);
+
+EXPORT int os_system_netlink_addreq(struct nlmsghdr *n,
+    int type, const void *data, int len);
+
+static INLINE int
+os_system_netlink_addnetaddr(struct nlmsghdr *n,
+    int type, const struct netaddr *addr) {
+  return os_system_netlink_addreq(n, type, netaddr_get_binptr(addr), netaddr_get_maxprefix(addr)/8);
+}
+#endif /* OS_SYSTEM_LINUX_H_ */

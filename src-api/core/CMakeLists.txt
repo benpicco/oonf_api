@@ -22,57 +22,32 @@ ADD_CUSTOM_COMMAND (
     COMMENT "Create new library builddata"
 )
 
-SET(OONF_CORE_SRCS olsr_class.c
-                   olsr_clock.c
-                   olsr_interface.c
+SET(OONF_CORE_SRCS olsr_cfg.c
                    olsr_logging.c
-                   olsr_packet_socket.c
+                   olsr_logging_cfg.c
                    olsr_plugins.c
-                   olsr_socket.c
-                   olsr_stream_socket.c
                    olsr_subsystem.c
-                   olsr_timer.c
                    ${GEN_DATA_C})
 
-SET(OONF_CORE_INCLUDES olsr_class.h
-                       olsr_clock.h
-                       olsr_interface.h
+SET(OONF_CORE_INCLUDES olsr_cfg.h
                        olsr_logging.h
-                       olsr_netaddr_acl.h
-                       olsr_packet_socket.h
+                       olsr_logging_cfg.h
                        olsr_plugins.h
-                       olsr_socket.h
                        olsr_subsystem.h
-                       olsr_stream_socket.h
-                       olsr_timer.h
                        olsr_libdata.h
                        os_clock.h
-                       os_net.h
-                       os_routing.h
-                       os_syslog.h
-                       os_system.h
                        )
 
 # add os_specific source(include files
 # TODO: add BSD and WIN32
 IF(LINUX)
     SET(OONF_CORE_SRCS ${OONF_CORE_SRCS}
-                       os_generic/os_net_generic_configsocket.c
-                       os_generic/os_net_generic_getsocket.c
-                       os_generic/os_net_generic_join_mcast.c
-                       os_generic/os_net_generic_sendto.c
-                       os_generic/os_net_generic_set_nonblocking.c
-                       os_generic/os_routing_generic_rt_to_string.c
+                       os_linux/os_clock_linux.c
                        os_generic/os_syslog_generic.c
-                       os_linux/os_net_linux.c
-                       os_linux/os_system_linux.c
-                       os_linux/os_routing_linux.c
-                       os_linux/os_clock_linux.c)
+                       )
     SET(OONF_CORE_INCLUDES ${OONF_CORE_INCLUDES}
-                       os_linux/os_net_linux.h
-                       os_linux/os_system_linux.h
-                       os_linux/os_routing_linux.h
-                       os_linux/os_clock_linux.h)
+                       os_linux/os_clock_linux.h
+                       )
 ENDIF(LINUX)
 
 oonf_create_library("core" "${OONF_CORE_SRCS}" "${OONF_CORE_INCLUDES}" "rt")

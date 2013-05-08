@@ -48,8 +48,8 @@
 #include "core/olsr_plugins.h"
 #include "core/olsr_subsystem.h"
 
-#include "tools/olsr_cfg.h"
-#include "tools/olsr_telnet.h"
+#include "core/olsr_cfg.h"
+#include "subsystems/olsr_telnet.h"
 
 #include "plugin_controller/plugin_controller.h"
 

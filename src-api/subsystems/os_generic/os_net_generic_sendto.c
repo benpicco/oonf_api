@@ -39,34 +39,21 @@
  *
  */
 
-#ifndef OS_CLOCK_H_
-#define OS_CLOCK_H_
-
-#include <stdio.h>
-#include <sys/time.h>
+#include <sys/socket.h>
 
 #include "common/common_types.h"
-#include "core/olsr_subsystem.h"
+#include "common/netaddr.h"
+#include "subsystems/os_net.h"
 
-#define MSEC_PER_SEC 1000
-#define USEC_PER_MSEC 1000
-
-/* pre-decleare inlines */
-static INLINE int os_clock_gettimeofday(struct timeval *tv);
-
-#if defined(__linux__)
-#include "core/os_linux/os_clock_linux.h"
-#elif defined (BSD)
-#include "core/os_bsd/os_clock_bsd.h"
-#elif defined (_WIN32)
-#include "core/os_win32/os_clock_win32.h"
-#else
-#error "Unknown operation system"
-#endif
-
-EXPORT extern struct oonf_subsystem oonf_os_clock_subsystem;
-
-/* prototypes for all os_system functions */
-EXPORT int os_clock_gettime64(uint64_t *t64);
-
-#endif /* OS_CLOCK_H_ */
+/**
+ * Sends data to an UDP socket.
+ * @param fd filedescriptor
+ * @param buf buffer for target data
+ * @param length length of buffer
+ * @param dst pointer to netaddr socket to send packet to
+ * @return same as sendto()
+ */
+int
+os_sendto(int fd, const void *buf, size_t length, union netaddr_socket *dst) {
+  return sendto(fd, buf, length, 0, &dst->std, sizeof(*dst));
+}

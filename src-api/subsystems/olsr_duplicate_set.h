@@ -39,34 +39,63 @@
  *
  */
 
-#ifndef OS_CLOCK_H_
-#define OS_CLOCK_H_
+#ifndef OLSR_DUPLICATE_SET_H_
+#define OLSR_DUPLICATE_SET_H_
 
-#include <stdio.h>
-#include <sys/time.h>
-
+#include "common/avl.h"
 #include "common/common_types.h"
-#include "core/olsr_subsystem.h"
+#include "common/netaddr.h"
+#include "subsystems/olsr_timer.h"
 
-#define MSEC_PER_SEC 1000
-#define USEC_PER_MSEC 1000
+enum { OLSR_DUPSET_MAXIMUM_TOO_OLD = 8 };
 
-/* pre-decleare inlines */
-static INLINE int os_clock_gettimeofday(struct timeval *tv);
+enum olsr_duplicate_result {
+  OLSR_DUPSET_TOO_OLD   = -3,
+  OLSR_DUPSET_DUPLICATE = -2,
+  OLSR_DUPSET_CURRENT   = -1,
+  OLSR_DUPSET_NEW       =  0,
+  OLSR_DUPSET_NEWEST    =  1,
+};
 
-#if defined(__linux__)
-#include "core/os_linux/os_clock_linux.h"
-#elif defined (BSD)
-#include "core/os_bsd/os_clock_bsd.h"
-#elif defined (_WIN32)
-#include "core/os_win32/os_clock_win32.h"
-#else
-#error "Unknown operation system"
-#endif
+struct olsr_duplicate_set {
+  struct avl_tree _tree;
+};
 
-EXPORT extern struct oonf_subsystem oonf_os_clock_subsystem;
+struct olsr_duplicate_entry_key {
+  struct netaddr addr;
+  uint8_t  msg_type;
+};
 
-/* prototypes for all os_system functions */
-EXPORT int os_clock_gettime64(uint64_t *t64);
+struct olsr_duplicate_entry {
+  struct olsr_duplicate_entry_key key;
 
-#endif /* OS_CLOCK_H_ */
+  uint32_t history;
+  uint16_t current;
+
+  uint16_t too_old_count;
+
+  struct olsr_duplicate_set *set;
+
+  struct avl_node _node;
+  struct olsr_timer_entry _vtime;
+};
+
+EXPORT extern struct oonf_subsystem oonf_duplicate_set_subsystem;
+
+EXPORT void olsr_duplicate_set_add(struct olsr_duplicate_set *);
+EXPORT void olsr_duplicate_set_remove(struct olsr_duplicate_set *);
+
+EXPORT enum olsr_duplicate_result olsr_duplicate_entry_add(
+    struct olsr_duplicate_set *, uint8_t msg_type,
+    struct netaddr *, uint16_t seqno, uint64_t vtime);
+
+EXPORT enum olsr_duplicate_result olsr_duplicate_test(
+    struct olsr_duplicate_set *, uint8_t msg_type,
+    struct netaddr *, uint16_t seqno);
+
+static INLINE bool
+olsr_duplicate_is_new(enum olsr_duplicate_result result) {
+  return result == OLSR_DUPSET_NEW || result == OLSR_DUPSET_NEWEST;
+}
+
+#endif /* OLSR_DUPLICATE_SET_H_ */

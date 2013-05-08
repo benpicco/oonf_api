@@ -39,34 +39,26 @@
  *
  */
 
-#ifndef OS_CLOCK_H_
-#define OS_CLOCK_H_
+#include <fcntl.h>
 
-#include <stdio.h>
-#include <sys/time.h>
+#include "subsystems/os_net.h"
 
-#include "common/common_types.h"
-#include "core/olsr_subsystem.h"
+/**
+ * Set a socket to non-blocking mode
+ * @param sock filedescriptor of socket
+ * @return -1 if an error happened, 0 otherwise
+ */
+int
+os_net_set_nonblocking(int sock) {
+  int state;
 
-#define MSEC_PER_SEC 1000
-#define USEC_PER_MSEC 1000
+  /* put socket into non-blocking mode */
+  if ((state = fcntl(sock, F_GETFL)) == -1) {
+    return -1;
+  }
 
-/* pre-decleare inlines */
-static INLINE int os_clock_gettimeofday(struct timeval *tv);
-
-#if defined(__linux__)
-#include "core/os_linux/os_clock_linux.h"
-#elif defined (BSD)
-#include "core/os_bsd/os_clock_bsd.h"
-#elif defined (_WIN32)
-#include "core/os_win32/os_clock_win32.h"
-#else
-#error "Unknown operation system"
-#endif
-
-EXPORT extern struct oonf_subsystem oonf_os_clock_subsystem;
-
-/* prototypes for all os_system functions */
-EXPORT int os_clock_gettime64(uint64_t *t64);
-
-#endif /* OS_CLOCK_H_ */
+  if (fcntl(sock, F_SETFL, state | O_NONBLOCK) < 0) {
+    return -1;
+  }
+  return 0;
+}

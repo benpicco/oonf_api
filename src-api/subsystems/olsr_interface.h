@@ -39,34 +39,60 @@
  *
  */
 
-#ifndef OS_CLOCK_H_
-#define OS_CLOCK_H_
+#ifndef INTERFACE_H_
+#define INTERFACE_H_
 
-#include <stdio.h>
-#include <sys/time.h>
+#include <ifaddrs.h>
 
 #include "common/common_types.h"
-#include "core/olsr_subsystem.h"
+#include "common/avl.h"
+#include "common/list.h"
+#include "common/netaddr.h"
 
-#define MSEC_PER_SEC 1000
-#define USEC_PER_MSEC 1000
+#include "subsystems/olsr_timer.h"
+#include "subsystems/os_net.h"
 
-/* pre-decleare inlines */
-static INLINE int os_clock_gettimeofday(struct timeval *tv);
+struct olsr_interface_listener {
+  /* name of interface */
+  const char *name;
 
-#if defined(__linux__)
-#include "core/os_linux/os_clock_linux.h"
-#elif defined (BSD)
-#include "core/os_bsd/os_clock_bsd.h"
-#elif defined (_WIN32)
-#include "core/os_win32/os_clock_win32.h"
-#else
-#error "Unknown operation system"
-#endif
+  /*
+   * set to true if listener is on a mesh traffic interface.
+   * keep this false if in doubt, true will trigger some interface
+   * reconfiguration to allow forwarding of user traffic
+   */
+  bool mesh;
 
-EXPORT extern struct oonf_subsystem oonf_os_clock_subsystem;
+  /* callback for interface change */
+  void (*process)(struct olsr_interface_listener *);
 
-/* prototypes for all os_system functions */
-EXPORT int os_clock_gettime64(uint64_t *t64);
+  /*
+   * pointer to the interface this listener is registered to, will be
+   * set by the core while process() is called
+   */
+  struct olsr_interface *interface;
 
-#endif /* OS_CLOCK_H_ */
+  /*
+   * pointer to the interface data before the change happened, will be
+   * set by the core while process() is called
+   */
+  struct olsr_interface_data *old;
+
+  /* hook into list of listeners */
+  struct list_entity _node;
+};
+
+EXPORT extern struct avl_tree olsr_interface_tree;
+EXPORT extern struct oonf_subsystem oonf_interface_subsystem;
+
+EXPORT int olsr_interface_add_listener(struct olsr_interface_listener *);
+EXPORT void olsr_interface_remove_listener(struct olsr_interface_listener *);
+
+EXPORT struct olsr_interface_data *olsr_interface_get_data(const char *name);
+EXPORT void olsr_interface_trigger_change(const char *name, bool down);
+EXPORT void olsr_interface_trigger_handler(struct olsr_interface *interf);
+
+EXPORT int olsr_interface_find_address(struct netaddr *dst,
+    struct netaddr *prefix, struct olsr_interface_data *);
+
+#endif /* INTERFACE_H_ */

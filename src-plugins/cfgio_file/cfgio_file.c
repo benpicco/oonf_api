@@ -52,7 +52,7 @@
 #include "config/cfg.h"
 #include "core/olsr_plugins.h"
 
-#include "tools/olsr_cfg.h"
+#include "core/olsr_cfg.h"
 
 #include "cfgio_file/cfgio_file.h"
 
