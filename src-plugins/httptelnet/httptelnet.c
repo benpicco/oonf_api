@@ -44,12 +44,12 @@
 #include "common/netaddr.h"
 #include "common/netaddr_acl.h"
 #include "config/cfg_schema.h"
-#include "core/olsr_logging.h"
-#include "core/olsr_plugins.h"
-#include "core/olsr_subsystem.h"
-#include "core/olsr_cfg.h"
-#include "subsystems/olsr_http.h"
-#include "subsystems/olsr_telnet.h"
+#include "core/oonf_logging.h"
+#include "core/oonf_plugins.h"
+#include "core/oonf_subsystem.h"
+#include "core/oonf_cfg.h"
+#include "subsystems/oonf_http.h"
+#include "subsystems/oonf_telnet.h"
 
 /* constants */
 #define _CFG_SECTION "httptelnet"
@@ -58,21 +58,21 @@
 static int _init(void);
 static void _cleanup(void);
 
-static enum olsr_http_result _cb_generate_site(
-    struct autobuf *out, struct olsr_http_session *);
+static enum oonf_http_result _cb_generate_site(
+    struct autobuf *out, struct oonf_http_session *);
 
 static void _cb_config_changed(void);
 
 /* html handler */
-static struct olsr_http_handler _http_site_handler = {
+static struct oonf_http_handler _http_site_handler = {
   .content_handler = _cb_generate_site,
 };
 
 /* configuration */
 static struct cfg_schema_entry _httptelnet_entries[] = {
-  CFG_MAP_STRING(olsr_http_handler, site, "site", "/telnet", "Path for http2telnet bridge"),
-  CFG_MAP_ACL(olsr_http_handler, acl, "acl", "default_accept", "acl for http2telnet bridge"),
-  CFG_MAP_STRINGLIST(olsr_http_handler, auth, "auth", "", "TODO"),
+  CFG_MAP_STRING(oonf_http_handler, site, "site", "/telnet", "Path for http2telnet bridge"),
+  CFG_MAP_ACL(oonf_http_handler, acl, "acl", "default_accept", "acl for http2telnet bridge"),
+  CFG_MAP_STRINGLIST(oonf_http_handler, auth, "auth", "", "TODO"),
 };
 
 static struct cfg_schema_section _httptelnet_section = {
@@ -85,7 +85,7 @@ static struct cfg_schema_section _httptelnet_section = {
 /* plugin declaration */
 struct oonf_subsystem oonf_httptelnet_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
-  .descr = "OLSRD http2telnet bridge plugin",
+  .descr = "OONFD http2telnet bridge plugin",
   .author = "Henning Rogge",
 
   .cfg_section = &_httptelnet_section,
@@ -124,18 +124,18 @@ _cleanup(void) {
  * @param session pointer to http session
  * @return http result code
  */
-static enum olsr_http_result
-_cb_generate_site(struct autobuf *out, struct olsr_http_session *session) {
+static enum oonf_http_result
+_cb_generate_site(struct autobuf *out, struct oonf_http_session *session) {
   const char *command, *param;
 
-  command = olsr_http_lookup_param(session, "c");
-  param = olsr_http_lookup_param(session, "p");
+  command = oonf_http_lookup_param(session, "c");
+  param = oonf_http_lookup_param(session, "p");
 
   if (command == NULL) {
     return HTTP_404_NOT_FOUND;
   }
 
-  switch (olsr_telnet_execute(command, param, out, session->remote)) {
+  switch (oonf_telnet_execute(command, param, out, session->remote)) {
     case TELNET_RESULT_ACTIVE:
     case TELNET_RESULT_QUIT:
       session->content_type = HTTP_CONTENTTYPE_TEXT;
@@ -156,14 +156,14 @@ static void
 _cb_config_changed(void) {
   if (cfg_schema_tobin(&_http_site_handler, _httptelnet_section.post,
       _httptelnet_entries, ARRAYSIZE(_httptelnet_entries))) {
-    OLSR_WARN(LOG_CONFIG, "Could not convert httptelnet config to bin");
+    OONF_WARN(LOG_CONFIG, "Could not convert httptelnet config to bin");
     return;
   }
 
   if (_httptelnet_section.pre) {
-    olsr_http_remove(&_http_site_handler);
+    oonf_http_remove(&_http_site_handler);
   }
   if (_httptelnet_section.post) {
-    olsr_http_add(&_http_site_handler);
+    oonf_http_add(&_http_site_handler);
   }
 }

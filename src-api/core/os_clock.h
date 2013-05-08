@@ -46,7 +46,7 @@
 #include <sys/time.h>
 
 #include "common/common_types.h"
-#include "core/olsr_subsystem.h"
+#include "core/oonf_subsystem.h"
 
 #define MSEC_PER_SEC 1000
 #define USEC_PER_MSEC 1000

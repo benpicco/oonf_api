@@ -1,27 +1,27 @@
-SET(OONF_SUBSYSTEMS_SRCS olsr_class.c
-                         olsr_clock.c
-                         olsr_duplicate_set.c
-                         olsr_http.c
-                         olsr_interface.c
-                         olsr_packet_socket.c
-                         olsr_rfc5444.c
-                         olsr_socket.c
-                         olsr_stream_socket.c
-                         olsr_telnet.c
-                         olsr_timer.c
+SET(OONF_SUBSYSTEMS_SRCS oonf_class.c
+                         oonf_clock.c
+                         oonf_duplicate_set.c
+                         oonf_http.c
+                         oonf_interface.c
+                         oonf_packet_socket.c
+                         oonf_rfc5444.c
+                         oonf_socket.c
+                         oonf_stream_socket.c
+                         oonf_telnet.c
+                         oonf_timer.c
                          )
 
-SET(OONF_SUBSYSTEMS_INCLUDES olsr_class.h
-                             olsr_clock.h
-                             olsr_duplicate_set.h
-                             olsr_http.h
-                             olsr_interface.h
-                             olsr_packet_socket.h
-                             olsr_rfc5444.h
-                             olsr_socket.h
-                             olsr_stream_socket.h
-                             olsr_telnet.h
-                             olsr_timer.h
+SET(OONF_SUBSYSTEMS_INCLUDES oonf_class.h
+                             oonf_clock.h
+                             oonf_duplicate_set.h
+                             oonf_http.h
+                             oonf_interface.h
+                             oonf_packet_socket.h
+                             oonf_rfc5444.h
+                             oonf_socket.h
+                             oonf_stream_socket.h
+                             oonf_telnet.h
+                             oonf_timer.h
                              os_net.h
                              os_routing.h
                              os_system.h

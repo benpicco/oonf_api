@@ -43,8 +43,8 @@
 #define OS_SYSLOG_H_
 
 #include "common/common_types.h"
-#include "core/olsr_logging.h"
-#include "core/olsr_subsystem.h"
+#include "core/oonf_logging.h"
+#include "core/oonf_subsystem.h"
 
 EXPORT extern struct oonf_subsystem oonf_os_syslog_subsystem;
 

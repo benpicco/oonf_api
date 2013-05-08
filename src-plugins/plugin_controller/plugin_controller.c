@@ -44,12 +44,12 @@
 #include "common/netaddr.h"
 #include "common/netaddr_acl.h"
 #include "config/cfg_schema.h"
-#include "core/olsr_logging.h"
-#include "core/olsr_plugins.h"
-#include "core/olsr_subsystem.h"
+#include "core/oonf_logging.h"
+#include "core/oonf_plugins.h"
+#include "core/oonf_subsystem.h"
 
-#include "core/olsr_cfg.h"
-#include "subsystems/olsr_telnet.h"
+#include "core/oonf_cfg.h"
+#include "subsystems/oonf_telnet.h"
 
 #include "plugin_controller/plugin_controller.h"
 
@@ -62,10 +62,10 @@ struct _acl_config {
 static int _init(void);
 static void _cleanup(void);
 
-static enum olsr_telnet_result _cb_telnet_plugin(struct olsr_telnet_data *data);
+static enum oonf_telnet_result _cb_telnet_plugin(struct oonf_telnet_data *data);
 static void _cb_config_changed(void);
 
-struct olsr_telnet_command _telnet_commands[] = {
+struct oonf_telnet_command _telnet_commands[] = {
   TELNET_CMD("plugin", _cb_telnet_plugin,
         "control plugins dynamically, parameters are 'list',"
         "'load <plugin>' and 'unload <plugin>'"),
@@ -88,7 +88,7 @@ struct _acl_config _config;
 /* plugin declaration */
 struct oonf_subsystem oonf_plugin_controller_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
-  .descr = "OLSRD plugin controller plugin",
+  .descr = "OONFD plugin controller plugin",
   .author = "Henning Rogge",
 
   .cfg_section = &_plugin_controller_section,
@@ -107,7 +107,7 @@ _init(void) {
   netaddr_acl_add(&_config.acl);
   _telnet_commands[0].acl = &_config.acl;
 
-  olsr_telnet_add(&_telnet_commands[0]);
+  oonf_telnet_add(&_telnet_commands[0]);
   return 0;
 }
 
@@ -116,7 +116,7 @@ _init(void) {
  */
 static void
 _cleanup(void) {
-  olsr_telnet_remove(&_telnet_commands[0]);
+  oonf_telnet_remove(&_telnet_commands[0]);
   netaddr_acl_remove(&_config.acl);
 }
 
@@ -125,15 +125,15 @@ _cleanup(void) {
  * @param data pointer to telnet data
  * @return telnet command result
  */
-static enum olsr_telnet_result
-_cb_telnet_plugin(struct olsr_telnet_data *data) {
+static enum oonf_telnet_result
+_cb_telnet_plugin(struct oonf_telnet_data *data) {
   struct oonf_subsystem *plugin;
   const char *plugin_name = NULL;
 
   if (data->parameter == NULL || strcasecmp(data->parameter, "list") == 0) {
     abuf_puts(data->out, "Plugins:\n");
 
-    avl_for_each_element(&olsr_plugin_tree, plugin, _node) {
+    avl_for_each_element(&oonf_plugin_tree, plugin, _node) {
       abuf_appendf(data->out, "\t%s\n", plugin->name);
     }
     return TELNET_RESULT_ACTIVE;
@@ -149,13 +149,13 @@ _cb_telnet_plugin(struct olsr_telnet_data *data) {
     plugin_name++;
   }
 
-  plugin = olsr_plugins_get(plugin_name);
+  plugin = oonf_plugins_get(plugin_name);
   if (str_hasnextword(data->parameter, "load") == NULL) {
     if (plugin != NULL) {
       abuf_appendf(data->out, "Plugin %s already loaded\n", plugin_name);
       return TELNET_RESULT_ACTIVE;
     }
-    plugin = olsr_plugins_load(plugin_name);
+    plugin = oonf_plugins_load(plugin_name);
     if (plugin != NULL) {
       abuf_appendf(data->out, "Plugin %s successfully loaded\n", plugin_name);
     }
@@ -171,7 +171,7 @@ _cb_telnet_plugin(struct olsr_telnet_data *data) {
   }
 
   if (str_hasnextword(data->parameter, "unload") == NULL) {
-    if (olsr_plugins_unload(plugin)) {
+    if (oonf_plugins_unload(plugin)) {
       abuf_appendf(data->out, "Could not unload plugin %s\n", plugin_name);
     }
     else {

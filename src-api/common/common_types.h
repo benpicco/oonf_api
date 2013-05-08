@@ -44,7 +44,7 @@
 
 #include <stddef.h>
 
-/* support EXPORT macro of OLSR */
+/* support EXPORT macro of OONF */
 #ifndef EXPORT
 #  define EXPORT __attribute__((visibility ("default")))
 #endif

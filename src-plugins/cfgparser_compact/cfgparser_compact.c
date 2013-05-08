@@ -53,9 +53,9 @@
 #include "config/cfg_db.h"
 #include "config/cfg_parser.h"
 #include "config/cfg.h"
-#include "core/olsr_subsystem.h"
-#include "core/olsr_plugins.h"
-#include "core/olsr_cfg.h"
+#include "core/oonf_subsystem.h"
+#include "core/oonf_plugins.h"
+#include "core/oonf_cfg.h"
 
 #include "cfgparser_compact/cfgparser_compact.h"
 
@@ -73,7 +73,7 @@ static int _parse_line(struct cfg_db *db, char *line,
 
 struct oonf_subsystem oonf_compact_parser_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
-  .descr = "OLSRD compact configuration format plugin",
+  .descr = "OONFD compact configuration format plugin",
   .author = "Henning Rogge",
 
   .early_cfg_init = _early_cfg_init,
@@ -94,7 +94,7 @@ struct cfg_parser cfg_parser_compact = {
 static void
 _early_cfg_init(void)
 {
-  cfg_parser_add(olsr_cfg_get_instance(), &cfg_parser_compact);
+  cfg_parser_add(oonf_cfg_get_instance(), &cfg_parser_compact);
 }
 
 /**
@@ -103,7 +103,7 @@ _early_cfg_init(void)
 static void
 _cleanup(void)
 {
-  cfg_parser_remove(olsr_cfg_get_instance(), &cfg_parser_compact);
+  cfg_parser_remove(oonf_cfg_get_instance(), &cfg_parser_compact);
 }
 
 

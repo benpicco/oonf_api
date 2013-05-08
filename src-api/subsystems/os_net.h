@@ -49,10 +49,10 @@
 #include "common/common_types.h"
 #include "common/list.h"
 #include "common/netaddr.h"
-#include "core/olsr_logging.h"
-#include "subsystems/olsr_timer.h"
+#include "core/oonf_logging.h"
+#include "subsystems/oonf_timer.h"
 
-struct olsr_interface_data {
+struct oonf_interface_data {
   /* Interface addresses with mesh-wide scope (at least) */
   struct netaddr *if_v4, *if_v6;
 
@@ -76,9 +76,9 @@ struct olsr_interface_data {
   bool up;
 };
 
-struct olsr_interface {
+struct oonf_interface {
   /* data of interface */
-  struct olsr_interface_data data;
+  struct oonf_interface_data data;
 
   /*
    * usage counter to allow multiple instances to add the same
@@ -103,11 +103,11 @@ struct olsr_interface {
   struct avl_node _node;
 
   /* timer for lazy interface change handling */
-  struct olsr_timer_entry _change_timer;
+  struct oonf_timer_entry _change_timer;
 };
 
 /* pre-declare inlines */
-static INLINE int os_net_bindto_interface(int, struct olsr_interface_data *data);
+static INLINE int os_net_bindto_interface(int, struct oonf_interface_data *data);
 static INLINE int os_close(int fd);
 static INLINE int os_select(
     int num, fd_set *r,fd_set *w,fd_set *e, struct timeval *timeout);
@@ -127,21 +127,21 @@ EXPORT extern struct oonf_subsystem oonf_os_net_subsystem;
 
 /* prototypes for all os_net functions */
 EXPORT int os_net_getsocket(union netaddr_socket *bindto,
-    bool tcp, int recvbuf, struct olsr_interface_data *, enum log_source log_src);
+    bool tcp, int recvbuf, struct oonf_interface_data *, enum log_source log_src);
 EXPORT int os_net_configsocket(int sock, union netaddr_socket *bindto,
-    int recvbuf, struct olsr_interface_data *, enum log_source log_src);
+    int recvbuf, struct oonf_interface_data *, enum log_source log_src);
 EXPORT int os_net_set_nonblocking(int sock);
 EXPORT int os_net_join_mcast_recv(int sock, struct netaddr *multicast,
-    struct olsr_interface_data *oif, enum log_source log_src);
+    struct oonf_interface_data *oif, enum log_source log_src);
 EXPORT int os_net_join_mcast_send(int sock, struct netaddr *multicast,
-    struct olsr_interface_data *oif, bool loop, enum log_source log_src);
-EXPORT int os_net_update_interface(struct olsr_interface_data *, const char *);
+    struct oonf_interface_data *oif, bool loop, enum log_source log_src);
+EXPORT int os_net_update_interface(struct oonf_interface_data *, const char *);
 EXPORT int os_recvfrom(int fd, void *buf, size_t length,
-    union netaddr_socket *source, struct olsr_interface_data *);
+    union netaddr_socket *source, struct oonf_interface_data *);
 EXPORT int os_sendto(
     int fd, const void *buf, size_t length, union netaddr_socket *dst);
 
-EXPORT int os_net_init_mesh_if(struct olsr_interface *);
-EXPORT void os_net_cleanup_mesh_if(struct olsr_interface *);
+EXPORT int os_net_init_mesh_if(struct oonf_interface *);
+EXPORT void os_net_cleanup_mesh_if(struct oonf_interface *);
 
 #endif /* OS_NET_H_ */

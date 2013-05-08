@@ -49,8 +49,8 @@
 
 #include "common/common_types.h"
 
-#include "core/olsr_logging.h"
-#include "core/olsr_subsystem.h"
+#include "core/oonf_logging.h"
+#include "core/oonf_subsystem.h"
 #include "subsystems/os_net.h"
 
 /* ip forwarding */
@@ -99,14 +99,14 @@ static int
 _init(void) {
   _ioctl_v4 = socket(AF_INET, SOCK_DGRAM, 0);
   if (_ioctl_v4 == -1) {
-    OLSR_WARN(LOG_OS_NET, "Cannot open ipv4 ioctl socket: %s (%d)",
+    OONF_WARN(LOG_OS_NET, "Cannot open ipv4 ioctl socket: %s (%d)",
         strerror(errno), errno);
     return -1;
   }
 
   _ioctl_v6 = socket(AF_INET6, SOCK_DGRAM, 0);
   if (_ioctl_v6 == -1) {
-    OLSR_WARN(LOG_OS_NET, "Cannot open ipv6 ioctl socket: %s (%d)",
+    OONF_WARN(LOG_OS_NET, "Cannot open ipv6 ioctl socket: %s (%d)",
         strerror(errno), errno);
 
     /* do not stop here, system might just not support IPv6 */
@@ -138,7 +138,7 @@ _cleanup(void) {
  */
 int
 os_recvfrom(int fd, void *buf, size_t length, union netaddr_socket *source,
-    struct olsr_interface_data *interf __attribute__((unused))) {
+    struct oonf_interface_data *interf __attribute__((unused))) {
   socklen_t len = sizeof(*source);
   return recvfrom(fd, buf, length, 0, &source->std, &len);
 }
@@ -151,7 +151,7 @@ os_recvfrom(int fd, void *buf, size_t length, union netaddr_socket *source,
  * @return -1 if an error happened, 0 otherwise
  */
 int
-os_net_update_interface(struct olsr_interface_data *ifdata,
+os_net_update_interface(struct oonf_interface_data *ifdata,
     const char *name) {
   struct ifreq ifr;
   struct ifaddrs *ifaddrs;
@@ -179,7 +179,7 @@ os_net_update_interface(struct olsr_interface_data *ifdata,
   strscpy(ifr.ifr_name, ifdata->name, IF_NAMESIZE);
 
   if (ioctl(_ioctl_v4, SIOCGIFFLAGS, &ifr) < 0) {
-    OLSR_WARN(LOG_OS_NET,
+    OONF_WARN(LOG_OS_NET,
         "ioctl SIOCGIFFLAGS (get flags) error on device %s: %s (%d)\n",
         ifdata->name, strerror(errno), errno);
     return -1;
@@ -193,7 +193,7 @@ os_net_update_interface(struct olsr_interface_data *ifdata,
   strscpy(ifr.ifr_name, ifdata->name, IF_NAMESIZE);
 
   if (ioctl(_ioctl_v4, SIOCGIFHWADDR, &ifr) < 0) {
-    OLSR_WARN(LOG_OS_NET,
+    OONF_WARN(LOG_OS_NET,
         "ioctl SIOCGIFHWADDR (get flags) error on device %s: %s (%d)\n",
         ifdata->name, strerror(errno), errno);
     return -1;
@@ -206,7 +206,7 @@ os_net_update_interface(struct olsr_interface_data *ifdata,
   addrcount = 0;
 
   if (getifaddrs(&ifaddrs)) {
-    OLSR_WARN(LOG_OS_NET,
+    OONF_WARN(LOG_OS_NET,
         "getifaddrs() failed: %s (%d)", strerror(errno), errno);
     return -1;
   }
@@ -220,7 +220,7 @@ os_net_update_interface(struct olsr_interface_data *ifdata,
 
   ifdata->addresses = calloc(addrcount, sizeof(struct netaddr));
   if (ifdata->addresses == NULL) {
-    OLSR_WARN(LOG_OS_NET,
+    OONF_WARN(LOG_OS_NET,
         "Cannot allocate memory for interface %s with %"PRINTF_SIZE_T_SPECIFIER" prefixes",
         ifdata->name, addrcount);
     freeifaddrs(ifaddrs);
@@ -267,7 +267,7 @@ os_net_update_interface(struct olsr_interface_data *ifdata,
  * @return -1 if an error happened, 0 otherwise
  */
 int
-os_net_init_mesh_if(struct olsr_interface *interf) {
+os_net_init_mesh_if(struct oonf_interface *interf) {
   char procfile[FILENAME_MAX];
   char old_redirect = 0, old_spoof = 0;
 
@@ -281,7 +281,7 @@ os_net_init_mesh_if(struct olsr_interface *interf) {
   snprintf(procfile, sizeof(procfile), PROC_IF_REDIRECT, interf->data.name);
 
   if (_os_linux_writeToProc(procfile, &old_redirect, '0')) {
-    OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable ICMP redirects! "
+    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable ICMP redirects! "
         "You should manually ensure that ICMP redirects are disabled!");
   }
 
@@ -289,7 +289,7 @@ os_net_init_mesh_if(struct olsr_interface *interf) {
   snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, interf->data.name);
 
   if (_os_linux_writeToProc(procfile, &old_spoof, '0')) {
-    OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable the IP spoof filter! "
+    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable the IP spoof filter! "
         "You should mannually ensure that IP spoof filtering is disabled!");
   }
 
@@ -302,7 +302,7 @@ os_net_init_mesh_if(struct olsr_interface *interf) {
  * @param interf pointer to interface object
  */
 void
-os_net_cleanup_mesh_if(struct olsr_interface *interf) {
+os_net_cleanup_mesh_if(struct oonf_interface *interf) {
   char restore_redirect, restore_spoof;
   char procfile[FILENAME_MAX];
 
@@ -313,7 +313,7 @@ os_net_cleanup_mesh_if(struct olsr_interface *interf) {
   snprintf(procfile, sizeof(procfile), PROC_IF_REDIRECT, interf->data.name);
 
   if (_os_linux_writeToProc(procfile, NULL, restore_redirect) != 0) {
-    OLSR_WARN(LOG_OS_SYSTEM, "Could not restore ICMP redirect flag %s to %c",
+    OONF_WARN(LOG_OS_SYSTEM, "Could not restore ICMP redirect flag %s to %c",
         procfile, restore_redirect);
   }
 
@@ -321,7 +321,7 @@ os_net_cleanup_mesh_if(struct olsr_interface *interf) {
   snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, interf->data.name);
 
   if (_os_linux_writeToProc(procfile, NULL, restore_spoof) != 0) {
-    OLSR_WARN(LOG_OS_SYSTEM, "Could not restore IP spoof flag %s to %c",
+    OONF_WARN(LOG_OS_SYSTEM, "Could not restore IP spoof flag %s to %c",
         procfile, restore_spoof);
   }
 
@@ -338,23 +338,23 @@ os_net_cleanup_mesh_if(struct olsr_interface *interf) {
 static void
 _activate_if_routing(void) {
   if (_os_linux_writeToProc(PROC_IPFORWARD_V4, &_original_ipv4_forward, '1')) {
-    OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not activate ip_forward for ipv4! "
+    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not activate ip_forward for ipv4! "
         "You should manually ensure that ip_forward for ipv4 is activated!");
   }
   if (_os_linux_writeToProc(PROC_IPFORWARD_V6, &_original_ipv6_forward, '1')) {
-    OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not activate ip_forward for ipv6! "
+    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not activate ip_forward for ipv6! "
         "You should manually ensure that ip_forward for ipv6 is activated!");
   }
 
   if (_os_linux_writeToProc(PROC_ALL_REDIRECT, &_original_icmp_redirect, '0')) {
-    OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable ICMP redirects! "
+    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable ICMP redirects! "
         "You should manually ensure that ICMP redirects are disabled!");
   }
 
   /* check kernel version and disable global rp_filter */
   if (_is_at_least_linuxkernel_2_6_31()) {
     if (_os_linux_writeToProc(PROC_ALL_SPOOF, &_original_rp_filter, '0')) {
-      OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable global rp_filter "
+      OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable global rp_filter "
           "(necessary for kernel 2.6.31 and newer)! You should manually "
           "ensure that rp_filter is disabled!");
     }
@@ -364,23 +364,23 @@ _activate_if_routing(void) {
 static void
 _deactivate_if_routing(void) {
   if (_os_linux_writeToProc(PROC_ALL_REDIRECT, NULL, _original_icmp_redirect) != 0) {
-    OLSR_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_SYSTEM,
         "WARNING! Could not restore ICMP redirect flag %s to %c!",
         PROC_ALL_REDIRECT, _original_icmp_redirect);
   }
 
   if (_os_linux_writeToProc(PROC_ALL_SPOOF, NULL, _original_rp_filter)) {
-    OLSR_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_SYSTEM,
         "WARNING! Could not restore global rp_filter flag %s to %c!",
         PROC_ALL_SPOOF, _original_rp_filter);
   }
 
   if (_os_linux_writeToProc(PROC_IPFORWARD_V4, NULL, _original_ipv4_forward)) {
-    OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore %s to %c!",
+    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore %s to %c!",
         PROC_IPFORWARD_V4, _original_ipv4_forward);
   }
   if (_os_linux_writeToProc(PROC_IPFORWARD_V6, NULL, _original_ipv6_forward)) {
-    OLSR_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore %s to %c",
+    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore %s to %c",
         PROC_IPFORWARD_V6, _original_ipv6_forward);
   }
 }
@@ -405,14 +405,14 @@ _os_linux_writeToProc(const char *file, char *old, char value) {
   }
 
   if ((fd = open(file, O_RDWR)) < 0) {
-    OLSR_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_SYSTEM,
       "Error, cannot open proc entry %s: %s (%d)\n",
       file, strerror(errno), errno);
     return -1;
   }
 
   if (read(fd, &rv, 1) != 1) {
-    OLSR_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_SYSTEM,
       "Error, cannot read proc entry %s: %s (%d)\n",
       file, strerror(errno), errno);
     return -1;
@@ -420,19 +420,19 @@ _os_linux_writeToProc(const char *file, char *old, char value) {
 
   if (rv != value) {
     if (lseek(fd, SEEK_SET, 0) == -1) {
-      OLSR_WARN(LOG_OS_SYSTEM,
+      OONF_WARN(LOG_OS_SYSTEM,
         "Error, cannot rewind to start on proc entry %s: %s (%d)\n",
         file, strerror(errno), errno);
       return -1;
     }
 
     if (write(fd, &value, 1) != 1) {
-      OLSR_WARN(LOG_OS_SYSTEM,
+      OONF_WARN(LOG_OS_SYSTEM,
         "Error, cannot write '%c' to proc entry %s: %s (%d)\n",
         value, file, strerror(errno), errno);
     }
 
-    OLSR_DEBUG(LOG_OS_SYSTEM, "Writing '%c' (was %c) to %s", value, rv, file);
+    OONF_DEBUG(LOG_OS_SYSTEM, "Writing '%c' (was %c) to %s", value, rv, file);
   }
 
   close(fd);
@@ -455,7 +455,7 @@ _is_at_least_linuxkernel_2_6_31(void) {
 
   memset(&uts, 0, sizeof(uts));
   if (uname(&uts)) {
-    OLSR_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_SYSTEM,
         "Error, could not read kernel version: %s (%d)\n",
         strerror(errno), errno);
     return false;
@@ -482,7 +482,7 @@ _is_at_least_linuxkernel_2_6_31(void) {
   return first == 2 && second == 6 && third >= 31;
 
 kernel_parse_error:
-  OLSR_WARN(LOG_OS_SYSTEM,
+  OONF_WARN(LOG_OS_SYSTEM,
       "Error, cannot parse kernel version: %s\n", uts.release);
   return false;
 }

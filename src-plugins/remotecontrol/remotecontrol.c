@@ -53,15 +53,15 @@
 #include "config/cfg_db.h"
 #include "config/cfg_schema.h"
 
-#include "core/olsr_logging.h"
-#include "subsystems/olsr_class.h"
-#include "core/olsr_plugins.h"
-#include "subsystems/olsr_timer.h"
-#include "core/olsr_subsystem.h"
+#include "core/oonf_logging.h"
+#include "subsystems/oonf_class.h"
+#include "core/oonf_plugins.h"
+#include "subsystems/oonf_timer.h"
+#include "core/oonf_subsystem.h"
 #include "subsystems/os_routing.h"
 
-#include "core/olsr_cfg.h"
-#include "subsystems/olsr_telnet.h"
+#include "core/oonf_cfg.h"
+#include "subsystems/oonf_telnet.h"
 
 #include "remotecontrol/remotecontrol.h"
 
@@ -72,7 +72,7 @@ struct _remotecontrol_cfg {
 
 struct _remotecontrol_session {
   struct list_entity node;
-  struct olsr_telnet_cleanup cleanup;
+  struct oonf_telnet_cleanup cleanup;
 
   uint8_t mask[LOG_MAXIMUM_SOURCES];
 
@@ -83,19 +83,19 @@ struct _remotecontrol_session {
 static int _init(void);
 static void _cleanup(void);
 
-static enum olsr_telnet_result _cb_handle_resource(struct olsr_telnet_data *data);
-static enum olsr_telnet_result _cb_handle_route(struct olsr_telnet_data *data);
-static enum olsr_telnet_result _cb_handle_log(struct olsr_telnet_data *data);
-static enum olsr_telnet_result _cb_handle_config(struct olsr_telnet_data *data);
-static enum olsr_telnet_result _update_logfilter(struct olsr_telnet_data *data,
+static enum oonf_telnet_result _cb_handle_resource(struct oonf_telnet_data *data);
+static enum oonf_telnet_result _cb_handle_route(struct oonf_telnet_data *data);
+static enum oonf_telnet_result _cb_handle_log(struct oonf_telnet_data *data);
+static enum oonf_telnet_result _cb_handle_config(struct oonf_telnet_data *data);
+static enum oonf_telnet_result _update_logfilter(struct oonf_telnet_data *data,
     uint8_t *mask, const char *current, bool value);
 
 static void _print_memory(struct autobuf *buf);
 static void _print_timer(struct autobuf *buf);
 
-static enum olsr_telnet_result _start_logging(struct olsr_telnet_data *data,
+static enum oonf_telnet_result _start_logging(struct oonf_telnet_data *data,
     struct _remotecontrol_session *rc_session);
-static void _stop_logging(struct olsr_telnet_data *data);
+static void _stop_logging(struct oonf_telnet_data *data);
 
 static void _cb_print_log(struct log_handler_entry *,
     struct log_parameters *);
@@ -105,8 +105,8 @@ static void _cb_route_get(struct os_route *filter, struct os_route *route);
 
 static void _cb_config_changed(void);
 static struct _remotecontrol_session *
-    _get_remotecontrol_session(struct olsr_telnet_data *data);
-static void _cb_handle_session_cleanup(struct olsr_telnet_cleanup *cleanup);
+    _get_remotecontrol_session(struct oonf_telnet_data *data);
+static void _cb_handle_session_cleanup(struct oonf_telnet_cleanup *cleanup);
 
 /* configuration */
 static struct cfg_schema_entry _remotecontrol_entries[] = {
@@ -125,7 +125,7 @@ static struct _remotecontrol_cfg _remotecontrol_config;
 /* plugin declaration */
 struct oonf_subsystem oonf_remotecontrol_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
- .descr = "OLSRD remote control and debug plugin",
+ .descr = "OONFD remote control and debug plugin",
   .author = "Henning Rogge",
 
   .cfg_section = &_remotecontrol_section,
@@ -136,7 +136,7 @@ struct oonf_subsystem oonf_remotecontrol_subsystem = {
 DECLARE_OONF_PLUGIN(oonf_remotecontrol_subsystem);
 
 /* command callbacks and names */
-static struct olsr_telnet_command _telnet_cmds[] = {
+static struct oonf_telnet_command _telnet_cmds[] = {
   TELNET_CMD("resources", _cb_handle_resource,
       "\"resources memory\": display information about memory usage\n"
       "\"resources timer\": display information about active timers\n",
@@ -199,7 +199,7 @@ _init(void)
   list_init_head(&_remote_sessions);
 
   for (i=0; i<ARRAYSIZE(_telnet_cmds); i++) {
-    olsr_telnet_add(&_telnet_cmds[i]);
+    oonf_telnet_add(&_telnet_cmds[i]);
   }
 
   return 0;
@@ -216,11 +216,11 @@ _cleanup(void)
 
   /* shutdown all running logging streams */
   list_for_each_element_safe(&_remote_sessions, session, node, it) {
-    olsr_telnet_stop(session->cleanup.data);
+    oonf_telnet_stop(session->cleanup.data);
   }
 
   for (i=0; i<ARRAYSIZE(_telnet_cmds); i++) {
-    olsr_telnet_remove(&_telnet_cmds[i]);
+    oonf_telnet_remove(&_telnet_cmds[i]);
   }
 
   netaddr_acl_remove(&_remotecontrol_config.acl);
@@ -232,16 +232,16 @@ _cleanup(void)
  */
 static void
 _print_memory(struct autobuf *buf) {
-  struct olsr_class *c;
+  struct oonf_class *c;
 
-  avl_for_each_element(&olsr_classes, c, _node) {
+  avl_for_each_element(&oonf_classes, c, _node) {
     abuf_appendf(buf, "%-25s (MEMORY) size: %"PRINTF_SIZE_T_SPECIFIER
         " usage: %u freelist: %u allocations: %u/%u\n",
         c->name, c->size,
-        olsr_class_get_usage(c),
-        olsr_class_get_free(c),
-        olsr_class_get_allocations(c),
-        olsr_class_get_recycled(c));
+        oonf_class_get_usage(c),
+        oonf_class_get_free(c),
+        oonf_class_get_allocations(c),
+        oonf_class_get_recycled(c));
   }
 }
 
@@ -251,9 +251,9 @@ _print_memory(struct autobuf *buf) {
  */
 static void
 _print_timer(struct autobuf *buf) {
-  struct olsr_timer_info *t, *iterator;
+  struct oonf_timer_info *t, *iterator;
 
-  OLSR_FOR_ALL_TIMERS(t, iterator) {
+  OONF_FOR_ALL_TIMERS(t, iterator) {
     abuf_appendf(buf, "%-25s (TIMER) usage: %u changes: %u\n",
         t->name, t->usage, t->changes);
   }
@@ -264,8 +264,8 @@ _print_timer(struct autobuf *buf) {
  * @param data pointer to telnet data
  * @return telnet result constant
  */
-static enum olsr_telnet_result
-_cb_handle_resource(struct olsr_telnet_data *data) {
+static enum oonf_telnet_result
+_cb_handle_resource(struct oonf_telnet_data *data) {
   if (data->parameter == NULL || strcasecmp(data->parameter, "memory") == 0) {
     abuf_puts(data->out, "Memory cookies:\n");
     _print_memory(data->out);
@@ -287,14 +287,14 @@ _cb_handle_resource(struct olsr_telnet_data *data) {
  *    if it should be removed
  * @return telnet result constant
  */
-static enum olsr_telnet_result
-_update_logfilter(struct olsr_telnet_data *data,
+static enum oonf_telnet_result
+_update_logfilter(struct oonf_telnet_data *data,
     uint8_t *mask, const char *param, bool value) {
   const char *next;
   enum log_source src;
   enum log_severity sev;
 
-  OLSR_FOR_ALL_LOGSEVERITIES(sev) {
+  OONF_FOR_ALL_LOGSEVERITIES(sev) {
     if ((next = str_hasnextword(param, LOG_SEVERITY_NAMES[sev])) != NULL) {
       break;
     }
@@ -306,25 +306,25 @@ _update_logfilter(struct olsr_telnet_data *data,
 
   param = next;
   while (param && *param) {
-    for (src = 0; src < olsr_log_get_sourcecount(); src++) {
+    for (src = 0; src < oonf_log_get_sourcecount(); src++) {
       if ((next = str_hasnextword(param, LOG_SOURCE_NAMES[src])) != NULL) {
         if (value) {
-          olsr_log_mask_set(mask, src, sev);
+          oonf_log_mask_set(mask, src, sev);
         }
         else {
-          olsr_log_mask_reset(mask, src, sev);
+          oonf_log_mask_reset(mask, src, sev);
         }
         break;
       }
     }
-    if (src == olsr_log_get_sourcecount()) {
+    if (src == oonf_log_get_sourcecount()) {
       abuf_appendf(data->out, "Error, unknown logging source: %s\n", param);
       return TELNET_RESULT_ACTIVE;
     }
     param = next;
   }
 
-  olsr_log_updatemask();
+  oonf_log_updatemask();
   return TELNET_RESULT_ACTIVE;
 }
 
@@ -336,13 +336,13 @@ _update_logfilter(struct olsr_telnet_data *data,
 static void
 _cb_print_log(struct log_handler_entry *h __attribute__((unused)),
     struct log_parameters *param) {
-  struct olsr_telnet_data *data = h->custom;
+  struct oonf_telnet_data *data = h->custom;
 
   abuf_puts(data->out, param->buffer);
   abuf_puts(data->out, "\n");
 
-  /* This might trigger logging output in olsr_socket_stream ! */
-  olsr_telnet_flush_session(data);
+  /* This might trigger logging output in oonf_socket_stream ! */
+  oonf_telnet_flush_session(data);
 }
 
 /**
@@ -350,12 +350,12 @@ _cb_print_log(struct log_handler_entry *h __attribute__((unused)),
  * @param telnet pointer ot telnet telnet
  */
 static void
-_stop_logging(struct olsr_telnet_data *session) {
+_stop_logging(struct oonf_telnet_data *session) {
   struct log_handler_entry *log_handler;
 
   log_handler = session->stop_data[0];
 
-  olsr_log_removehandler(log_handler);
+  oonf_log_removehandler(log_handler);
   free (log_handler);
 
   session->stop_handler = NULL;
@@ -367,8 +367,8 @@ _stop_logging(struct olsr_telnet_data *session) {
  * @param rc_session pointer to remotecontrol session
  * @return telnet result code
  */
-static enum olsr_telnet_result
-_start_logging(struct olsr_telnet_data *data,
+static enum oonf_telnet_result
+_start_logging(struct oonf_telnet_data *data,
     struct _remotecontrol_session *rc_session) {
   struct log_handler_entry *log_handler;
 
@@ -377,7 +377,7 @@ _start_logging(struct olsr_telnet_data *data,
     return TELNET_RESULT_INTERNAL_ERROR;
   }
 
-  olsr_log_mask_copy(log_handler->user_bitmask, rc_session->mask);
+  oonf_log_mask_copy(log_handler->user_bitmask, rc_session->mask);
   log_handler->custom = data;
   log_handler->handler = _cb_print_log;
 
@@ -392,8 +392,8 @@ _start_logging(struct olsr_telnet_data *data,
  * @param data pointer to telnet data
  * @return telnet result constant
  */
-static enum olsr_telnet_result
-_cb_handle_log(struct olsr_telnet_data *data) {
+static enum oonf_telnet_result
+_cb_handle_log(struct oonf_telnet_data *data) {
   struct _remotecontrol_session *rc_session;
   const char *next;
   enum log_source src;
@@ -414,20 +414,20 @@ _cb_handle_log(struct olsr_telnet_data *data) {
 
   if (strcasecmp(data->parameter, "show") == 0) {
     abuf_appendf(data->out, "%*s %*s %*s %*s\n",
-        (int)olsr_log_get_max_sourcetextlen(), "",
-        (int)olsr_log_get_max_severitytextlen(), LOG_SEVERITY_NAMES[LOG_SEVERITY_DEBUG],
-        (int)olsr_log_get_max_severitytextlen(), LOG_SEVERITY_NAMES[LOG_SEVERITY_INFO],
-        (int)olsr_log_get_max_severitytextlen(), LOG_SEVERITY_NAMES[LOG_SEVERITY_WARN]);
+        (int)oonf_log_get_max_sourcetextlen(), "",
+        (int)oonf_log_get_max_severitytextlen(), LOG_SEVERITY_NAMES[LOG_SEVERITY_DEBUG],
+        (int)oonf_log_get_max_severitytextlen(), LOG_SEVERITY_NAMES[LOG_SEVERITY_INFO],
+        (int)oonf_log_get_max_severitytextlen(), LOG_SEVERITY_NAMES[LOG_SEVERITY_WARN]);
 
-    for (src=0; src<olsr_log_get_sourcecount(); src++) {
+    for (src=0; src<oonf_log_get_sourcecount(); src++) {
       abuf_appendf(data->out, "%*s %*s %*s %*s\n",
-          (int)olsr_log_get_max_sourcetextlen(), LOG_SOURCE_NAMES[src],
-          (int)olsr_log_get_max_severitytextlen(),
-          olsr_log_mask_test(rc_session->mask, src, LOG_SEVERITY_DEBUG) ? "*" : "",
-          (int)olsr_log_get_max_severitytextlen(),
-          olsr_log_mask_test(rc_session->mask, src, LOG_SEVERITY_INFO) ? "*" : "",
-          (int)olsr_log_get_max_severitytextlen(),
-          olsr_log_mask_test(rc_session->mask, src, LOG_SEVERITY_WARN) ? "*" : "");
+          (int)oonf_log_get_max_sourcetextlen(), LOG_SOURCE_NAMES[src],
+          (int)oonf_log_get_max_severitytextlen(),
+          oonf_log_mask_test(rc_session->mask, src, LOG_SEVERITY_DEBUG) ? "*" : "",
+          (int)oonf_log_get_max_severitytextlen(),
+          oonf_log_mask_test(rc_session->mask, src, LOG_SEVERITY_INFO) ? "*" : "",
+          (int)oonf_log_get_max_severitytextlen(),
+          oonf_log_mask_test(rc_session->mask, src, LOG_SEVERITY_WARN) ? "*" : "");
     }
     return TELNET_RESULT_ACTIVE;
   }
@@ -449,8 +449,8 @@ _cb_handle_log(struct olsr_telnet_data *data) {
  * @param data pointer to telnet data
  * @return telnet result constant
  */
-static enum olsr_telnet_result
-_cb_handle_config(struct olsr_telnet_data *data) {
+static enum oonf_telnet_result
+_cb_handle_config(struct oonf_telnet_data *data) {
   const char *next = NULL;
 
   if (data->parameter == NULL || *data->parameter == 0) {
@@ -459,40 +459,40 @@ _cb_handle_config(struct olsr_telnet_data *data) {
   }
 
   if ((next = str_hasnextword(data->parameter, "commit"))) {
-    if (cfg_schema_validate(olsr_cfg_get_rawdb(),
+    if (cfg_schema_validate(oonf_cfg_get_rawdb(),
         false, true, data->out) == 0) {
-      olsr_cfg_trigger_commit();
+      oonf_cfg_trigger_commit();
     }
   }
   else if ((next = str_hasnextword(data->parameter, "rollback"))) {
-    olsr_cfg_rollback();
+    oonf_cfg_rollback();
   }
   else if ((next = str_hasnextword(data->parameter, "format"))) {
-    cfg_cmd_handle_format(olsr_cfg_get_instance(), next);
+    cfg_cmd_handle_format(oonf_cfg_get_instance(), next);
   }
   else if ((next = str_hasnextword(data->parameter, "get"))) {
-    cfg_cmd_handle_get(olsr_cfg_get_instance(),
-        olsr_cfg_get_rawdb(), next, data->out);
+    cfg_cmd_handle_get(oonf_cfg_get_instance(),
+        oonf_cfg_get_rawdb(), next, data->out);
   }
   else if ((next = str_hasnextword(data->parameter, "load"))) {
-    cfg_cmd_handle_load(olsr_cfg_get_instance(),
-        olsr_cfg_get_rawdb(), next, data->out);
+    cfg_cmd_handle_load(oonf_cfg_get_instance(),
+        oonf_cfg_get_rawdb(), next, data->out);
   }
   else if ((next = str_hasnextword(data->parameter, "remove"))) {
-    cfg_cmd_handle_remove(olsr_cfg_get_instance(),
-        olsr_cfg_get_rawdb(), next, data->out);
+    cfg_cmd_handle_remove(oonf_cfg_get_instance(),
+        oonf_cfg_get_rawdb(), next, data->out);
   }
   else if ((next = str_hasnextword(data->parameter, "save"))) {
-    cfg_cmd_handle_save(olsr_cfg_get_instance(),
-        olsr_cfg_get_rawdb(), next, data->out);
+    cfg_cmd_handle_save(oonf_cfg_get_instance(),
+        oonf_cfg_get_rawdb(), next, data->out);
   }
   else if ((next = str_hasnextword(data->parameter, "schema"))) {
     cfg_cmd_handle_schema(
-        olsr_cfg_get_rawdb(), next, data->out);
+        oonf_cfg_get_rawdb(), next, data->out);
   }
   else if ((next = str_hasnextword(data->parameter, "set"))) {
-    cfg_cmd_handle_set(olsr_cfg_get_instance(),
-        olsr_cfg_get_rawdb(), next, data->out);
+    cfg_cmd_handle_set(oonf_cfg_get_instance(),
+        oonf_cfg_get_rawdb(), next, data->out);
   }
   else {
     abuf_appendf(data->out, "Error, unknown subcommand for %s: %s",
@@ -507,7 +507,7 @@ _cb_handle_config(struct olsr_telnet_data *data) {
  * @param session
  */
 static void
-_cb_route_stophandler(struct olsr_telnet_data *data) {
+_cb_route_stophandler(struct oonf_telnet_data *data) {
   struct _remotecontrol_session *session;
 
   session = data->stop_data[0];
@@ -533,7 +533,7 @@ _cb_route_finished(struct os_route *rt, int error) {
     abuf_puts(session->cleanup.data->out, "Command successful\n");
   }
 
-  olsr_telnet_stop(session->cleanup.data);
+  oonf_telnet_stop(session->cleanup.data);
 }
 
 /**
@@ -580,7 +580,7 @@ _cb_route_get(struct os_route *filter, struct os_route *route) {
     abuf_appendf(out, "table %d ", route->table);
   }
   abuf_puts(out, "\n");
-  olsr_telnet_flush_session(session->cleanup.data);
+  oonf_telnet_flush_session(session->cleanup.data);
 }
 
 /**
@@ -588,8 +588,8 @@ _cb_route_get(struct os_route *filter, struct os_route *route) {
  * @param data pointer to telnet data
  * @return telnet result constant
  */
-static enum olsr_telnet_result
-_cb_handle_route(struct olsr_telnet_data *data) {
+static enum oonf_telnet_result
+_cb_handle_route(struct oonf_telnet_data *data) {
   bool add  = false, del = false, get = false;
   const char *ptr = NULL, *next = NULL;
   struct _remotecontrol_session *session;
@@ -724,7 +724,7 @@ static void
 _cb_config_changed(void) {
   if (cfg_schema_tobin(&_remotecontrol_config, _remotecontrol_section.post,
       _remotecontrol_entries, ARRAYSIZE(_remotecontrol_entries))) {
-    OLSR_WARN(LOG_CONFIG, "Could not convert remotecontrol config to bin");
+    OONF_WARN(LOG_CONFIG, "Could not convert remotecontrol config to bin");
     return;
   }
 }
@@ -736,7 +736,7 @@ _cb_config_changed(void) {
  * @return remotecontrol session, NULL if an error happened
  */
 static struct _remotecontrol_session *
-_get_remotecontrol_session(struct olsr_telnet_data *data) {
+_get_remotecontrol_session(struct oonf_telnet_data *data) {
   struct _remotecontrol_session *cl;
 
   list_for_each_element(&_remote_sessions, cl, node) {
@@ -748,16 +748,16 @@ _get_remotecontrol_session(struct olsr_telnet_data *data) {
   /* create new telnet */
   cl = calloc(1, sizeof(*cl));
   if (cl == NULL) {
-    OLSR_WARN(LOG_PLUGINS, "Not enough memory for remotecontrol session");
+    OONF_WARN(LOG_PLUGINS, "Not enough memory for remotecontrol session");
     return NULL;
   }
 
   cl->cleanup.cleanup_handler = _cb_handle_session_cleanup;
   cl->cleanup.custom = cl;
-  olsr_telnet_add_cleanup(data, &cl->cleanup);
+  oonf_telnet_add_cleanup(data, &cl->cleanup);
 
   /* copy global mask */
-  olsr_log_mask_copy(cl->mask, log_global_mask);
+  oonf_log_mask_copy(cl->mask, log_global_mask);
 
   /* add to remote telnet list */
   list_add_tail(&_remote_sessions, &cl->node);
@@ -770,7 +770,7 @@ _get_remotecontrol_session(struct olsr_telnet_data *data) {
  * @param cleanup pointer to telnet cleanup handler
  */
 static void
-_cb_handle_session_cleanup(struct olsr_telnet_cleanup *cleanup) {
+_cb_handle_session_cleanup(struct oonf_telnet_cleanup *cleanup) {
   struct _remotecontrol_session *session;
 
   session = cleanup->custom;

@@ -48,8 +48,8 @@
 #include "common/common_types.h"
 #include "common/list.h"
 #include "common/netaddr.h"
-#include "subsystems/olsr_interface.h"
-#include "core/olsr_logging.h"
+#include "subsystems/oonf_interface.h"
+#include "core/oonf_logging.h"
 #include "subsystems/os_system.h"
 
 /* include os-specific headers */

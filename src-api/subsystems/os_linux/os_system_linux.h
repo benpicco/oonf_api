@@ -45,11 +45,11 @@
 #include <linux/netlink.h>
 
 #include "common/netaddr.h"
-#include "subsystems/olsr_socket.h"
-#include "subsystems/olsr_timer.h"
+#include "subsystems/oonf_socket.h"
+#include "subsystems/oonf_timer.h"
 
 struct os_system_netlink {
-  struct olsr_socket_entry socket;
+  struct oonf_socket_entry socket;
   struct autobuf out;
 
   struct nlmsghdr *in;
@@ -65,7 +65,7 @@ struct os_system_netlink {
   void (*cb_timeout)(void);
   void (*cb_done)(uint32_t seq);
 
-  struct olsr_timer_entry timeout;
+  struct oonf_timer_entry timeout;
 };
 
 EXPORT int os_system_netlink_add(struct os_system_netlink *,

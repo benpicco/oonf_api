@@ -50,9 +50,9 @@
 #include "config/cfg_io.h"
 #include "config/cfg_parser.h"
 #include "config/cfg.h"
-#include "core/olsr_plugins.h"
+#include "core/oonf_plugins.h"
 
-#include "core/olsr_cfg.h"
+#include "core/oonf_cfg.h"
 
 #include "cfgio_file/cfgio_file.h"
 
@@ -66,7 +66,7 @@ static int _cb_file_save(struct cfg_instance *instance,
 
 struct oonf_subsystem oonf_io_file_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
-  .descr = "OLSRD file io handler for configuration system",
+  .descr = "OONFD file io handler for configuration system",
   .author = "Henning Rogge",
 
   .cleanup = _cleanup,
@@ -87,7 +87,7 @@ struct cfg_io cfg_io_file = {
 static void
 _early_cfg_init(void)
 {
-  cfg_io_add(olsr_cfg_get_instance(), &cfg_io_file);
+  cfg_io_add(oonf_cfg_get_instance(), &cfg_io_file);
 }
 
 /**
@@ -96,7 +96,7 @@ _early_cfg_init(void)
 static void
 _cleanup(void)
 {
-  cfg_io_remove(olsr_cfg_get_instance(), &cfg_io_file);
+  cfg_io_remove(oonf_cfg_get_instance(), &cfg_io_file);
 }
 
 /*

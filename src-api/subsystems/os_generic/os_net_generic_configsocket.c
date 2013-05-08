@@ -45,8 +45,8 @@
 #include "common/common_types.h"
 #include "common/netaddr.h"
 #include "common/string.h"
-#include "core/olsr_logging.h"
-#include "subsystems/olsr_interface.h"
+#include "core/oonf_logging.h"
+#include "subsystems/oonf_interface.h"
 #include "subsystems/os_net.h"
 
 /**
@@ -61,7 +61,7 @@
  */
 int
 os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
-    struct olsr_interface_data *interf __attribute__((unused)),
+    struct oonf_interface_data *interf __attribute__((unused)),
     enum log_source log_src __attribute__((unused))) {
   int yes;
   socklen_t addrlen;
@@ -75,7 +75,7 @@ os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
   memcpy(&bindto, bind_to, sizeof(bindto));
 
   if (os_net_set_nonblocking(sock)) {
-    OLSR_WARN(log_src, "Cannot make socket non-blocking %s: %s (%d)\n",
+    OONF_WARN(log_src, "Cannot make socket non-blocking %s: %s (%d)\n",
         netaddr_socket_to_string(&buf, &bindto), strerror(errno), errno);
     return -1;
   }
@@ -84,7 +84,7 @@ os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
   /* this is no multicast */
   if (interf != NULL && setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE,
       interf->name, strlen(interf->name) + 1) < 0) {
-    OLSR_WARN(log_src, "Cannot bind socket to interface %s: %s (%d)\n",
+    OONF_WARN(log_src, "Cannot bind socket to interface %s: %s (%d)\n",
         interf->name, strerror(errno), errno);
     return -1;
   }
@@ -94,7 +94,7 @@ os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
   /* allow to reuse address */
   yes = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
-    OLSR_WARN(log_src, "Cannot reuse address for %s: %s (%d)\n",
+    OONF_WARN(log_src, "Cannot reuse address for %s: %s (%d)\n",
         netaddr_socket_to_string(&buf, &bindto), strerror(errno), errno);
     return -1;
   }
@@ -103,7 +103,7 @@ os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
 #if defined(IP_RECVIF)
   if (interf != NULL
       && setsockopt(sock, IPPROTO_IP, IP_RECVIF, &yes, sizeof(yes)) < 0) {
-    OLSR_WARN(log_src, "Cannot apply IP_RECVIF for %s: %s (%d)\n",
+    OONF_WARN(log_src, "Cannot apply IP_RECVIF for %s: %s (%d)\n",
         netaddr_socket_to_string(&buf, &bindto), strerror(errno), errno);
     return -1;
   }
@@ -121,7 +121,7 @@ os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
     }
 
     if (recvbuf < 8192) {
-      OLSR_WARN(log_src, "Cannot setup receive buffer size for %s: %s (%d)\n",
+      OONF_WARN(log_src, "Cannot setup receive buffer size for %s: %s (%d)\n",
           netaddr_socket_to_string(&buf, &bindto), strerror(errno), errno);
       return -1;
     }
@@ -136,7 +136,7 @@ os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
   /* bind the socket to the port number */
   addrlen = sizeof(bindto);
   if (bind(sock, &bindto.std, addrlen) < 0) {
-    OLSR_WARN(log_src, "Cannot bind socket to address %s: %s (%d)\n",
+    OONF_WARN(log_src, "Cannot bind socket to address %s: %s (%d)\n",
         netaddr_socket_to_string(&buf, &bindto), strerror(errno), errno);
 
     return -1;

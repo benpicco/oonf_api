@@ -47,7 +47,7 @@
 #include <linux/rtnetlink.h>
 
 #include "common/common_types.h"
-#include "core/olsr_subsystem.h"
+#include "core/oonf_subsystem.h"
 #include "subsystems/os_routing.h"
 #include "subsystems/os_system.h"
 
@@ -444,19 +444,19 @@ _cb_rtnetlink_message(struct nlmsghdr *msg) {
   struct os_route *filter;
   struct os_route rt;
 
-  OLSR_DEBUG(LOG_OS_ROUTING, "Got message: %d %d", msg->nlmsg_seq, msg->nlmsg_type);
+  OONF_DEBUG(LOG_OS_ROUTING, "Got message: %d %d", msg->nlmsg_seq, msg->nlmsg_type);
 
   if (msg->nlmsg_type != RTM_NEWROUTE && msg->nlmsg_type != RTM_DELROUTE) {
     return;
   }
 
   if (_routing_parse_nlmsg(&rt, msg)) {
-    OLSR_WARN(LOG_OS_ROUTING, "Error while processing route reply");
+    OONF_WARN(LOG_OS_ROUTING, "Error while processing route reply");
     return;
   }
 
   list_for_each_element(&_rtnetlink_feedback, filter, _internal._node) {
-    OLSR_DEBUG_NH(LOG_OS_ROUTING, "  Compare with seq: %d", filter->_internal.nl_seq);
+    OONF_DEBUG_NH(LOG_OS_ROUTING, "  Compare with seq: %d", filter->_internal.nl_seq);
     if (msg->nlmsg_seq == filter->_internal.nl_seq) {
       if (filter->cb_get != NULL && _match_routes(filter, &rt)) {
         filter->cb_get(filter, &rt);
@@ -475,7 +475,7 @@ static void
 _cb_rtnetlink_error(uint32_t seq, int error) {
   struct os_route *route;
 
-  OLSR_DEBUG(LOG_OS_ROUTING, "Got feedback: %d %d", seq, error);
+  OONF_DEBUG(LOG_OS_ROUTING, "Got feedback: %d %d", seq, error);
 
   /* transform into errno number */
   error = -error;
@@ -495,7 +495,7 @@ static void
 _cb_rtnetlink_timeout(void) {
   struct os_route *route, *rt_it;
 
-  OLSR_DEBUG(LOG_OS_ROUTING, "Got timeout");
+  OONF_DEBUG(LOG_OS_ROUTING, "Got timeout");
 
   list_for_each_element_safe(&_rtnetlink_feedback, route, _internal._node, rt_it) {
     _routing_finished(route, -1);
@@ -510,7 +510,7 @@ static void
 _cb_rtnetlink_done(uint32_t seq) {
   struct os_route *route;
 
-  OLSR_DEBUG(LOG_OS_ROUTING, "Got done: %u", seq);
+  OONF_DEBUG(LOG_OS_ROUTING, "Got done: %u", seq);
 
   list_for_each_element(&_rtnetlink_feedback, route, _internal._node) {
     if (seq == route->_internal.nl_seq) {

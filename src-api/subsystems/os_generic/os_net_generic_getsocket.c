@@ -44,7 +44,7 @@
 
 #include "common/common_types.h"
 #include "common/netaddr.h"
-#include "core/olsr_logging.h"
+#include "core/oonf_logging.h"
 #include "subsystems/os_net.h"
 
 /**
@@ -59,7 +59,7 @@
  */
 int
 os_net_getsocket(union netaddr_socket *bind_to,
-    bool tcp, int recvbuf, struct olsr_interface_data *interf,
+    bool tcp, int recvbuf, struct oonf_interface_data *interf,
     enum log_source log_src __attribute__((unused))) {
 
   int sock;
@@ -67,7 +67,7 @@ os_net_getsocket(union netaddr_socket *bind_to,
   sock = socket(bind_to->std.sa_family,
       tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
   if (sock < 0) {
-    OLSR_WARN(log_src, "Cannot open socket: %s (%d)", strerror(errno), errno);
+    OONF_WARN(log_src, "Cannot open socket: %s (%d)", strerror(errno), errno);
     return -1;
   }
 

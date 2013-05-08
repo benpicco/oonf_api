@@ -41,10 +41,10 @@
 
 #include <syslog.h>
 
-#include "core/olsr_libdata.h"
-#include "core/olsr_logging.h"
+#include "core/oonf_libdata.h"
+#include "core/oonf_logging.h"
 #include "core/os_syslog.h"
-#include "core/olsr_subsystem.h"
+#include "core/oonf_subsystem.h"
 
 /* prototypes */
 static int _init(void);
@@ -62,7 +62,7 @@ struct oonf_subsystem oonf_os_syslog_subsystem = {
  */
 static int
 _init(void) {
-  openlog(olsr_log_get_appdata()->app_name, LOG_PID | LOG_ODELAY, LOG_DAEMON);
+  openlog(oonf_log_get_appdata()->app_name, LOG_PID | LOG_ODELAY, LOG_DAEMON);
   setlogmask(LOG_UPTO(LOG_DEBUG));
 
   return 0;

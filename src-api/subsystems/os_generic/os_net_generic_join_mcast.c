@@ -45,8 +45,8 @@
 #include "common/common_types.h"
 #include "common/netaddr.h"
 #include "common/string.h"
-#include "core/olsr_logging.h"
-#include "subsystems/olsr_interface.h"
+#include "core/oonf_logging.h"
+#include "subsystems/oonf_interface.h"
 #include "subsystems/os_net.h"
 
 /**
@@ -59,7 +59,7 @@
  */
 int
 os_net_join_mcast_recv(int sock, struct netaddr *multicast,
-    struct olsr_interface_data *oif,
+    struct oonf_interface_data *oif,
     enum log_source log_src __attribute__((unused))) {
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf1, buf2;
@@ -73,7 +73,7 @@ os_net_join_mcast_recv(int sock, struct netaddr *multicast,
 
     src = oif == NULL ? &NETADDR_IPV4_ANY : oif->if_v4;
 
-    OLSR_DEBUG(log_src,
+    OONF_DEBUG(log_src,
         "Socket on interface %s joining receiving multicast %s (src %s)\n",
         oif ? oif->name : "*",
         netaddr_to_string(&buf2, multicast),
@@ -84,7 +84,7 @@ os_net_join_mcast_recv(int sock, struct netaddr *multicast,
 
     if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
         &v4_mreq, sizeof(v4_mreq)) < 0) {
-      OLSR_WARN(log_src, "Cannot join multicast group: %s (%d, %s, %s)\n",
+      OONF_WARN(log_src, "Cannot join multicast group: %s (%d, %s, %s)\n",
           strerror(errno), errno,
           netaddr_to_string(&buf1, multicast),
           netaddr_to_string(&buf2, src));
@@ -96,7 +96,7 @@ os_net_join_mcast_recv(int sock, struct netaddr *multicast,
 
     if_index = oif == NULL ? 0 : oif->index;
 
-    OLSR_DEBUG(log_src,
+    OONF_DEBUG(log_src,
         "Socket on interface %s joining multicast %s (if %d)\n",
         oif ? oif->name : "*",
         netaddr_to_string(&buf2, multicast), if_index);
@@ -106,7 +106,7 @@ os_net_join_mcast_recv(int sock, struct netaddr *multicast,
 
     if (setsockopt(sock, IPPROTO_IPV6, IPV6_JOIN_GROUP,
         &v6_mreq, sizeof(v6_mreq)) < 0) {
-      OLSR_WARN(log_src, "Cannot join multicast group: %s (%d, %s, %d, %s)\n",
+      OONF_WARN(log_src, "Cannot join multicast group: %s (%d, %s, %d, %s)\n",
           strerror(errno), errno,
           netaddr_to_string(&buf1, multicast),
           if_index, if_indextoname(if_index, if_buf));
@@ -128,7 +128,7 @@ os_net_join_mcast_recv(int sock, struct netaddr *multicast,
 int
 os_net_join_mcast_send(int sock,
     struct netaddr *multicast,
-    struct olsr_interface_data *oif, bool loop,
+    struct oonf_interface_data *oif, bool loop,
     enum log_source log_src __attribute__((unused))) {
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   struct netaddr_str buf1, buf2;
@@ -136,27 +136,27 @@ os_net_join_mcast_send(int sock,
   unsigned i;
 
   if (netaddr_get_address_family(multicast) == AF_INET) {
-    OLSR_DEBUG(log_src,
+    OONF_DEBUG(log_src,
         "Socket on interface %s joining sending multicast %s (src %s)\n",
         oif->name,
         netaddr_to_string(&buf2, multicast),
         netaddr_to_string(&buf1, oif->if_v4));
 
     if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, netaddr_get_binptr(oif->if_v4), 4) < 0) {
-      OLSR_WARN(log_src, "Cannot set multicast interface: %s (%d)\n",
+      OONF_WARN(log_src, "Cannot set multicast interface: %s (%d)\n",
           strerror(errno), errno);
       return -1;
     }
 
     i = loop ? 1 : 0;
     if(setsockopt(sock, IPPROTO_IP, IP_MULTICAST_LOOP, (char *)&i, sizeof(i)) < 0) {
-      OLSR_WARN(log_src, "Cannot %sactivate local loop of multicast interface: %s (%d)\n",
+      OONF_WARN(log_src, "Cannot %sactivate local loop of multicast interface: %s (%d)\n",
           loop ? "" : "de", strerror(errno), errno);
       return -1;
     }
   }
   else {
-    OLSR_DEBUG(log_src,
+    OONF_DEBUG(log_src,
         "Socket on interface %s joining multicast %s (src %s)\n",
         oif->name,
         netaddr_to_string(&buf2, multicast),
@@ -164,14 +164,14 @@ os_net_join_mcast_send(int sock,
 
     if (setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,
         &oif->index, sizeof(oif->index)) < 0) {
-      OLSR_WARN(log_src, "Cannot set multicast interface: %s (%d)\n",
+      OONF_WARN(log_src, "Cannot set multicast interface: %s (%d)\n",
           strerror(errno), errno);
       return -1;
     }
 
     i=0;
     if(setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_LOOP, &i, sizeof(i)) < 0) {
-      OLSR_WARN(log_src, "Cannot deactivate local loop of multicast interface: %s (%d)\n",
+      OONF_WARN(log_src, "Cannot deactivate local loop of multicast interface: %s (%d)\n",
           strerror(errno), errno);
       return -1;
     }

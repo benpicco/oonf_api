@@ -57,8 +57,8 @@
 
 #include "common/common_types.h"
 #include "common/string.h"
-#include "core/olsr_subsystem.h"
-#include "subsystems/olsr_socket.h"
+#include "core/oonf_subsystem.h"
+#include "subsystems/oonf_socket.h"
 #include "subsystems/os_system.h"
 
 #ifndef SOL_NETLINK
@@ -118,7 +118,7 @@ static struct msghdr _netlink_send_msg = {
 };
 
 /* netlink timeout handling */
-static struct olsr_timer_info _netlink_timer= {
+static struct oonf_timer_info _netlink_timer= {
   .name = "netlink feedback timer",
   .callback = _cb_handle_netlink_timeout,
 };
@@ -149,7 +149,7 @@ static int
 _init(void) {
   _ioctl_fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (_ioctl_fd == -1) {
-    OLSR_WARN(LOG_OS_SYSTEM, "Cannot open ioctl socket: %s (%d)",
+    OONF_WARN(LOG_OS_SYSTEM, "Cannot open ioctl socket: %s (%d)",
         strerror(errno), errno);
     return -1;
   }
@@ -165,7 +165,7 @@ _init(void) {
     return -1;
   }
 
-  olsr_timer_add(&_netlink_timer);
+  oonf_timer_add(&_netlink_timer);
   list_init_head(&_ifchange_listener);
   return 0;
 }
@@ -175,7 +175,7 @@ _init(void) {
  */
 static void
 _cleanup(void) {
-  olsr_timer_remove(&_netlink_timer);
+  oonf_timer_remove(&_netlink_timer);
   os_system_netlink_remove(&_rtnetlink_receiver);
   close(_ioctl_fd);
 }
@@ -195,7 +195,7 @@ os_system_set_interface_state(const char *dev, bool up) {
   strscpy(ifr.ifr_name, dev, IFNAMSIZ);
 
   if (ioctl(_ioctl_fd, SIOCGIFFLAGS, &ifr) < 0) {
-    OLSR_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_SYSTEM,
         "ioctl SIOCGIFFLAGS (get flags) error on device %s: %s (%d)\n",
         dev, strerror(errno), errno);
     return -1;
@@ -215,7 +215,7 @@ os_system_set_interface_state(const char *dev, bool up) {
   }
 
   if (ioctl(_ioctl_fd, SIOCSIFFLAGS, &ifr) < 0) {
-    OLSR_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_SYSTEM,
         "ioctl SIOCSIFFLAGS (set flags %s) error on device %s: %s (%d)\n",
         up ? "up" : "down", dev, strerror(errno), errno);
     return -1;
@@ -245,19 +245,19 @@ os_system_netlink_add(struct os_system_netlink *nl, int protocol) {
 
   nl->socket.fd = socket(PF_NETLINK, SOCK_RAW, protocol);
   if (nl->socket.fd < 0) {
-    OLSR_WARN(LOG_OS_SYSTEM, "Cannot open sync rtnetlink socket: %s (%d)",
+    OONF_WARN(LOG_OS_SYSTEM, "Cannot open sync rtnetlink socket: %s (%d)",
         strerror(errno), errno);
     goto os_add_netlink_fail;
   }
 
   if (abuf_init(&nl->out)) {
-    OLSR_WARN(LOG_OS_SYSTEM, "Not enough memory for netlink output buffer");
+    OONF_WARN(LOG_OS_SYSTEM, "Not enough memory for netlink output buffer");
     goto os_add_netlink_fail;
   }
 
   nl->in = calloc(1, getpagesize());
   if (nl->in == NULL) {
-    OLSR_WARN(LOG_OS_SYSTEM, "Not enough memory for netlink input buffer");
+    OONF_WARN(LOG_OS_SYSTEM, "Not enough memory for netlink input buffer");
     goto os_add_netlink_fail;
   }
   nl->in_len = getpagesize();
@@ -269,7 +269,7 @@ os_system_netlink_add(struct os_system_netlink *nl, int protocol) {
   /* addr.nl_pid = 0; */
 
   if (bind(nl->socket.fd, (struct sockaddr *)&addr, sizeof(addr))<0) {
-    OLSR_WARN(LOG_OS_SYSTEM, "Could not bind netlink socket: %s (%d)",
+    OONF_WARN(LOG_OS_SYSTEM, "Could not bind netlink socket: %s (%d)",
         strerror(errno), errno);
     goto os_add_netlink_fail;
   }
@@ -277,7 +277,7 @@ os_system_netlink_add(struct os_system_netlink *nl, int protocol) {
   nl->socket.process = _netlink_handler;
   nl->socket.event_read = true;
   nl->socket.data = nl;
-  olsr_socket_add(&nl->socket);
+  oonf_socket_add(&nl->socket);
 
   nl->timeout.cb_context = nl;
   nl->timeout.info = &_netlink_timer;
@@ -299,7 +299,7 @@ os_add_netlink_fail:
  */
 void
 os_system_netlink_remove(struct os_system_netlink *nl) {
-  olsr_socket_remove(&nl->socket);
+  oonf_socket_remove(&nl->socket);
 
   close(nl->socket.fd);
   free (nl->in);
@@ -323,7 +323,7 @@ os_system_netlink_send(struct os_system_netlink *nl,
   abuf_memcpy(&nl->out, nl_hdr, nl_hdr->nlmsg_len);
 
   /* trigger write */
-  olsr_socket_set_write(&nl->socket, true);
+  oonf_socket_set_write(&nl->socket, true);
   return nl->seq_used;
 }
 
@@ -342,7 +342,7 @@ os_system_netlink_add_mc(struct os_system_netlink *nl,
   for (i=0; i<groupcount; i++) {
     if (setsockopt(nl->socket.fd, SOL_NETLINK, NETLINK_ADD_MEMBERSHIP,
              &groups[i], sizeof(groups[i]))) {
-      OLSR_WARN(LOG_OS_SYSTEM,
+      OONF_WARN(LOG_OS_SYSTEM,
           "Could not join netlink mc group: %x", groups[i]);
       return -1;
     }
@@ -365,7 +365,7 @@ os_system_netlink_drop_mc(struct os_system_netlink *nl,
   for (i=0; i<groupcount; i++) {
     if (setsockopt(nl->socket.fd, SOL_NETLINK, NETLINK_DROP_MEMBERSHIP,
              &groups[i], sizeof(groups[i]))) {
-      OLSR_WARN(LOG_OS_SYSTEM,
+      OONF_WARN(LOG_OS_SYSTEM,
           "Could not drop netlink mc group: %x", groups[i]);
       return -1;
     }
@@ -393,7 +393,7 @@ os_system_netlink_addreq(struct nlmsghdr *n,
   aligned_attr_len = NLA_HDRLEN + len;
 
   if (aligned_msg_len + aligned_attr_len > UIO_MAXIOV) {
-    OLSR_WARN(LOG_OS_SYSTEM, "Netlink message got too large!");
+    OONF_WARN(LOG_OS_SYSTEM, "Netlink message got too large!");
     return -1;
   }
 
@@ -432,24 +432,24 @@ _flush_netlink_buffer(struct os_system_netlink *nl) {
   ssize_t ret;
 
   /* start feedback timer */
-  olsr_timer_set(&nl->timeout, OS_SYSTEM_NETLINK_TIMEOUT);
+  oonf_timer_set(&nl->timeout, OS_SYSTEM_NETLINK_TIMEOUT);
 
   /* send outgoing message */
   _netlink_send_iov[0].iov_base = abuf_getptr(&nl->out);
   _netlink_send_iov[0].iov_len = abuf_getlen(&nl->out);
 
   if ((ret = sendmsg(nl->socket.fd, &_netlink_send_msg, 0)) <= 0) {
-    OLSR_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_SYSTEM,
         "Cannot send data to netlink socket (%d: %s)",
         errno, strerror(errno));
   }
   else {
-    OLSR_DEBUG(LOG_OS_SYSTEM, "Sent %zd/%zu bytes for netlink seqno: %d",
+    OONF_DEBUG(LOG_OS_SYSTEM, "Sent %zd/%zu bytes for netlink seqno: %d",
         ret, abuf_getlen(&nl->out), nl->seq_used);
     nl->seq_sent = nl->seq_used;
     abuf_clear(&nl->out);
 
-    olsr_socket_set_write(&nl->socket, false);
+    oonf_socket_set_write(&nl->socket, false);
   }
 }
 
@@ -464,7 +464,7 @@ _netlink_job_finished(struct os_system_netlink *nl) {
     nl->msg_in_transit--;
   }
   if (nl->msg_in_transit == 0) {
-    olsr_timer_stop(&nl->timeout);
+    oonf_timer_stop(&nl->timeout);
     nl->seq_used = 0;
   }
 }
@@ -503,7 +503,7 @@ netlink_rcv_retry:
 
   if ((ret = recvmsg(fd, &_netlink_rcv_msg, MSG_DONTWAIT | flags)) < 0) {
     if (errno != EAGAIN) {
-      OLSR_WARN(LOG_OS_SYSTEM,"netlink recvmsg error: %s (%d)\n",
+      OONF_WARN(LOG_OS_SYSTEM,"netlink recvmsg error: %s (%d)\n",
           strerror(errno), errno);
     }
     return;
@@ -520,7 +520,7 @@ netlink_rcv_retry:
     }
     ptr = realloc(nl->in, size);
     if (!ptr) {
-      OLSR_WARN(LOG_OS_SYSTEM, "Not enough memory to increase netlink input buffer");
+      OONF_WARN(LOG_OS_SYSTEM, "Not enough memory to increase netlink input buffer");
       return;
     }
     nl->in = ptr;
@@ -533,13 +533,13 @@ netlink_rcv_retry:
     goto netlink_rcv_retry;
   }
 
-  OLSR_DEBUG(LOG_OS_SYSTEM, "Got netlink message of %"
+  OONF_DEBUG(LOG_OS_SYSTEM, "Got netlink message of %"
       PRINTF_SSIZE_T_SPECIFIER" bytes", ret);
 
   /* loop through netlink headers */
   len = (size_t) ret;
   for (nh = nl->in; NLMSG_OK (nh, len); nh = NLMSG_NEXT (nh, len)) {
-    OLSR_DEBUG(LOG_OS_SYSTEM,
+    OONF_DEBUG(LOG_OS_SYSTEM,
         "Netlink message received: type %d\n", nh->nlmsg_type);
 
     switch (nh->nlmsg_type) {
@@ -547,7 +547,7 @@ netlink_rcv_retry:
         break;
 
       case NLMSG_DONE:
-        OLSR_DEBUG(LOG_OS_SYSTEM, "Netlink message done: %d", nh->nlmsg_seq);
+        OONF_DEBUG(LOG_OS_SYSTEM, "Netlink message done: %d", nh->nlmsg_seq);
         if (nl->cb_done) {
           nl->cb_done(nh->nlmsg_seq);
         }
@@ -585,12 +585,12 @@ _handle_rtnetlink(struct nlmsghdr *hdr) {
     ifi = (struct ifinfomsg *) NLMSG_DATA(hdr);
 
     if (if_indextoname(ifi->ifi_index, if_name) == NULL) {
-      OLSR_WARN(LOG_OS_SYSTEM,
+      OONF_WARN(LOG_OS_SYSTEM,
           "Failed to convert if-index to name: %d", ifi->ifi_index);
       return;
     }
 
-    OLSR_DEBUG(LOG_OS_SYSTEM, "Linkstatus of interface '%s' changed", if_name);
+    OONF_DEBUG(LOG_OS_SYSTEM, "Linkstatus of interface '%s' changed", if_name);
     list_for_each_element(&_ifchange_listener, listener, _node) {
       listener->if_changed(if_name, (ifi->ifi_flags & IFF_UP) == 0);
     }
@@ -600,12 +600,12 @@ _handle_rtnetlink(struct nlmsghdr *hdr) {
     ifa = (struct ifaddrmsg *) NLMSG_DATA(hdr);
 
     if (if_indextoname(ifa->ifa_index, if_name) == NULL) {
-      OLSR_WARN(LOG_OS_SYSTEM,
+      OONF_WARN(LOG_OS_SYSTEM,
           "Failed to convert if-index to name: %d", ifa->ifa_index);
       return;
     }
 
-    OLSR_DEBUG(LOG_OS_SYSTEM, "Address of interface '%s' changed", if_name);
+    OONF_DEBUG(LOG_OS_SYSTEM, "Address of interface '%s' changed", if_name);
     list_for_each_element(&_ifchange_listener, listener, _node) {
       listener->if_changed(if_name, false);
     }
@@ -623,7 +623,7 @@ _handle_nl_err(struct os_system_netlink *nl, struct nlmsghdr *nh) {
 
   err = (struct nlmsgerr *) NLMSG_DATA(nh);
 
-  OLSR_DEBUG(LOG_OS_SYSTEM, "Received netlink feedback (%u bytes): %s (%d)",
+  OONF_DEBUG(LOG_OS_SYSTEM, "Received netlink feedback (%u bytes): %s (%d)",
       nh->nlmsg_len, strerror(-err->error), err->error);
 
   if (nl->cb_error) {

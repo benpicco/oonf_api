@@ -1,5 +1,5 @@
-# make sure that olsr_libdata is rebuild everytimes 
-SET(GEN_DATA_C ${PROJECT_BINARY_DIR}/olsr_libdata.c)
+# make sure that oonf_libdata is rebuild everytimes 
+SET(GEN_DATA_C ${PROJECT_BINARY_DIR}/oonf_libdata.c)
 
 ADD_CUSTOM_TARGET(LibCleanData ALL
     COMMAND ${CMAKE_COMMAND} -E remove ${GEN_DATA_C}
@@ -9,7 +9,7 @@ ADD_CUSTOM_TARGET(LibCleanData ALL
 ADD_CUSTOM_COMMAND (
     OUTPUT ${GEN_DATA_C}
     COMMAND ${CMAKE_COMMAND}
-        -DSRC=${CMAKE_CURRENT_SOURCE_DIR}/olsr_libdata.c.in
+        -DSRC=${CMAKE_CURRENT_SOURCE_DIR}/oonf_libdata.c.in
         -DDST=${GEN_DATA_C}
         -DGIT=${PROJECT_SOURCE_DIR}/.git
         -DOONF_LIB_VERSION=${OONF_LIB_VERSION}
@@ -22,19 +22,19 @@ ADD_CUSTOM_COMMAND (
     COMMENT "Create new library builddata"
 )
 
-SET(OONF_CORE_SRCS olsr_cfg.c
-                   olsr_logging.c
-                   olsr_logging_cfg.c
-                   olsr_plugins.c
-                   olsr_subsystem.c
+SET(OONF_CORE_SRCS oonf_cfg.c
+                   oonf_logging.c
+                   oonf_logging_cfg.c
+                   oonf_plugins.c
+                   oonf_subsystem.c
                    ${GEN_DATA_C})
 
-SET(OONF_CORE_INCLUDES olsr_cfg.h
-                       olsr_logging.h
-                       olsr_logging_cfg.h
-                       olsr_plugins.h
-                       olsr_subsystem.h
-                       olsr_libdata.h
+SET(OONF_CORE_INCLUDES oonf_cfg.h
+                       oonf_logging.h
+                       oonf_logging_cfg.h
+                       oonf_plugins.h
+                       oonf_subsystem.h
+                       oonf_libdata.h
                        os_clock.h
                        )
 

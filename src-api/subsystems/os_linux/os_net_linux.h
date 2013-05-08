@@ -84,7 +84,7 @@ os_select(int num, fd_set *r,fd_set *w,fd_set *e, struct timeval *timeout) {
  * @return -1 if an error happened, 0 otherwise
  */
 static INLINE int
-os_net_bindto_interface(int sock, struct olsr_interface_data *data) {
+os_net_bindto_interface(int sock, struct oonf_interface_data *data) {
   return setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, data->name, strlen(data->name) + 1);
 }
 
