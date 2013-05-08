@@ -16,4 +16,4 @@ SET (source "nl80211_listener.c")
 message("Using '${LIBNL3_LIBRARIES}' for nl80211 access")
 
 # use generic plugin maker
-oonf_create_app_plugin("nl80211_listener" "${source}" "" "${LIBNL3_LIBRARIES}")
+oonf_create_plugin("nl80211_listener" "${source}" "" "${LIBNL3_LIBRARIES}")
