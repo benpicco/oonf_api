@@ -785,6 +785,10 @@ cfg_schema_help_netaddr(
   for (i=0; i<5; i++) {
     type = entry->validate_param[0].i8[i];
 
+    if (type == -1) {
+      continue;
+    }
+
     if (first) {
       first = false;
     }
@@ -812,7 +816,7 @@ cfg_schema_help_netaddr(
   }
 
   if (entry->validate_param[1].b) {
-    abuf_puts(out, " (with an optional prefix)");
+    abuf_puts(out, "\n        (the address can have an optional prefix)");
   }
   abuf_puts(out, "\n");
 }
