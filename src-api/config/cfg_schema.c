@@ -879,7 +879,9 @@ cfg_schema_help_acl(
       "        - '" ACL_DEFAULT_ACCEPT "' to accept input if it doesn't match"
           " either list\n"
       "        - '" ACL_DEFAULT_REJECT "' to not accept it if it doesn't match"
-          " either list\n");
+          " either list\n"
+      "        (default mode is '" ACL_FIRST_ACCEPT "'"
+          " and '" ACL_DEFAULT_REJECT "')\n");
 }
 
 /**
