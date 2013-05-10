@@ -359,6 +359,7 @@ cfg_cmd_handle_schema(struct cfg_db *db,
   const char *c_ptr;
   char *copy, *ptr;
   int result;
+  bool first;
 
   if (db->schema == NULL) {
     abuf_puts(log, "Internal error, database not connected to schema\n");
@@ -425,7 +426,6 @@ cfg_cmd_handle_schema(struct cfg_db *db,
                 s_entry_it->list ? " (list)" : "");
       }
       if (s_entry_it->help) {
-        abuf_puts(log, "    Description:\n");
         cfg_append_printable_line(log, "        %s", s_entry_it->help);
       }
     }
@@ -465,9 +465,15 @@ cfg_cmd_handle_schema(struct cfg_db *db,
         }
       }
     }
+    first = true;
+
     avl_for_each_elements_with_key(&db->schema->entries, s_entry_it, _node, s_entry, &key) {
       /* print help text */
       if (s_entry_it->help) {
+        if (first) {
+          abuf_puts(log, "    Description:\n");
+          first = false;
+        }
         cfg_append_printable_line(log, "        %s", s_entry_it->help);
       }
     }
