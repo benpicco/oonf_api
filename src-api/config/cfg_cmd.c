@@ -425,6 +425,7 @@ cfg_cmd_handle_schema(struct cfg_db *db,
                 s_entry_it->list ? " (list)" : "");
       }
       if (s_entry_it->help) {
+        abuf_puts(log, "    Description:\n");
         cfg_append_printable_line(log, "        %s", s_entry_it->help);
       }
     }
