@@ -822,6 +822,67 @@ cfg_schema_help_netaddr(
 }
 
 /**
+ * Help generator for network addresses and prefixes validator.
+ * See CFG_VALIDATE_NETADDR_*() macros in cfg_schema.h
+ * @param entry pointer to schema entry
+ * @param out pointer to autobuffer for validator output
+ */
+void
+cfg_schema_help_acl(
+    const struct cfg_schema_entry *entry, struct autobuf *out) {
+  int8_t type;
+  bool first;
+  int i;
+
+  abuf_puts(out, "    The parameter is an apache2 style access control list. It is a list of addresses and prefixes of the following types: ");
+
+  first = true;
+  for (i=0; i<5; i++) {
+    type = entry->validate_param[0].i8[i];
+
+    if (type == -1) {
+      continue;
+    }
+
+    if (first) {
+      first = false;
+    }
+    else {
+      abuf_puts(out, ", ");
+    }
+
+    switch (type) {
+      case AF_INET:
+        abuf_puts(out, "IPv4");
+        break;
+      case AF_INET6:
+        abuf_puts(out, "IPv6");
+        break;
+      case AF_MAC48:
+        abuf_puts(out, "MAC48");
+        break;
+      case AF_EUI64:
+        abuf_puts(out, "EUI64");
+        break;
+      default:
+        abuf_puts(out, "Unspec (-)");
+        break;
+    }
+  }
+  abuf_puts(out, "\n"
+      "        Each of the addresses/prefixes can start with a"
+      " '+' to add them to the whitelist and '-' to add it to the blacklist"
+      " (default is the whitelist).\n"
+      "        In addition to this there are four keywords to configure the ACL:\n"
+      "        - '" ACL_FIRST_ACCEPT "' to parse the whitelist first\n"
+      "        - '" ACL_FIRST_REJECT "' to parse the blacklist first\n"
+      "        - '" ACL_DEFAULT_ACCEPT "' to accept input if it doesn't match"
+          " either list\n"
+      "        - '" ACL_DEFAULT_REJECT "' to not accept it if it doesn't match"
+          " either list\n");
+}
+
+/**
  * Binary converter for string pointers. This validator will
  * allocate additional memory for the string.
  * See CFG_MAP_STRING() and CFG_MAP_STRING_LEN() macro

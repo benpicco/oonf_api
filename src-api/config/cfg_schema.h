@@ -111,13 +111,13 @@ struct cfg_schema_entry;
 #define CFG_VALIDATE_NETADDR_V4(p_name, p_def, p_help, prefix, unspec, args...)            _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_netaddr, .cb_valhelp = cfg_schema_help_netaddr, .validate_param = {{.i8 = {AF_INET, -1,-1,-1, !!(unspec) ? AF_UNSPEC : -1}}, {.b = !!(prefix)}}, ##args )
 #define CFG_VALIDATE_NETADDR_V6(p_name, p_def, p_help, prefix, unspec, args...)            _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_netaddr, .cb_valhelp = cfg_schema_help_netaddr, .validate_param = {{.i8 = {AF_INET6, -1,-1,-1, !!(unspec) ? AF_UNSPEC : -1}}, {.b = !!(prefix)}}, ##args )
 #define CFG_VALIDATE_NETADDR_V46(p_name, p_def, p_help, prefix, unspec, args...)           _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_netaddr, .cb_valhelp = cfg_schema_help_netaddr, .validate_param = {{.i8 = {AF_INET, AF_INET6, -1,-1, !!(unspec) ? AF_UNSPEC : -1}}, {.b = !!(prefix)}}, ##args )
-#define CFG_VALIDATE_ACL(p_name, p_def, p_help, args...)                                   _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {-1}}, {.b = true}}, ##args )
-#define CFG_VALIDATE_ACL_HWADDR(p_name, p_def, p_help, args...)                            _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_MAC48, AF_EUI64, -1}}, {.b = true}}, ##args )
-#define CFG_VALIDATE_ACL_MAC48(p_name, p_def, p_help, args...)                             _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_MAC48, -1}}, {.b = true}}, ##args )
-#define CFG_VALIDATE_ACL_EUI64(p_name, p_def, p_help, args...)                             _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_EUI64, -1}}, {.b = true}}, ##args )
-#define CFG_VALIDATE_ACL_V4(p_name, p_def, p_help, args...)                                _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_INET, -1}}, {.b = true}}, ##args )
-#define CFG_VALIDATE_ACL_V6(p_name, p_def, p_help, args...)                                _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_INET6, -1}}, {.b = true}}, ##args )
-#define CFG_VALIDATE_ACL_V46(p_name, p_def, p_help, args...)                               _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .list = true, .validate_param = {{.i8 = {AF_INET, AF_INET6, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL(p_name, p_def, p_help, args...)                                   _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .cb_valhelp = cfg_schema_help_acl, .list = true, .validate_param = {{.i8 = {AF_MAC48, AF_EUI64, AF_INET, AF_INET6, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_HWADDR(p_name, p_def, p_help, args...)                            _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .cb_valhelp = cfg_schema_help_acl, .list = true, .validate_param = {{.i8 = {AF_MAC48, AF_EUI64, -1, -1, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_MAC48(p_name, p_def, p_help, args...)                             _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .cb_valhelp = cfg_schema_help_acl, .list = true, .validate_param = {{.i8 = {AF_MAC48, -1, -1, -1, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_EUI64(p_name, p_def, p_help, args...)                             _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .cb_valhelp = cfg_schema_help_acl, .list = true, .validate_param = {{.i8 = {AF_EUI64, -1, -1, -1, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_V4(p_name, p_def, p_help, args...)                                _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .cb_valhelp = cfg_schema_help_acl, .list = true, .validate_param = {{.i8 = {AF_INET, -1, -1, -1, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_V6(p_name, p_def, p_help, args...)                                _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .cb_valhelp = cfg_schema_help_acl, .list = true, .validate_param = {{.i8 = {AF_INET6, -1, -1, -1, -1}}, {.b = true}}, ##args )
+#define CFG_VALIDATE_ACL_V46(p_name, p_def, p_help, args...)                               _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = cfg_schema_validate_acl, .cb_valhelp = cfg_schema_help_acl, .list = true, .validate_param = {{.i8 = {AF_INET, AF_INET6, -1, -1, -1}}, {.b = true}}, ##args )
 
 #define CFG_VALIDATE_BOOL(p_name, p_def, p_help, args...)                                  CFG_VALIDATE_CHOICE(p_name, p_def, p_help, CFGLIST_BOOL, ##args)
 
@@ -379,6 +379,8 @@ EXPORT void cfg_schema_help_int(
 EXPORT void cfg_schema_help_fractional(
     const struct cfg_schema_entry *entry, struct autobuf *out);
 EXPORT void cfg_schema_help_netaddr(
+    const struct cfg_schema_entry *entry, struct autobuf *out);
+EXPORT void cfg_schema_help_acl(
     const struct cfg_schema_entry *entry, struct autobuf *out);
 
 EXPORT int cfg_schema_tobin_strptr(const struct cfg_schema_entry *s_entry,
