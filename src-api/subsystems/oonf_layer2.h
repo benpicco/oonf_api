@@ -120,7 +120,7 @@ struct oonf_layer2_network {
   size_t rate_count;
 };
 
-EXPORT extern struct oonf_subsystem dlep_layer2_subsystem;
+EXPORT extern struct oonf_subsystem oonf_layer2_subsystem;
 
 EXPORT extern struct avl_tree oonf_layer2_network_tree;
 EXPORT extern struct avl_tree oonf_layer2_neighbor_tree;

@@ -90,7 +90,7 @@ static struct oonf_timer_info _neighbor_vtime_info = {
   .periodic = true,
 };
 
-struct oonf_subsystem dlep_layer2_subsystem = {
+struct oonf_subsystem oonf_layer2_subsystem = {
   .init = _init,
   .cleanup = _cleanup,
 };
