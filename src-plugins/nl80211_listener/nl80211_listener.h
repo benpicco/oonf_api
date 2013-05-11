@@ -11,6 +11,6 @@
 #include "common/common_types.h"
 #include "core/oonf_subsystem.h"
 
-EXPORT extern struct oonf_subsystem dlep_nl80211_listener_subsystem;
+EXPORT extern struct oonf_subsystem nl80211_listener_subsystem;
 
 #endif /* NL80211_LISTENER_H_ */

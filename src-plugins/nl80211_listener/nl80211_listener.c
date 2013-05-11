@@ -136,9 +136,9 @@ static struct cfg_schema_section _nl80211_section = {
 static struct _nl80211_config _config;
 
 /* plugin declaration */
-struct oonf_subsystem dlep_nl80211_listener_subsystem = {
+struct oonf_subsystem nl80211_listener_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
-  .descr = "OONFD nl80211 listener plugin",
+  .descr = "OONF nl80211 listener plugin",
   .author = "Henning Rogge",
 
   .cfg_section = &_nl80211_section,
@@ -146,7 +146,7 @@ struct oonf_subsystem dlep_nl80211_listener_subsystem = {
   .init = _init,
   .cleanup = _cleanup,
 };
-DECLARE_OONF_PLUGIN(dlep_nl80211_listener_subsystem);
+DECLARE_OONF_PLUGIN(nl80211_listener_subsystem);
 
 /* netlink specific data */
 static struct os_system_netlink _netlink_handler = {
@@ -199,6 +199,8 @@ _init(void) {
     free(_msgbuf);
     return -1;
   }
+
+  avl_init(&_anonymized_tree, avl_comp_netaddr, false);
 
   oonf_class_add(&_amac_info);
   strarray_init(&_config.interf);
