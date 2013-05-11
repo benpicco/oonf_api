@@ -51,9 +51,6 @@
 #include "subsystems/oonf_http.h"
 #include "subsystems/oonf_telnet.h"
 
-/* constants */
-#define _CFG_SECTION "httptelnet"
-
 /* prototypes */
 static int _init(void);
 static void _cleanup(void);
@@ -76,7 +73,7 @@ static struct cfg_schema_entry _httptelnet_entries[] = {
 };
 
 static struct cfg_schema_section _httptelnet_section = {
-  .type = _CFG_SECTION,
+  .type = OONF_PLUGIN_GET_NAME(),
   .cb_delta_handler = _cb_config_changed,
   .entries = _httptelnet_entries,
   .entry_count = ARRAYSIZE(_httptelnet_entries),

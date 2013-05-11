@@ -118,11 +118,11 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
    */
   if (!msg->target_specific) {
     /* not interface specific */
-    msg->specific_if = NULL;
+    writer->msg_target = NULL;
   }
   else if (useIf == rfc5444_writer_singletarget_selector) {
     /* interface specific, but single_if selector is used */
-    msg->specific_if = param;
+    writer->msg_target = param;
   }
   else {
     /* interface specific, but generic selector is used */

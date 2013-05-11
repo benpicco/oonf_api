@@ -56,9 +56,6 @@
 #include "subsystems/oonf_layer2.h"
 #include "subsystems/oonf_telnet.h"
 
-/* constants */
-#define _CFG_SECTION "layer2_viewer"
-
 /* keys for template engine */
 #define KEY_neighbor "neighbor"
 #define KEY_radio "radio"
@@ -98,7 +95,7 @@ static struct cfg_schema_entry _layer2_entries[] = {
 };
 
 static struct cfg_schema_section _layer2_section = {
-  .type = _CFG_SECTION,
+  .type = OONF_PLUGIN_GET_NAME(),
   .cb_delta_handler = _cb_config_changed,
   .entries = _layer2_entries,
   .entry_count = ARRAYSIZE(_layer2_entries),

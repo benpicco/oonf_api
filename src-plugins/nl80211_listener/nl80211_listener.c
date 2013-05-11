@@ -74,9 +74,6 @@
 
 #include "nl80211_listener/nl80211_listener.h"
 
-/* constants */
-#define _CFG_SECTION "nl80211"
-
 /* definitions */
 struct _nl80211_config {
   struct strarray interf;
@@ -129,7 +126,7 @@ static struct cfg_schema_entry _nl80211_entries[] = {
 };
 
 static struct cfg_schema_section _nl80211_section = {
-  .type = _CFG_SECTION,
+  .type = OONF_PLUGIN_GET_NAME(),
   .cb_delta_handler = _cb_config_changed,
   .cb_validate = _cb_config_validate,
   .entries = _nl80211_entries,

@@ -252,14 +252,14 @@ EXPORT enum rfc5444_result oonf_rfc5444_send_all(
     uint8_t msgid, rfc5444_writer_targetselector useIf);
 
 /**
- * @param msg pointer to rfc5444 message
+ * @param writer pointer to rfc5444 writer
  * @return pointer to rfc5444 target used by message
  */
 static INLINE struct oonf_rfc5444_target *
-oonf_rfc5444_get_target_from_message(struct rfc5444_writer_message *msg) {
-  assert (msg->target_specific);
+oonf_rfc5444_get_target_from_writer(struct rfc5444_writer *writer) {
+  assert (writer->msg_target);
 
-  return container_of(msg->specific_if, struct oonf_rfc5444_target, rfc5444_target);
+  return container_of(writer->msg_target, struct oonf_rfc5444_target, rfc5444_target);
 }
 
 /**
