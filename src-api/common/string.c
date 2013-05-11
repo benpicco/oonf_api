@@ -41,6 +41,8 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -503,4 +505,63 @@ str_get_human_readable_number(struct human_readable_str *out,
   }
 
   return out->buf;
+}
+
+int
+str_parse_human_readable_number(uint64_t *dst, const char *hrn, bool binary) {
+  uint64_t num;
+  uint64_t factor;
+  uint64_t multiplicator;
+  char *next = NULL;
+
+  errno = 0;
+  num = strtoull(hrn, &next, 10);
+  if (errno) {
+    return -1;
+  }
+
+  if (*next == 0) {
+    *dst = num;
+    return 0;
+  }
+
+  if (next[1] != 0) {
+    return -1;
+  }
+
+  factor = 1;
+  multiplicator = binary ? 1024 : 1000;
+
+  switch (next[0]) {
+    case 'E':
+      factor *= multiplicator;
+      /* no break */
+    case 'P':
+      factor *= multiplicator;
+      /* no break */
+    case 'T':
+      factor *= multiplicator;
+      /* no break */
+    case 'G':
+      factor *= multiplicator;
+      /* no break */
+    case 'M':
+      factor *= multiplicator;
+      /* no break */
+    case 'k':
+      factor *= multiplicator;
+      /* no break */
+    case ' ':
+      break;
+    default:
+      return -1;
+  }
+
+  if (num > UINT64_MAX / factor) {
+    /* this would be an integer overflow */
+    return -1;
+  }
+
+  *dst = num * factor;
+  return 0;
 }

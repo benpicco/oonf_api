@@ -75,7 +75,7 @@ struct const_strarray {
   const size_t length;
 };
 
-struct human_readable_str{
+struct human_readable_str {
     char buf[48];
 };
 
@@ -87,6 +87,8 @@ EXPORT const char *str_cpynextword (char *dst, const char *buffer, size_t len);
 
 EXPORT const char *str_get_human_readable_number(struct human_readable_str *out,
     uint64_t number, const char *unit, int maxfraction, bool binary, bool raw);
+EXPORT int str_parse_human_readable_number(
+    uint64_t *dst, const char *hrn, bool binary);
 
 EXPORT bool str_is_printable(const char *value);
 

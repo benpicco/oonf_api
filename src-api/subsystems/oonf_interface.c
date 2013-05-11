@@ -194,14 +194,23 @@ oonf_interface_trigger_handler(struct oonf_interface *interf) {
 
 /**
  * @param name interface name
+ * @param buf optional pointer to helper buffer, if not NULL and the
+ *   interface data wasn't cached, it will be read into the helper
+ *   buffer directly.
  * @return pointer to olsr interface data, NULL if not found
  */
 struct oonf_interface_data *
-oonf_interface_get_data(const char *name) {
+oonf_interface_get_data(const char *name, struct oonf_interface_data *buf) {
   struct oonf_interface *interf;
 
   interf = avl_find_element(&oonf_interface_tree, name, interf, _node);
   if (interf == NULL) {
+    if (buf) {
+      if (os_net_update_interface(buf, name)) {
+        return NULL;
+      }
+      return buf;
+    }
     return NULL;
   }
 

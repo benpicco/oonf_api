@@ -47,7 +47,11 @@
 #include "core/oonf_subsystem.h"
 #include "subsystems/oonf_class.h"
 #include "subsystems/oonf_layer2.h"
+#include "subsystems/oonf_rfc5444.h"
 #include "subsystems/oonf_timer.h"
+
+/* definitions and constants */
+#define CFG_KEY_LINKSPEED "linkspeed"
 
 /* prototypes */
 static int _init(void);
@@ -63,7 +67,7 @@ static const char *_cb_get_neighbor_name(
 static const char *_cb_get_network_name(
     struct oonf_objectkey_str *, struct oonf_class *, void *);
 
-struct avl_tree oonf_layer2_network_tree;
+struct avl_tree oonf_layer2_network_id_tree;
 struct avl_tree oonf_layer2_neighbor_tree;
 
 static struct oonf_class _network_cookie = {
@@ -89,7 +93,6 @@ static struct oonf_timer_info _neighbor_vtime_info = {
   .callback = _cb_neighbor_timeout,
   .periodic = true,
 };
-
 struct oonf_subsystem oonf_layer2_subsystem = {
   .init = _init,
   .cleanup = _cleanup,
@@ -107,7 +110,7 @@ _init(void) {
   oonf_timer_add(&_network_vtime_info);
   oonf_timer_add(&_neighbor_vtime_info);
 
-  avl_init(&oonf_layer2_network_tree, avl_comp_netaddr, false);
+  avl_init(&oonf_layer2_network_id_tree, avl_comp_netaddr, false);
   avl_init(&oonf_layer2_neighbor_tree, _avl_comp_l2neigh, false);
   return 0;
 }
@@ -120,12 +123,12 @@ _cleanup(void) {
   struct oonf_layer2_neighbor *neigh, *neigh_it;
   struct oonf_layer2_network *net, *net_it;
 
-  OONF_FOR_ALL_LAYER2_NETWORKS(net, net_it) {
+  avl_for_each_element_safe(&oonf_layer2_network_id_tree, net, _id_node, net_it) {
     net->active = false;
     oonf_layer2_remove_network(net);
   }
 
-  OONF_FOR_ALL_LAYER2_NEIGHBORS(neigh, neigh_it) {
+  avl_for_each_element_safe(&oonf_layer2_neighbor_tree, neigh, _node, neigh_it) {
     neigh->active = false;
     oonf_layer2_remove_neighbor(neigh);
   }
@@ -140,8 +143,9 @@ _cleanup(void) {
  * Add an active network to the database. If an entry for the
  * interface does already exists, it will be returned by this
  * function and no new entry will be created.
- * @param radio_id ID of the radio
+ * @param radio_id ID of the radio (might be NULL)
  * @param if_index local interface index of network
+ * @param name interface name of the radio (might be NULL)
  * @param vtime validity time of data
  * @return pointer to layer2 network data, NULL if OOM
  */
@@ -152,21 +156,21 @@ oonf_layer2_add_network(struct netaddr *radio_id, uint32_t if_index,
 
   assert (vtime > 0);
 
-  net = oonf_layer2_get_network(radio_id);
-  if (!net) {
+  net = oonf_layer2_get_network_by_id(radio_id);
+  if (net) {
     net = oonf_class_malloc(&_network_cookie);
     if (!net) {
       return NULL;
     }
 
-    net->_node.key = &net->radio_id;
+    /* initialize the nodes */
+    net->_id_node.key = &net->radio_id;
     memcpy (&net->radio_id, radio_id, sizeof(*radio_id));
-    net->if_index = if_index;
+    avl_insert(&oonf_layer2_network_id_tree, &net->_id_node);
 
+    net->if_index = if_index;
     net->_valitity_timer.info = &_network_vtime_info;
     net->_valitity_timer.cb_context = net;
-
-    avl_insert(&oonf_layer2_network_tree, &net->_node);
 
     oonf_class_event(&_network_cookie, net, OONF_OBJECT_ADDED);
   }
@@ -336,7 +340,8 @@ _remove_network(struct oonf_layer2_network *net) {
     return;
   }
 
-  avl_remove(&oonf_layer2_network_tree, &net->_node);
+  avl_remove(&oonf_layer2_network_id_tree, &net->_id_node);
+
   oonf_timer_stop(&net->_valitity_timer);
   free (net->supported_rates);
   oonf_class_free(&_network_cookie, net);

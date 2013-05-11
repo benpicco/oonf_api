@@ -88,7 +88,8 @@ EXPORT extern struct oonf_subsystem oonf_interface_subsystem;
 EXPORT int oonf_interface_add_listener(struct oonf_interface_listener *);
 EXPORT void oonf_interface_remove_listener(struct oonf_interface_listener *);
 
-EXPORT struct oonf_interface_data *oonf_interface_get_data(const char *name);
+EXPORT struct oonf_interface_data *oonf_interface_get_data(
+    const char *name, struct oonf_interface_data *buffer);
 EXPORT void oonf_interface_trigger_change(const char *name, bool down);
 EXPORT void oonf_interface_trigger_handler(struct oonf_interface *interf);
 

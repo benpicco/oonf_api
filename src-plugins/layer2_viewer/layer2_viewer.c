@@ -456,8 +456,8 @@ _parse_mode(struct autobuf *out, const char *cmd, struct _command_params *params
  */
 static enum oonf_telnet_result
 _cb_handle_layer2(struct oonf_telnet_data *data) {
-  struct oonf_layer2_network *net, *net_it;
-  struct oonf_layer2_neighbor *neigh, *neigh_it;
+  struct oonf_layer2_network *net;
+  struct oonf_layer2_neighbor *neigh;
   struct abuf_template_storage *tmpl_storage = NULL;
 
   if (data->parameter == NULL || *data->parameter == 0) {
@@ -474,7 +474,7 @@ _cb_handle_layer2(struct oonf_telnet_data *data) {
       }
     }
 
-    OONF_FOR_ALL_LAYER2_NETWORKS(net, net_it) {
+    avl_for_each_element(&oonf_layer2_network_id_tree, net, _id_node) {
       if (net->active ? _net_params.active : _net_params.inactive) {
         if (_init_network_template(net, _net_params.template == NULL)) {
           free(tmpl_storage);
@@ -499,7 +499,7 @@ _cb_handle_layer2(struct oonf_telnet_data *data) {
       }
     }
 
-    OONF_FOR_ALL_LAYER2_NEIGHBORS(neigh, neigh_it) {
+    avl_for_each_element(&oonf_layer2_neighbor_tree, neigh, _node) {
       if (neigh->active ? _neigh_params.active : _neigh_params.inactive) {
         if (_init_neighbor_template(neigh, _neigh_params.template == NULL)) {
           free(tmpl_storage);

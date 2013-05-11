@@ -432,7 +432,7 @@ _parse_cmd_new_station(struct nlmsghdr *hdr) {
     return;
   }
 
-  if_data = oonf_interface_get_data(if_name);
+  if_data = oonf_interface_get_data(if_name, NULL);
   if (if_data == NULL || netaddr_get_address_family(&if_data->mac) == AF_UNSPEC) {
     return;
   }
@@ -450,7 +450,7 @@ _parse_cmd_new_station(struct nlmsghdr *hdr) {
   }
 
   /* make sure that the network is there */
-  if (oonf_layer2_get_network(&if_data->mac) == NULL) {
+  if (oonf_layer2_get_network_by_id(&if_data->mac) == NULL) {
     OONF_DEBUG(LOG_NL80211, "Add empty network %s for neighbor %s",
         netaddr_to_string(&buf2, &if_data->mac), netaddr_to_string(&buf1, &mac));
 
@@ -563,7 +563,7 @@ _parse_cmd_del_station(struct nlmsghdr *hdr) {
   if (if_indextoname(if_index, if_name) == NULL) {
     return;
   }
-  if_data = oonf_interface_get_data(if_name);
+  if_data = oonf_interface_get_data(if_name, NULL);
   if (if_data == NULL || netaddr_get_address_family(&if_data->mac) == AF_UNSPEC) {
     return;
   }
@@ -656,7 +656,7 @@ _parse_cmd_new_scan_result(struct nlmsghdr *msg) {
     return;
   }
 
-  if_data = oonf_interface_get_data(if_name);
+  if_data = oonf_interface_get_data(if_name, NULL);
   if (if_data == NULL || netaddr_get_address_family(&if_data->mac) == AF_UNSPEC) {
     return;
   }

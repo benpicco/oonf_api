@@ -99,7 +99,7 @@ enum oonf_layer2_network_data {
 };
 
 struct oonf_layer2_network {
-  struct avl_node _node;
+  struct avl_node _id_node;
 
   struct netaddr radio_id;
   uint32_t if_index;
@@ -120,17 +120,19 @@ struct oonf_layer2_network {
   size_t rate_count;
 };
 
+struct oonf_layer2_network_config {
+  struct avl_node _name_node;
+
+  const char *if_name;
+
+  uint64_t tx_bitrate;
+};
+
 EXPORT extern struct oonf_subsystem oonf_layer2_subsystem;
 
-EXPORT extern struct avl_tree oonf_layer2_network_tree;
+EXPORT extern struct avl_tree oonf_layer2_network_id_tree;
+EXPORT extern struct avl_tree oonf_layer2_network_name_tree;
 EXPORT extern struct avl_tree oonf_layer2_neighbor_tree;
-
-#define OONF_FOR_ALL_LAYER2_NETWORKS(network, iterator) avl_for_each_element_safe(&oonf_layer2_network_tree, network, _node, iterator)
-#define OONF_FOR_ALL_LAYER2_NEIGHBORS(neighbor, iterator) avl_for_each_element_safe(&oonf_layer2_neighbor_tree, neighbor, _node, iterator)
-#define OONF_FOR_ALL_LAYER2_ACTIVE_NETWORKS(network, iterator) OONF_FOR_ALL_LAYER2_NETWORKS(network,iterator) if((network)->active)
-#define OONF_FOR_ALL_LAYER2_ACTIVE_NEIGHBORS(neighbor, iterator) OONF_FOR_ALL_LAYER2_NEIGHBORS(neighbor, iterator) if ((neighbor)->active)
-#define OONF_FOR_ALL_LAYER2_LOST_NETWORKS(network, iterator) OONF_FOR_ALL_LAYER2_NETWORKS(network,iterator) if(!(network)->active)
-#define OONF_FOR_ALL_LAYER2_LOST_NEIGHBORS(neighbor, iterator) OONF_FOR_ALL_LAYER2_NEIGHBORS(neighbor, iterator) if (!(neighbor)->active)
 
 EXPORT struct oonf_layer2_network *oonf_layer2_add_network(
     struct netaddr *ssid, uint32_t if_index, uint64_t vtime);
@@ -152,13 +154,13 @@ EXPORT void oonf_layer2_network_commit(struct oonf_layer2_network *);
 
 /**
  * Retrieve a layer2 network entry from the database
- * @param if_index local interface index of network
+ * @param radio mac address of the local interface
  * @return pointer to layer2 network, NULL if not found
  */
 static INLINE struct oonf_layer2_network *
-oonf_layer2_get_network(struct netaddr *radio) {
+oonf_layer2_get_network_by_id(struct netaddr *radio) {
   struct oonf_layer2_network *net;
-  return avl_find_element(&oonf_layer2_network_tree, radio, net, _node);
+  return avl_find_element(&oonf_layer2_network_id_tree, radio, net, _id_node);
 }
 
 /*
