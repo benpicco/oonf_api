@@ -159,6 +159,7 @@ os_net_update_interface(struct oonf_interface_data *ifdata,
   size_t addrcount;
   union netaddr_socket *sock;
   struct netaddr *addr;
+  struct netaddr_str nbuf;
 
   /* cleanup data structure */
   if (ifdata->addresses) {
@@ -200,6 +201,8 @@ os_net_update_interface(struct oonf_interface_data *ifdata,
   }
 
   netaddr_from_binary(&ifdata->mac, ifr.ifr_hwaddr.sa_data, 6, AF_MAC48);
+  OONF_INFO(LOG_OS_NET, "Interface %s has mac address %s",
+      ifdata->name, netaddr_to_string(&nbuf, &ifdata->mac));
 
   /* get ip addresses */
   ifaddrs = NULL;

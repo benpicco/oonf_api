@@ -96,7 +96,10 @@ netaddr_from_binary_prefix(struct netaddr *dst, const void *binary,
 
   memset(dst->_addr, 0, sizeof(dst->_addr));
 
-  if (addr_type == 0) {
+  if (addr_type != 0) {
+    dst->_type = addr_type;
+  }
+  else {
     switch (len) {
       case 4:
         dst->_type = AF_INET;
