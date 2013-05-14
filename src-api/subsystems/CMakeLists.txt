@@ -4,7 +4,7 @@ SET(OONF_SUBSYSTEMS_SRCS oonf_class.c
                          oonf_http.c
                          oonf_interface.c
                          oonf_layer2.c
-                         oonf_l2config.c
+                         oonf_linkconfig.c
                          oonf_packet_socket.c
                          oonf_rfc5444.c
                          oonf_socket.c
@@ -19,7 +19,7 @@ SET(OONF_SUBSYSTEMS_INCLUDES oonf_class.h
                              oonf_http.h
                              oonf_interface.h
                              oonf_layer2.h
-                             oonf_l2config.h
+                             oonf_linkconfig.h
                              oonf_packet_socket.h
                              oonf_rfc5444.h
                              oonf_socket.h

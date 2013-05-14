@@ -39,8 +39,8 @@
  *
  */
 
-#ifndef OONF_L2CONFIG_H_
-#define OONF_L2CONFIG_H_
+#ifndef OONF_LINKCONFIG_H_
+#define OONF_LINKCONFIG_H_
 
 #include "common/avl.h"
 #include "common/common_types.h"
@@ -48,10 +48,10 @@
 #include "core/oonf_subsystem.h"
 
 /* both callbacks support ADD and REMOVE events */
-#define LAYER2_CONFIG_CLASS_NEIGHBOR           "l2config_neighbor"
-#define LAYER2_CONFIG_CLASS_NETWORK            "l2config_neighbor"
+#define LAYER2_CONFIG_CLASS_NEIGHBOR           "linkconfig_neighbor"
+#define LAYER2_CONFIG_CLASS_NETWORK            "linkconfig_neighbor"
 
-struct oonf_l2config_network {
+struct oonf_linkconfig_network {
   char name[IF_NAMESIZE];
 
   uint64_t tx_bitrate;
@@ -61,59 +61,59 @@ struct oonf_l2config_network {
   struct avl_tree _link_tree;
 };
 
-struct oonf_l2config_link {
+struct oonf_linkconfig_link {
   struct netaddr remote_mac;
 
-  struct oonf_l2config_network *net;
+  struct oonf_linkconfig_network *net;
 
   uint64_t tx_bitrate;
 
   struct avl_node _node;
 };
 
-#define CFG_VALIDATE_LINKSPEED(p_name, p_def, p_help, args...)         _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = oonf_l2config_validate_linkspeed, ##args )
+#define CFG_VALIDATE_LINKSPEED(p_name, p_def, p_help, args...)         _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = oonf_linkconfig_validate_linkspeed, ##args )
 
-EXPORT extern struct oonf_subsystem oonf_l2config_subsystem;
-EXPORT extern struct avl_tree oonf_l2config_network_tree;
+EXPORT extern struct oonf_subsystem oonf_linkconfig_subsystem;
+EXPORT extern struct avl_tree oonf_linkconfig_network_tree;
 
-EXPORT struct oonf_l2config_network *oonf_l2config_network_add(
+EXPORT struct oonf_linkconfig_network *oonf_linkconfig_network_add(
     const char *name);
-EXPORT void oonf_l2config_network_remove(struct oonf_l2config_network *);
+EXPORT void oonf_linkconfig_network_remove(struct oonf_linkconfig_network *);
 
-EXPORT struct oonf_l2config_link *oonf_l2config_link_add(
-    struct oonf_l2config_network *, struct netaddr *remote);
-EXPORT void oonf_l2config_link_remove(struct oonf_l2config_link *);
+EXPORT struct oonf_linkconfig_link *oonf_linkconfig_link_add(
+    struct oonf_linkconfig_network *, struct netaddr *remote);
+EXPORT void oonf_linkconfig_link_remove(struct oonf_linkconfig_link *);
 
-EXPORT int oonf_l2config_validate_linkspeed(const struct cfg_schema_entry *entry,
+EXPORT int oonf_linkconfig_validate_linkspeed(const struct cfg_schema_entry *entry,
     const char *section_name, const char *value, struct autobuf *out);
 
-static INLINE struct oonf_l2config_network *
-oonf_l2config_network_get(const char *name) {
-  struct oonf_l2config_network *net;
+static INLINE struct oonf_linkconfig_network *
+oonf_linkconfig_network_get(const char *name) {
+  struct oonf_linkconfig_network *net;
 
-  return avl_find_element(&oonf_l2config_network_tree,
+  return avl_find_element(&oonf_linkconfig_network_tree,
       name, net, _node);
 }
 
-static INLINE struct oonf_l2config_link *
-oonf_l2config_link_get(struct oonf_l2config_network *net,
+static INLINE struct oonf_linkconfig_link *
+oonf_linkconfig_link_get(struct oonf_linkconfig_network *net,
     struct netaddr *remote) {
-  struct oonf_l2config_link *lnk;
+  struct oonf_linkconfig_link *lnk;
 
   return avl_find_element(&net->_link_tree, remote, lnk, _node);
 }
 
 static INLINE uint64_t
-oonf_l2config_tx_bitrate_get(const char *name, struct netaddr *remote) {
-  struct oonf_l2config_network *net;
-  struct oonf_l2config_link *lnk;
+oonf_linkconfig_tx_bitrate_get(const char *name, struct netaddr *remote) {
+  struct oonf_linkconfig_network *net;
+  struct oonf_linkconfig_link *lnk;
 
-  net = oonf_l2config_network_get(name);
+  net = oonf_linkconfig_network_get(name);
   if (!net) {
     return 0;
   }
 
-  lnk = oonf_l2config_link_get(net, remote);
+  lnk = oonf_linkconfig_link_get(net, remote);
   if (lnk) {
     return lnk->tx_bitrate;
   }
@@ -121,4 +121,4 @@ oonf_l2config_tx_bitrate_get(const char *name, struct netaddr *remote) {
   return net->tx_bitrate;
 }
 
-#endif /* OONF_L2CONFIG_H_ */
+#endif /* OONF_LINKCONFIG_H_ */
