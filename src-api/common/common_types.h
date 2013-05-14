@@ -54,6 +54,11 @@
 #define ARRAYSIZE(a)  (sizeof(a) / sizeof(*(a)))
 #endif
 
+/* convert the value into a string */
+#ifndef STRINGIFY
+#define STRINGIFY(x) #x
+#endif
+
 /*
  * This force gcc to always inline, which prevents errors
  * with option -Os

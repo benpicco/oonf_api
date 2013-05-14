@@ -10,14 +10,20 @@
 #include "subsystems/oonf_timer.h"
 
 /* definitions and constants */
-#define CFG_KEY_LINKSPEED "linkspeed"
+#define CFG_LINKSPEED_KEY          "linkspeed"
+
+enum {
+  CFG_LINKSPEED_DEFAULT = 0,
+};
 
 /* Prototypes */
 static int _init(void);
 static void _cleanup(void);
-static void _parse_strarray(struct strarray *array,
-    const char *ifname, bool add);
-
+static void _parse_strarray(struct strarray *array, const char *ifname,
+    void (*set)(struct oonf_linkconfig_data *, const char *),
+    const char *key, const char *def_value);
+static void _set_tx_speed(struct oonf_linkconfig_data *data, const char *value);
+static void _cleanup_database(void);
 static void _cb_config_changed(void);
 
 /* memory classes */
@@ -32,8 +38,12 @@ static struct oonf_class _link_class = {
 };
 
 /* subsystem definition */
+const struct oonf_linkconfig_data oonf_linkconfig_default = {
+  .tx_bitrate = CFG_LINKSPEED_DEFAULT,
+};
+
 static struct cfg_schema_entry _linkconfig_if_entries[] = {
-  CFG_VALIDATE_LINKSPEED(CFG_KEY_LINKSPEED, "",
+  CFG_VALIDATE_LINKSPEED(CFG_LINKSPEED_KEY, "",
       "Sets the link speed on the interface. Consists of a speed in"
       " bits/s (with iso-suffix) and an optional list of 48-bit mac addresses",
       .list = true),
@@ -41,7 +51,7 @@ static struct cfg_schema_entry _linkconfig_if_entries[] = {
 
 static struct cfg_schema_section _linkconfig_section = {
   .type = CFG_INTERFACE_SECTION,
-  .mode = CFG_SSMODE_NAMED_MANDATORY,
+  .mode = CFG_INTERFACE_SECTION_MODE,
   .cb_delta_handler = _cb_config_changed,
   .entries = _linkconfig_if_entries,
   .entry_count = ARRAYSIZE(_linkconfig_if_entries),
@@ -56,6 +66,10 @@ struct oonf_subsystem oonf_linkconfig_subsystem = {
 
 struct avl_tree oonf_linkconfig_network_tree;
 
+/**
+ * Subsystem constructor
+ * @return always returns 0
+ */
 static int
 _init(void) {
   oonf_class_add(&_network_class);
@@ -65,6 +79,9 @@ _init(void) {
   return 0;
 }
 
+/**
+ * Subsystem destructor
+ */
 static void
 _cleanup(void) {
   struct oonf_linkconfig_network *linknet, *n_it;
@@ -77,6 +94,11 @@ _cleanup(void) {
   oonf_class_remove(&_network_class);
 }
 
+/**
+ * Add a network wide database entry
+ * @param name interface name
+ * @return network wide database entry, NULL if out of memory
+ */
 struct oonf_linkconfig_network *
 oonf_linkconfig_network_add(const char *name) {
   struct oonf_linkconfig_network *net;
@@ -97,6 +119,11 @@ oonf_linkconfig_network_add(const char *name) {
   return net;
 }
 
+/**
+ * Remove a network wide database entry including its
+ * link specific entries
+ * @param net pointer to network wide database entry
+ */
 void
 oonf_linkconfig_network_remove(struct oonf_linkconfig_network *net) {
   struct oonf_linkconfig_link *linklink, *link_it;
@@ -109,6 +136,12 @@ oonf_linkconfig_network_remove(struct oonf_linkconfig_network *net) {
   oonf_class_free(&_network_class, net);
 }
 
+/**
+ * Add a link specific database entry
+ * @param net pointer to network wide database entry
+ * @param remote remote link mac address
+ * @return pointer to link database entry, NULL if out of memory
+ */
 struct oonf_linkconfig_link *
 oonf_linkconfig_link_add(struct oonf_linkconfig_network *net,
     struct netaddr *remote) {
@@ -130,12 +163,24 @@ oonf_linkconfig_link_add(struct oonf_linkconfig_network *net,
   return linklnk;
 }
 
+/**
+ * Remove a link specific database entry
+ * @param lnk pointer to link specific database entry
+ */
 void
-oonf_linkconfig_link_remove(struct oonf_linkconfig_link *linklnk) {
-  avl_remove(&linklnk->net->_link_tree, &linklnk->_node);
-  oonf_class_free(&_link_class, linklnk);
+oonf_linkconfig_link_remove(struct oonf_linkconfig_link *lnk) {
+  avl_remove(&lnk->net->_link_tree, &lnk->_node);
+  oonf_class_free(&_link_class, lnk);
 }
 
+/**
+ * Configuration subsystem validator for linkspeed
+ * @param entry
+ * @param section_name
+ * @param value
+ * @param out
+ * @return
+ */
 int
 oonf_linkconfig_validate_linkspeed(const struct cfg_schema_entry *entry,
     const char *section_name, const char *value, struct autobuf *out) {
@@ -168,58 +213,97 @@ oonf_linkconfig_validate_linkspeed(const struct cfg_schema_entry *entry,
 }
 
 /**
- * Parse a string array and modify the fixed linkspeed database
+ * Parse user input and add the corresponding database entries
  */
 static void
-_parse_strarray(struct strarray *array, const char *ifname, bool add) {
-  struct oonf_linkconfig_link *linklink;
-  struct oonf_linkconfig_network *linknet;
-  struct human_readable_str sbuf;
+_parse_strarray(struct strarray *array, const char *ifname,
+    void (*set)(struct oonf_linkconfig_data *, const char *),
+    const char *key, const char *def_value) {
+  struct oonf_linkconfig_link *linkentry;
+  struct oonf_linkconfig_network *netentry;
   struct netaddr_str nbuf;
-  struct netaddr dummy;
-  uint64_t speed;
-  const char *ptr;
-  char *value;
+  struct netaddr linkmac;
+  const char *ptr, *value;
+  char valuebuf[40];
+  char *entry;
 
-  FOR_ALL_STRINGS(array, value) {
-    ptr = str_cpynextword(sbuf.buf, value, sizeof(sbuf));
-    if (str_parse_human_readable_number(&speed, sbuf.buf, true)) {
+  FOR_ALL_STRINGS(array, entry) {
+    ptr = str_cpynextword(valuebuf, entry, sizeof(valuebuf));
+    netentry = oonf_linkconfig_network_add(ifname);
+    if (!netentry) {
       continue;
     }
 
-    linknet = oonf_linkconfig_network_add(ifname);
-    if (!linknet) {
-      continue;
+    if (def_value) {
+      value = def_value;
+    }
+    else {
+      value = valuebuf;
     }
 
     if (ptr == NULL) {
-      /* add fixed link speed for network */
-      linknet->tx_bitrate = speed;
+      /* add network wide data entry */
+      set(&netentry->data, value);
 
-      OONF_INFO(LOG_MAIN, "%s if-wide linkspeed for %s: %lu",
-          add ? "add" : "remove",
-          ifname, speed);
+      OONF_INFO(LOG_MAIN, "if-wide %s for %s: %s",
+          key, ifname, value);
       continue;
     }
 
     while (ptr) {
       ptr = str_cpynextword(nbuf.buf, ptr, sizeof(nbuf));
 
-      if (netaddr_from_string(&dummy, nbuf.buf) != 0
-          || netaddr_get_address_family(&dummy) != AF_MAC48) {
+      if (netaddr_from_string(&linkmac, nbuf.buf) != 0
+          || netaddr_get_address_family(&linkmac) != AF_MAC48) {
         break;
       }
 
-      linklink = oonf_linkconfig_link_add(linknet, &dummy);
-      if (!linklink) {
+      linkentry = oonf_linkconfig_link_add(netentry, &linkmac);
+      if (!linkentry) {
         continue;
       }
 
-      linklink->tx_bitrate = speed;
+      set(&linkentry->data, value);
+      OONF_INFO(LOG_MAIN, "%s to neighbor %s on %s: %s",
+          key, nbuf.buf, ifname, value);
+    }
+  }
+}
 
-      OONF_INFO(LOG_MAIN, "%s linkspeed to neighbor %s on %s: %lu",
-          add ? "add" : "remove",
-          nbuf.buf, ifname, speed);
+/**
+ * Parse the string representation of tx_speed and put it into database
+ * @param data pointer to database entry
+ * @param value string value of tx_speed
+ */
+static void
+_set_tx_speed(struct oonf_linkconfig_data *data, const char *value) {
+  uint64_t speed;
+
+  if (str_parse_human_readable_number(&speed, value, true)) {
+    return;
+  }
+  data->tx_bitrate = speed;
+}
+
+/**
+ * Remove all database entries that are completely default
+ */
+static void
+_cleanup_database(void) {
+  struct oonf_linkconfig_network *net, *n_it;
+  struct oonf_linkconfig_link *lnk, *l_it;
+  avl_for_each_element_safe(&oonf_linkconfig_network_tree, net, _node, n_it) {
+    avl_for_each_element_safe(&net->_link_tree, lnk, _node, l_it) {
+      if (memcmp(&lnk->data, &oonf_linkconfig_default, sizeof(lnk->data)) == 0) {
+        /* everything default */
+        oonf_linkconfig_link_remove(lnk);
+      }
+    }
+
+    if (avl_is_empty(&net->_link_tree)
+        && memcmp(&net->data, &oonf_linkconfig_default, sizeof(net->data)) == 0) {
+      /* everything default */
+      oonf_linkconfig_network_remove(net);
     }
   }
 }
@@ -232,15 +316,19 @@ _cb_config_changed(void) {
   struct cfg_entry *entry;
 
   if (_linkconfig_section.pre) {
-    entry = cfg_db_get_entry(_linkconfig_section.pre, CFG_KEY_LINKSPEED);
+    entry = cfg_db_get_entry(_linkconfig_section.pre, CFG_LINKSPEED_KEY);
     if (entry) {
-      _parse_strarray(&entry->val, _linkconfig_section.section_name, false);
+      _parse_strarray(&entry->val, _linkconfig_section.section_name,
+          _set_tx_speed, CFG_LINKSPEED_KEY, STRINGIFY(CFG_LINKSPEED_DEFAULT));
     }
   }
   if (_linkconfig_section.post) {
-    entry = cfg_db_get_entry(_linkconfig_section.post, CFG_KEY_LINKSPEED);
+    entry = cfg_db_get_entry(_linkconfig_section.post, CFG_LINKSPEED_KEY);
     if (entry) {
-      _parse_strarray(&entry->val, _linkconfig_section.section_name, true);
+      _parse_strarray(&entry->val, _linkconfig_section.section_name,
+          _set_tx_speed, CFG_LINKSPEED_KEY, NULL);
     }
   }
+
+  _cleanup_database();
 }

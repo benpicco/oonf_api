@@ -178,7 +178,7 @@ static struct cfg_schema_entry _interface_entries[] = {
 
 static struct cfg_schema_section _interface_section = {
   .type = CFG_INTERFACE_SECTION,
-  .mode = CFG_SSMODE_NAMED,
+  .mode = CFG_INTERFACE_SECTION_MODE,
   .cb_delta_handler = _cb_cfg_interface_changed,
   .entries = _interface_entries,
   .entry_count = ARRAYSIZE(_interface_entries),

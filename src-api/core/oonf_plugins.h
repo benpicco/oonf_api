@@ -54,8 +54,7 @@
 #define _OONF_PLUGIN_DEF2(plg_name, subsystem) EXPORT void hookup_plugin_ ## plg_name (void) __attribute__ ((constructor)); void hookup_plugin_ ## plg_name (void) { oonf_plugins_hook(&subsystem); }
 
 #define OONF_PLUGIN_GET_NAME() _OONF_PLUGIN_GET_NAME(PLUGIN_FULLNAME)
-#define _OONF_PLUGIN_GET_NAME(plg_name) __OONF_PLUGIN_GET_NAME(plg_name)
-#define __OONF_PLUGIN_GET_NAME(plg_name) #plg_name
+#define _OONF_PLUGIN_GET_NAME(plg_name) STRINGIFY(plg_name)
 
 EXPORT extern struct avl_tree oonf_plugin_tree;
 

@@ -65,9 +65,9 @@ enum {
 
 /*
  * Configuration settings for interfaces with rfc5444 default protocol
- * (see RFC 5498, IANA Allocations for Mobile Ad Hoc Network (MANET) Protocols
  */
-#define CFG_INTERFACE_SECTION "interface"
+#define CFG_INTERFACE_SECTION      "interface"
+#define CFG_INTERFACE_SECTION_MODE CFG_SSMODE_NAMED_MANDATORY
 
 enum {
   /* Maximum packet size for this RFC5444 multiplexer */
