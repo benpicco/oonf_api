@@ -113,8 +113,9 @@ oonf_linkconfig_network_add(const char *name) {
     strscpy(net->name, name, IF_NAMESIZE);
 
     avl_insert(&oonf_linkconfig_network_tree, &net->_node);
-
     avl_init(&net->_link_tree, avl_comp_netaddr, false);
+
+    memcpy(&net->data, &oonf_linkconfig_default, sizeof(net->data));
   }
   return net;
 }
@@ -145,22 +146,25 @@ oonf_linkconfig_network_remove(struct oonf_linkconfig_network *net) {
 struct oonf_linkconfig_link *
 oonf_linkconfig_link_add(struct oonf_linkconfig_network *net,
     struct netaddr *remote) {
-  struct oonf_linkconfig_link *linklnk;
+  struct oonf_linkconfig_link *lnk;
 
-  linklnk = oonf_linkconfig_link_get(net, remote);
-  if (!linklnk) {
-    linklnk = oonf_class_malloc(&_link_class);
-    if (!linklnk) {
+  lnk = oonf_linkconfig_link_get(net, remote);
+  if (!lnk) {
+    lnk = oonf_class_malloc(&_link_class);
+    if (!lnk) {
       return NULL;
     }
 
-    memcpy(&linklnk->remote_mac, remote, sizeof(*remote));
-    linklnk->_node.key = &linklnk->remote_mac;
+    memcpy(&lnk->remote_mac, remote, sizeof(*remote));
+    lnk->_node.key = &lnk->remote_mac;
 
-    avl_insert(&net->_link_tree, &net->_node);
+    lnk->net = net;
+    avl_insert(&net->_link_tree, &lnk->_node);
+
+    memcpy(&lnk->data, &oonf_linkconfig_default, sizeof(lnk->data));
   }
 
-  return linklnk;
+  return lnk;
 }
 
 /**
