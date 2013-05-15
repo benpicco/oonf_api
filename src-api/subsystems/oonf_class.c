@@ -122,7 +122,6 @@ oonf_class_add(struct oonf_class *ci)
 
   /* Init list heads */
   list_init_head(&ci->_free_list);
-  list_init_head(&ci->_listeners);
   list_init_head(&ci->_extensions);
 
   OONF_DEBUG(LOG_CLASS, "Class %s added: %" PRINTF_SIZE_T_SPECIFIER " bytes\n",
@@ -136,7 +135,7 @@ oonf_class_add(struct oonf_class *ci)
 void
 oonf_class_remove(struct oonf_class *ci)
 {
-  struct oonf_class_listener *l, *iterator;
+  struct oonf_class_extension *ext, *iterator;
 
   /* remove memcookie from tree */
   avl_remove(&oonf_classes, &ci->_node);
@@ -145,8 +144,8 @@ oonf_class_remove(struct oonf_class *ci)
   _free_freelist(ci);
 
   /* remove all listeners */
-  list_for_each_element_safe(&ci->_listeners, l, _node, iterator) {
-    oonf_class_listener_remove(l);
+  list_for_each_element_safe(&ci->_extensions, ext, _node, iterator) {
+    oonf_class_extension_remove(ext);
   }
 
   OONF_DEBUG(LOG_CLASS, "Class %s removed\n", ci->name);
@@ -283,15 +282,14 @@ oonf_class_free(struct oonf_class *ci, void *ptr)
 
 /**
  * Register an extension to an existing class without objects.
- * Extensions can NOT be unregistered!
  * @param ext pointer to class extension
  * @return 0 if extension was registered, -1 if an error happened
  */
 int
-oonf_class_extend(struct oonf_class_extension *ext) {
+oonf_class_extension_add(struct oonf_class_extension *ext) {
   struct oonf_class *c;
 
-  if (ext->_offset != 0) {
+  if (oonf_class_is_extension_registered(ext)) {
     /* already registered */
     return 0;
   }
@@ -329,33 +327,12 @@ oonf_class_extend(struct oonf_class_extension *ext) {
 }
 
 /**
- * Add a listener to an OONF class
- * @param l pointer o listener
- * @return 0 if successful, -1 otherwise
- */
-int
-oonf_class_listener_add(struct oonf_class_listener *l) {
-  struct oonf_class *c;
-
-  c = avl_find_element(&oonf_classes, l->class_name, c, _node);
-  if (c == NULL) {
-    OONF_WARN(LOG_CLASS, "Unknown class %s for listener %s",
-        l->name, l->class_name);
-    return -1;
-  }
-
-  /* hook listener into class */
-  list_add_tail(&c->_listeners, &l->_node);
-  return 0;
-}
-
-/**
  * Remove listener from class
  * @param l pointer to listener
  */
 void
-oonf_class_listener_remove(struct oonf_class_listener *l) {
-  list_remove(&l->_node);
+oonf_class_extension_remove(struct oonf_class_extension *ext) {
+  list_remove(&ext->_node);
 }
 
 /**
@@ -366,25 +343,25 @@ oonf_class_listener_remove(struct oonf_class_listener *l) {
  */
 void
 oonf_class_event(struct oonf_class *c, void *ptr, enum oonf_class_event evt) {
-  struct oonf_class_listener *l;
+  struct oonf_class_extension *ext;
 #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
   struct oonf_objectkey_str buf;
 #endif
 
   OONF_DEBUG(LOG_CLASS, "Fire '%s' event for %s",
       OONF_CLASS_EVENT_NAME[evt], c->to_keystring(&buf, c, ptr));
-  list_for_each_element(&c->_listeners, l, _node) {
-    if (evt == OONF_OBJECT_ADDED && l->cb_add != NULL) {
-      OONF_DEBUG(LOG_CLASS, "Fire listener %s", l->name);
-      l->cb_add(ptr);
+  list_for_each_element(&c->_extensions, ext, _node) {
+    if (evt == OONF_OBJECT_ADDED && ext->cb_add != NULL) {
+      OONF_DEBUG(LOG_CLASS, "Fire listener %s", ext->name);
+      ext->cb_add(ptr);
     }
-    else if (evt == OONF_OBJECT_REMOVED && l->cb_remove != NULL) {
-      OONF_DEBUG(LOG_CLASS, "Fire listener %s", l->name);
-      l->cb_remove(ptr);
+    else if (evt == OONF_OBJECT_REMOVED && ext->cb_remove != NULL) {
+      OONF_DEBUG(LOG_CLASS, "Fire listener %s", ext->name);
+      ext->cb_remove(ptr);
     }
-    else if (evt == OONF_OBJECT_CHANGED && l->cb_change != NULL) {
-      OONF_DEBUG(LOG_CLASS, "Fire listener %s", l->name);
-      l->cb_change(ptr);
+    else if (evt == OONF_OBJECT_CHANGED && ext->cb_change != NULL) {
+      OONF_DEBUG(LOG_CLASS, "Fire listener %s", ext->name);
+      ext->cb_change(ptr);
     }
   }
   OONF_DEBUG(LOG_CLASS, "Fire event finished");

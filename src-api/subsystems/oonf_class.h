@@ -87,9 +87,6 @@ struct oonf_class {
   /* List head for recyclable blocks */
   struct list_entity _free_list;
 
-  /* listeners of this class */
-  struct list_entity _listeners;
-
   /* extensions of this class */
   struct list_entity _extensions;
 
@@ -104,14 +101,17 @@ struct oonf_class {
 };
 
 /*
- * This structure represents an extension of a class. The extension can
- * be registered as long as no memory objects are allocated
+ * This structure defines a listener that can receive Add/Change/Remove
+ * events for a certain class.
+ *
+ * It can also be used to extend the class with additional memory, as long
+ * as no object has been allocated for the class in this moment.
  */
 struct oonf_class_extension {
-  /* name of the extension for logging/debug purpose */
+  /* name of the consumer */
   const char *name;
 
-  /* name of the class to be extended */
+  /* name of the provider */
   const char *class_name;
 
   /* size of the extension */
@@ -119,21 +119,6 @@ struct oonf_class_extension {
 
   /* offset of the extension within the memory block */
   size_t _offset;
-
-  /* node for list of class extensions */
-  struct list_entity _node;
-};
-
-/*
- * This structure defines a listener that can receive Add/Change/Remove
- * events for a certain class
- */
-struct oonf_class_listener {
-  /* name of the consumer */
-  const char *name;
-
-  /* name of the provider */
-  const char *class_name;
 
   /* callback for 'cb_add object' event */
   void (*cb_add)(void *);
@@ -166,10 +151,8 @@ EXPORT void *oonf_class_malloc(struct oonf_class *)
     __attribute__((warn_unused_result));
 EXPORT void oonf_class_free(struct oonf_class *, void *);
 
-EXPORT int oonf_class_extend(struct oonf_class_extension *);
-
-EXPORT int oonf_class_listener_add(struct oonf_class_listener *);
-EXPORT void oonf_class_listener_remove(struct oonf_class_listener *);
+EXPORT int oonf_class_extension_add(struct oonf_class_extension *);
+EXPORT void oonf_class_extension_remove(struct oonf_class_extension *);
 
 EXPORT void oonf_class_event(struct oonf_class *, void *, enum oonf_class_event);
 
@@ -225,7 +208,7 @@ oonf_class_get_extension(struct oonf_class_extension *ext, void *ptr) {
  */
 static INLINE bool
 oonf_class_is_extension_registered(struct oonf_class_extension *ext) {
-  return ext->_offset > 0;
+  return list_is_node_added(&ext->_node);
 }
 
 #endif /* _OONF_CLASS_H */
