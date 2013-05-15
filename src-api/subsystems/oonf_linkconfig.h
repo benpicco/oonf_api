@@ -121,7 +121,7 @@ oonf_linkconfig_link_get(struct oonf_linkconfig_network *net,
  * Returns the default link data set by the user
  * @param name interface name
  * @param remote remote network configuration
- * @return link data set for the neighbor
+ * @return link data set for the neighbor, NULL if not found
  */
 static INLINE const struct oonf_linkconfig_data *
 oonf_linkconfig_get(const char *name, struct netaddr *remote) {
@@ -130,7 +130,7 @@ oonf_linkconfig_get(const char *name, struct netaddr *remote) {
 
   net = oonf_linkconfig_network_get(name);
   if (!net) {
-    return &oonf_linkconfig_default;
+    return NULL;
   }
 
   lnk = oonf_linkconfig_link_get(net, remote);

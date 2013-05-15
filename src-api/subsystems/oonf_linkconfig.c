@@ -45,7 +45,7 @@ const struct oonf_linkconfig_data oonf_linkconfig_default = {
 static struct cfg_schema_entry _linkconfig_if_entries[] = {
   CFG_VALIDATE_LINKSPEED(CFG_LINKSPEED_KEY, "",
       "Sets the link speed on the interface. Consists of a speed in"
-      " bits/s (with iso-suffix) and an optional list of 48-bit mac addresses",
+      " bits/s (with iso-suffix) and an optional list of addresses (both IP and MAC)",
       .list = true),
 };
 
@@ -139,7 +139,7 @@ oonf_linkconfig_network_remove(struct oonf_linkconfig_network *net) {
 /**
  * Add a link specific database entry
  * @param net pointer to network wide database entry
- * @param remote remote link mac address
+ * @param remote remote link mac address or originator IP
  * @return pointer to link database entry, NULL if out of memory
  */
 struct oonf_linkconfig_link *
@@ -202,9 +202,9 @@ oonf_linkconfig_validate_linkspeed(const struct cfg_schema_entry *entry,
     ptr = str_cpynextword(nbuf.buf, ptr, sizeof(nbuf));
 
     if (netaddr_from_string(&dummy, nbuf.buf) != 0
-        || netaddr_get_address_family(&dummy) != AF_MAC48) {
+        || netaddr_get_address_family(&dummy) == AF_UNSPEC) {
       cfg_append_printable_line(out, "Value '%s' for entry '%s'"
-          " in section %s is no valid ethernet address",
+          " in section %s is no valid address",
           value, entry->key.entry, section_name);
       return -1;
     }
@@ -254,7 +254,7 @@ _parse_strarray(struct strarray *array, const char *ifname,
       ptr = str_cpynextword(nbuf.buf, ptr, sizeof(nbuf));
 
       if (netaddr_from_string(&linkmac, nbuf.buf) != 0
-          || netaddr_get_address_family(&linkmac) != AF_MAC48) {
+          || netaddr_get_address_family(&linkmac) == AF_UNSPEC) {
         break;
       }
 
