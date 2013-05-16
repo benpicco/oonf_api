@@ -159,7 +159,9 @@ os_net_update_interface(struct oonf_interface_data *ifdata,
   size_t addrcount;
   union netaddr_socket *sock;
   struct netaddr *addr;
+#ifdef OONF_LOG_INFO
   struct netaddr_str nbuf;
+#endif
 
   /* cleanup data structure */
   if (ifdata->addresses) {

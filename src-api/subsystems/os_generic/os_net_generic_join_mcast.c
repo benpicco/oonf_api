@@ -61,10 +61,8 @@ int
 os_net_join_mcast_recv(int sock, struct netaddr *multicast,
     struct oonf_interface_data *oif,
     enum log_source log_src __attribute__((unused))) {
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf1, buf2;
   char if_buf[IF_NAMESIZE];
-#endif
   struct ip_mreq   v4_mreq;
   struct ipv6_mreq v6_mreq;
 
@@ -130,7 +128,7 @@ os_net_join_mcast_send(int sock,
     struct netaddr *multicast,
     struct oonf_interface_data *oif, bool loop,
     enum log_source log_src __attribute__((unused))) {
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str buf1, buf2;
 #endif
   unsigned i;

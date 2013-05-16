@@ -405,7 +405,7 @@ _parse_cmd_new_station(struct nlmsghdr *hdr) {
   unsigned if_index;
   char if_name[IF_NAMESIZE];
 
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str buf1, buf2;
 #endif
 
@@ -547,7 +547,7 @@ _parse_cmd_del_station(struct nlmsghdr *hdr) {
   struct netaddr mac;
   unsigned if_index;
   char if_name[IF_NAMESIZE];
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str buf1, buf2;
 #endif
 
@@ -619,7 +619,7 @@ _parse_cmd_new_scan_result(struct nlmsghdr *msg) {
   struct netaddr mac;
   unsigned if_index;
   char if_name[IF_NAMESIZE];
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str buf;
 #endif
 

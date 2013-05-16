@@ -494,7 +494,7 @@ _cb_telnet_receive_data(struct oonf_stream_session *session) {
 static enum oonf_telnet_result
 _telnet_handle_command(struct oonf_telnet_data *data) {
   struct oonf_telnet_command *cmd;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_INFO
+#ifdef OONF_LOG_INFO
   struct netaddr_str buf;
 #endif
   cmd = _check_telnet_command(data, data->command, NULL);
@@ -519,7 +519,7 @@ _telnet_handle_command(struct oonf_telnet_data *data) {
 static struct oonf_telnet_command *
 _check_telnet_command(struct oonf_telnet_data *data,
     const char *name, struct oonf_telnet_command *cmd) {
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str buf;
 #endif
 

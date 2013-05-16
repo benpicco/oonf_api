@@ -332,7 +332,7 @@ _cleanup(void) {
  */
 enum rfc5444_result oonf_rfc5444_send_if(
     struct oonf_rfc5444_target *target, uint8_t msgid) {
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_INFO
+#ifdef OONF_LOG_INFO
   struct netaddr_str buf;
 #endif
 
@@ -608,10 +608,7 @@ oonf_rfc5444_reconfigure_interface(struct oonf_rfc5444_interface *interf,
     struct oonf_packet_managed_config *config) {
   struct oonf_rfc5444_target *target, *old;
   uint16_t port;
-
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
-#endif
 
   old = NULL;
 
@@ -840,9 +837,7 @@ _print_packet_to_buffer(union netaddr_socket *sock __attribute__((unused)),
     const char *success __attribute__((unused)),
     const char *error __attribute__((unused))) {
   enum rfc5444_result result;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
-#endif
 
   if (oonf_log_mask_test(log_global_mask, LOG_RFC5444, LOG_SEVERITY_DEBUG)) {
     abuf_clear(&_printer_buffer);
@@ -876,9 +871,7 @@ _cb_receive_data(struct oonf_packet_socket *sock,
   struct oonf_rfc5444_interface *interf;
   enum rfc5444_result result;
   struct netaddr source_ip;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
-#endif
 
   interf = sock->config.user;
   protocol = interf->protocol;
@@ -1018,7 +1011,7 @@ _cb_filtered_targets_selector(struct rfc5444_writer *writer,
     struct rfc5444_writer_target *rfc5444_target, void *ptr) {
   rfc5444_writer_targetselector userUseIf;
   struct oonf_rfc5444_target *target;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_INFO
+#ifdef OONF_LOG_INFO
   struct netaddr_str buf;
 #endif
 

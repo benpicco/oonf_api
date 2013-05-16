@@ -66,10 +66,7 @@ os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
   int yes;
   socklen_t addrlen;
   union netaddr_socket bindto;
-
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
-#endif
 
   /* temporary copy bindto address */
   memcpy(&bindto, bind_to, sizeof(bindto));

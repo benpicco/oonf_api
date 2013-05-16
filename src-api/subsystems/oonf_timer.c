@@ -143,7 +143,7 @@ oonf_timer_remove(struct oonf_timer_info *info) {
 void
 oonf_timer_start(struct oonf_timer_entry *timer, uint64_t rel_time)
 {
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct fraction_str timebuf1;
 #endif
 

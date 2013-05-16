@@ -134,15 +134,16 @@ struct oonf_appdata {
 /*
  * macros to check which logging levels are active
  *
- * #if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_xxxx
- *   // variable only necessary for logging level xxx and finer
+ * #ifdef OONF_LOG_DEBUG_INFO
+ *   // variable only necessary for logging level debug and info
  *   struct netaddr_str buf;
  * #endif
+ *
+ *  * #ifdef OONF_LOG_INFO
+ *   // variable only necessary for logging level info
+ *   struct netaddr_str buf2;
+ * #endif
  */
-
-#define OONF_LOGGING_LEVEL_WARN  0
-#define OONF_LOGGING_LEVEL_INFO  2
-#define OONF_LOGGING_LEVEL_DEBUG 3
 
 /**
  * these macros should be used to generate OONF logging output
@@ -162,7 +163,7 @@ struct oonf_appdata {
 
 #define _OONF_LOG(severity, source, no_header, format, args...) do { if (oonf_log_mask_test(log_global_mask, source, severity)) oonf_log(severity, source, no_header, __FILE__, __LINE__, format, ##args); } while(0)
 
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
 #define OONF_DEBUG(source, format, args...) _OONF_LOG(LOG_SEVERITY_DEBUG, source, false, format, ##args)
 #define OONF_DEBUG_NH(source, format, args...) _OONF_LOG(LOG_SEVERITY_DEBUG, source, true, format, ##args)
 #else
@@ -170,7 +171,7 @@ struct oonf_appdata {
 #define OONF_DEBUG_NH(source, format, args...) do { } while(0)
 #endif
 
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_INFO
+#ifdef OONF_LOG_INFO
 #define OONF_INFO(source, format, args...) _OONF_LOG(LOG_SEVERITY_INFO, source, false, format, ##args)
 #define OONF_INFO_NH(source, format, args...) _OONF_LOG(LOG_SEVERITY_INFO, source, true, format, ##args)
 #else

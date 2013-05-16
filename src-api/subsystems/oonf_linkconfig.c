@@ -222,7 +222,7 @@ oonf_linkconfig_validate_linkspeed(const struct cfg_schema_entry *entry,
 static void
 _parse_strarray(struct strarray *array, const char *ifname,
     void (*set)(struct oonf_linkconfig_data *, const char *),
-    const char *key, const char *def_value) {
+    const char *key __attribute__((unused)), const char *def_value) {
   struct oonf_linkconfig_link *linkentry;
   struct oonf_linkconfig_network *netentry;
   struct netaddr_str nbuf;

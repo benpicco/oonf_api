@@ -195,7 +195,7 @@ oonf_class_malloc(struct oonf_class *ci)
   struct list_entity *entity;
   void *ptr;
 
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   bool reuse = false;
 #endif
 
@@ -226,7 +226,7 @@ oonf_class_malloc(struct oonf_class *ci)
 
     ci->_free_list_size--;
     ci->_recycled++;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
     reuse = true;
 #endif
   }
@@ -248,7 +248,7 @@ void
 oonf_class_free(struct oonf_class *ci, void *ptr)
 {
   struct list_entity *item;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   bool reuse = false;
 #endif
 
@@ -264,7 +264,7 @@ oonf_class_free(struct oonf_class *ci, void *ptr)
     list_add_tail(&ci->_free_list, item);
 
     ci->_free_list_size++;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
     reuse = true;
 #endif
   } else {
@@ -346,7 +346,7 @@ oonf_class_extension_remove(struct oonf_class_extension *ext) {
 void
 oonf_class_event(struct oonf_class *c, void *ptr, enum oonf_class_event evt) {
   struct oonf_class_extension *ext;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct oonf_objectkey_str buf;
 #endif
 

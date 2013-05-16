@@ -177,9 +177,7 @@ int
 oonf_packet_send(struct oonf_packet_socket *pktsocket, union netaddr_socket *remote,
     const void *data, size_t length) {
   int result;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
-#endif
 
   if (abuf_getlen(&pktsocket->out) == 0) {
     /* no backlog of outgoing packets, try to send directly */
@@ -297,7 +295,7 @@ oonf_packet_apply_managed(struct oonf_packet_managed *managed,
 int
 oonf_packet_send_managed(struct oonf_packet_managed *managed,
     union netaddr_socket *remote, const void *data, size_t length) {
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str buf;
 #endif
 
@@ -504,9 +502,7 @@ _apply_managed_socket(struct oonf_packet_managed *managed,
     struct oonf_interface_data *data) {
   union netaddr_socket sock;
   struct netaddr _bind_to;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
-#endif
 
   /* Handle prefix based address selection */
   if (netaddr_get_prefix_length(bindto) != netaddr_get_maxprefix(bindto)) {
@@ -621,10 +617,9 @@ _cb_packet_event(int fd, void *data, bool event_read, bool event_write,
   uint16_t length;
   char *pkt;
   int result;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str netbuf;
-#endif
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+
+#ifdef OONF_LOG_DEBUG_INFO
   const char *interf = "";
 
   if (pktsocket->interface) {
@@ -708,14 +703,14 @@ _cb_packet_event(int fd, void *data, bool event_read, bool event_write,
 static void
 _cb_interface_listener(struct oonf_interface_listener *l) {
   struct oonf_packet_managed *managed;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   int result;
 #endif
 
   /* calculate managed socket for this event */
   managed = container_of(l, struct oonf_packet_managed, _if_listener);
 
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   result =
 #endif
       _apply_managed(managed);

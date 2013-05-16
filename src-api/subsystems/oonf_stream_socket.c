@@ -140,9 +140,7 @@ int
 oonf_stream_add(struct oonf_stream_socket *stream_socket,
     union netaddr_socket *local) {
   int s = -1;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
-#endif
 
   memset(stream_socket, 0, sizeof(*stream_socket));
 
@@ -247,9 +245,7 @@ oonf_stream_connect_to(struct oonf_stream_socket *stream_socket,
   struct netaddr remote_addr;
   bool wait_for_connect = false;
   int s;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
-#endif
 
   s = os_net_getsocket(&stream_socket->local_socket,
       true, 0, NULL, LOG_STREAM);
@@ -395,9 +391,7 @@ _apply_managed_socket(struct oonf_stream_managed *managed,
     struct oonf_stream_socket *stream,
     struct netaddr *bindto, uint16_t port) {
   union netaddr_socket sock;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
-#endif
 
   if (netaddr_get_address_family(bindto) == AF_UNSPEC) {
     oonf_stream_remove(stream, true);
@@ -444,7 +438,7 @@ _cb_parse_request(int fd, void *data, bool event_read,
   struct netaddr remote_addr;
   socklen_t addrlen;
   int sock;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str buf1, buf2;
 #endif
 
@@ -485,7 +479,7 @@ static struct oonf_stream_session *
 _create_session(struct oonf_stream_socket *stream_socket,
     int sock, struct netaddr *remote_addr) {
   struct oonf_stream_session *session;
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str buf;
 #endif
 
@@ -583,9 +577,7 @@ _cb_parse_connection(int fd, void *data, bool event_read, bool event_write) {
   struct oonf_stream_socket *s_sock;
   int len;
   char buffer[1024];
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_WARN
   struct netaddr_str buf;
-#endif
 
   session = data;
   s_sock = session->comport;

@@ -353,7 +353,7 @@ _remove_network(struct oonf_layer2_network *net) {
  */
 static void
 _cb_neighbor_timeout(void *ptr) {
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct oonf_layer2_neighbor *neigh = ptr;
 #endif
   OONF_DEBUG(LOG_MAIN, "Layer-2 neighbor timeout (was %sactive)", neigh->active ? "" : "in");
@@ -366,7 +366,7 @@ _cb_neighbor_timeout(void *ptr) {
  */
 static void
 _cb_network_timeout(void *ptr) {
-#if OONF_LOGGING_LEVEL >= OONF_LOGGING_LEVEL_DEBUG
+#ifdef OONF_LOG_DEBUG_INFO
   struct oonf_layer2_network *net = ptr;
 #endif
   OONF_DEBUG(LOG_MAIN, "Layer-2 network timeout (was %sactive)", net->active ? "" : "in");
