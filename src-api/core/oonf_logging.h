@@ -64,23 +64,35 @@ enum log_severity {
 
 /* Defines the builtin sources of a logging event. */
 enum log_source {
+  /* all logging sources */
   LOG_ALL,
+
+  /* the 'default' logging source */
+  LOG_MAIN,
+
+  /* logging sources for the core */
   LOG_LOGGING,
   LOG_CONFIG,
-  LOG_MAIN,
-  LOG_SOCKET,
-  LOG_TIMER,
-  LOG_CLASS,
-  LOG_SOCKET_STREAM,
-  LOG_SOCKET_PACKET,
-  LOG_INTERFACE,
-  LOG_OS_NET,
-  LOG_OS_SYSTEM,
-  LOG_OS_ROUTING,
-  LOG_PLUGINLOADER,
-  LOG_TELNET,
   LOG_PLUGINS,
+
+  /* logging sources for subsystems */
+  LOG_CLASS,
+  LOG_CLOCK,
+  // LOG_DUPLICATE_SET,
   LOG_HTTP,
+  LOG_INTERFACE,
+  LOG_LAYER2,
+  LOG_LINKCONFIG,
+  LOG_PACKET,
+  LOG_RFC5444,
+  LOG_SOCKET,
+  LOG_STREAM,
+  LOG_TELNET,
+  LOG_TIMER,
+
+  LOG_OS_NET,
+  LOG_OS_ROUTING,
+  LOG_OS_SYSTEM,
 
   /* this one must be the last ones of the normal enums ! */
   LOG_CORESOURCE_COUNT,

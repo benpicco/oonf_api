@@ -186,6 +186,8 @@ static struct oonf_telnet_command _telnet_cmds[] = {
 /* list of telnet sessions with logging mask data */
 static struct list_entity _remote_sessions;
 
+static enum log_source LOG_REMOTECONTROL;
+
 /**
  * Initialize remotecontrol plugin
  * @return always returns 0 (cannot fail)
@@ -194,6 +196,8 @@ static int
 _init(void)
 {
   size_t i;
+
+  LOG_REMOTECONTROL = oonf_log_register_source(OONF_PLUGIN_GET_NAME());
 
   netaddr_acl_add(&_remotecontrol_config.acl);
   list_init_head(&_remote_sessions);
@@ -748,7 +752,7 @@ _get_remotecontrol_session(struct oonf_telnet_data *data) {
   /* create new telnet */
   cl = calloc(1, sizeof(*cl));
   if (cl == NULL) {
-    OONF_WARN(LOG_PLUGINS, "Not enough memory for remotecontrol session");
+    OONF_WARN(LOG_REMOTECONTROL, "Not enough memory for remotecontrol session");
     return NULL;
   }
 

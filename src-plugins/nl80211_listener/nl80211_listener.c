@@ -187,7 +187,7 @@ enum log_source LOG_NL80211;
  */
 static int
 _init(void) {
-  LOG_NL80211 = oonf_log_register_source("nl80211");
+  LOG_NL80211 = oonf_log_register_source(OONF_PLUGIN_GET_NAME());
 
   _msgbuf = calloc(1, UIO_MAXIOV);
   if (_msgbuf == NULL) {

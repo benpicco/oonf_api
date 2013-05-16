@@ -238,16 +238,12 @@ struct oonf_subsystem oonf_rfc5444_subsystem = {
   .cfg_section = &_interface_section,
 };
 
-static enum log_source LOG_RFC5444;
-
 /**
  * Initialize RFC5444 handling system
  * @return -1 if an error happened, 0 otherwise
  */
 static int
 _init(void) {
-  LOG_RFC5444 = oonf_log_register_source(_LOG_RFC5444_NAME);
-
   avl_init(&_protocol_tree, avl_comp_strcasecmp, false);
 
   oonf_class_add(&_protocol_memcookie);

@@ -73,7 +73,7 @@ struct oonf_subsystem oonf_clock_subsystem = {
 static int
 _init(void) {
   if (os_clock_gettime64(&start_time)) {
-    OONF_WARN(LOG_TIMER, "OS clock is not working: %s (%d)\n", strerror(errno), errno);
+    OONF_WARN(LOG_CLOCK, "OS clock is not working: %s (%d)\n", strerror(errno), errno);
     return -1;
   }
 
@@ -91,7 +91,7 @@ oonf_clock_update(void)
 {
   uint64_t now;
   if (os_clock_gettime64(&now)) {
-    OONF_WARN(LOG_TIMER, "OS clock is not working: %s (%d)\n", strerror(errno), errno);
+    OONF_WARN(LOG_CLOCK, "OS clock is not working: %s (%d)\n", strerror(errno), errno);
     return -1;
   }
 

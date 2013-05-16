@@ -67,23 +67,30 @@ static size_t _max_sourcetext_len, _max_severitytext_len, _source_count;
 
 /* names for buildin logging targets */
 const char *LOG_SOURCE_NAMES[LOG_MAXIMUM_SOURCES] = {
+  /* all logging sources */
   [LOG_ALL]           = "all",
+
+  /* the 'default' logging source */
   [LOG_LOGGING]       = "logging",
   [LOG_CONFIG]        = "config",
-  [LOG_MAIN]          = "main",
-  [LOG_SOCKET]        = "socket",
-  [LOG_TIMER]         = "timer",
-  [LOG_CLASS]         = "class",
-  [LOG_SOCKET_STREAM] = "socket-stream",
-  [LOG_SOCKET_PACKET] = "socket-packet",
-  [LOG_INTERFACE]     = "interface",
-  [LOG_OS_NET]        = "os-net",
-  [LOG_OS_SYSTEM]     = "os-system",
-  [LOG_OS_ROUTING]    = "os-routing",
-  [LOG_PLUGINLOADER]  = "plugin-loader",
-  [LOG_TELNET]        = "telnet",
   [LOG_PLUGINS]       = "plugins",
+
+  /* logging sources for subsystems */
+  [LOG_CLASS]         = "class",
+  [LOG_CLOCK]         = "clock",
   [LOG_HTTP]          = "http",
+  [LOG_INTERFACE]     = "interface",
+  [LOG_PACKET]        = "packet",
+  [LOG_RFC5444]       = "rfc5444",
+  [LOG_SOCKET]        = "socket",
+  [LOG_STREAM]        = "stream",
+  [LOG_TELNET]        = "telnet",
+  [LOG_TIMER]         = "timer",
+
+  /* operation system specific subsystems */
+  [LOG_OS_NET]        = "os_net",
+  [LOG_OS_ROUTING]    = "os_routing",
+  [LOG_OS_SYSTEM]     = "os_system",
 };
 
 const char *LOG_SEVERITY_NAMES[LOG_SEVERITY_MAX+1] = {

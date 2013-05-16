@@ -252,12 +252,16 @@ struct _command_params _neigh_params = {
   .headline_filtered_table = "If\tRadio            \tNeighbor\n",
 };
 
+static enum log_source LOG_LAYER2_VIEWER;
+
 /**
  * Constructor of plugin
  * @return 0 if initialization was successful, -1 otherwise
  */
 static int
 _init(void) {
+  LOG_LAYER2_VIEWER = oonf_log_register_source(OONF_PLUGIN_GET_NAME());
+
   oonf_telnet_add(&_telnet_cmd);
   return 0;
 }
@@ -531,7 +535,7 @@ static void
 _cb_config_changed(void) {
   if (cfg_schema_tobin(&_config, _layer2_section.post,
       _layer2_entries, ARRAYSIZE(_layer2_entries))) {
-    OONF_WARN(LOG_CONFIG, "Could not convert layer2_listener config to bin");
+    OONF_WARN(LOG_LAYER2_VIEWER, "Could not convert layer2_listener config to bin");
     return;
   }
 }

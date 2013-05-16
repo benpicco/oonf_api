@@ -92,12 +92,16 @@ struct oonf_subsystem oonf_httptelnet_subsystem = {
 };
 DECLARE_OONF_PLUGIN(oonf_httptelnet_subsystem);
 
+static enum log_source LOG_HTTPTELNET;
+
 /**
  * Constructor of plugin
  * @return 0 if initialization was successful, -1 otherwise
  */
 static int
 _init(void) {
+  LOG_HTTPTELNET = oonf_log_register_source(OONF_PLUGIN_GET_NAME());
+
   netaddr_acl_add(&_http_site_handler.acl);
   strarray_init(&_http_site_handler.auth);
 
@@ -124,6 +128,7 @@ _cleanup(void) {
 static enum oonf_http_result
 _cb_generate_site(struct autobuf *out, struct oonf_http_session *session) {
   const char *command, *param;
+  enum oonf_telnet_result result;
 
   command = oonf_http_lookup_param(session, "c");
   param = oonf_http_lookup_param(session, "p");
@@ -132,16 +137,24 @@ _cb_generate_site(struct autobuf *out, struct oonf_http_session *session) {
     return HTTP_404_NOT_FOUND;
   }
 
-  switch (oonf_telnet_execute(command, param, out, session->remote)) {
+  result = oonf_telnet_execute(command, param, out, session->remote);
+  switch (result) {
     case TELNET_RESULT_ACTIVE:
     case TELNET_RESULT_QUIT:
+      OONF_DEBUG(LOG_HTTPTELNET, "httptelnet called command '%s'"
+          " with parameters '%s'",
+          command, param);
       session->content_type = HTTP_CONTENTTYPE_TEXT;
       return HTTP_200_OK;
 
     case _TELNET_RESULT_UNKNOWN_COMMAND:
+      OONF_WARN(LOG_HTTPTELNET, "Unknown command for httptelnet bridge: %s",
+          command);
       return HTTP_404_NOT_FOUND;
 
     default:
+      OONF_WARN(LOG_HTTPTELNET, "Unknown telnet returncode: %d",
+          result);
       return HTTP_400_BAD_REQ;
   }
 }
@@ -153,7 +166,8 @@ static void
 _cb_config_changed(void) {
   if (cfg_schema_tobin(&_http_site_handler, _httptelnet_section.post,
       _httptelnet_entries, ARRAYSIZE(_httptelnet_entries))) {
-    OONF_WARN(LOG_CONFIG, "Could not convert httptelnet config to bin");
+    OONF_WARN(LOG_HTTPTELNET, "Could not convert %s config to bin",
+        OONF_PLUGIN_GET_NAME());
     return;
   }
 

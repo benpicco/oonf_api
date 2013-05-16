@@ -149,14 +149,14 @@ oonf_stream_add(struct oonf_stream_socket *stream_socket,
   /* server socket not necessary for outgoing connections */
   if (netaddr_socket_get_port(local) != 0) {
     /* Init socket */
-    s = os_net_getsocket(local, true, 0, NULL, LOG_SOCKET_STREAM);
+    s = os_net_getsocket(local, true, 0, NULL, LOG_STREAM);
     if (s < 0) {
       goto add_stream_error;
     }
 
     /* show that we are willing to listen */
     if (listen(s, 1) == -1) {
-      OONF_WARN(LOG_SOCKET_STREAM, "tcp socket listen failed for %s: %s (%d)\n",
+      OONF_WARN(LOG_STREAM, "tcp socket listen failed for %s: %s (%d)\n",
           netaddr_socket_to_string(&buf, local), strerror(errno), errno);
       goto add_stream_error;
     }
@@ -252,14 +252,14 @@ oonf_stream_connect_to(struct oonf_stream_socket *stream_socket,
 #endif
 
   s = os_net_getsocket(&stream_socket->local_socket,
-      true, 0, NULL, LOG_SOCKET_STREAM);
+      true, 0, NULL, LOG_STREAM);
   if (s < 0) {
     return NULL;
   }
 
   if (connect(s, &remote->std, sizeof(*remote))) {
     if (errno != EINPROGRESS) {
-      OONF_WARN(LOG_SOCKET_STREAM, "Cannot connect outgoing tcp connection to %s: %s (%d)",
+      OONF_WARN(LOG_STREAM, "Cannot connect outgoing tcp connection to %s: %s (%d)",
           netaddr_socket_to_string(&buf, remote), strerror(errno), errno);
       goto connect_to_error;
     }
@@ -404,7 +404,7 @@ _apply_managed_socket(struct oonf_stream_managed *managed,
     return 0;
   }
   if (netaddr_socket_init(&sock, bindto, port, 0)) {
-    OONF_WARN(LOG_SOCKET_STREAM, "Cannot create managed socket address: %s/%u",
+    OONF_WARN(LOG_STREAM, "Cannot create managed socket address: %s/%u",
         netaddr_to_string(&buf, bindto), port);
     return -1;
   }
@@ -457,14 +457,14 @@ _cb_parse_request(int fd, void *data, bool event_read,
   addrlen = sizeof(remote_socket);
   sock = accept(fd, &remote_socket.std, &addrlen);
   if (sock < 0) {
-    OONF_WARN(LOG_SOCKET_STREAM, "accept() call returned error: %s (%d)", strerror(errno), errno);
+    OONF_WARN(LOG_STREAM, "accept() call returned error: %s (%d)", strerror(errno), errno);
     return;
   }
 
   netaddr_from_socket(&remote_addr, &remote_socket);
   if (comport->config.acl) {
     if (!netaddr_acl_check_accept(comport->config.acl, &remote_addr)) {
-      OONF_DEBUG(LOG_SOCKET_STREAM, "Access from %s to socket %s blocked because of ACL",
+      OONF_DEBUG(LOG_STREAM, "Access from %s to socket %s blocked because of ACL",
           netaddr_to_string(&buf1, &remote_addr),
           netaddr_socket_to_string(&buf2, &comport->local_socket));
       close(sock);
@@ -491,23 +491,23 @@ _create_session(struct oonf_stream_socket *stream_socket,
 
   /* put socket into non-blocking mode */
   if (os_net_set_nonblocking(sock)) {
-    OONF_WARN(LOG_SOCKET_STREAM, "Cannot read comport socket status: %s (%d)",
+    OONF_WARN(LOG_STREAM, "Cannot read comport socket status: %s (%d)",
         strerror(errno), errno);
     return NULL;
   }
 
   session = oonf_class_malloc(stream_socket->config.memcookie);
   if (session == NULL) {
-    OONF_WARN(LOG_SOCKET_STREAM, "Cannot allocate memory for comport session");
+    OONF_WARN(LOG_STREAM, "Cannot allocate memory for comport session");
     goto parse_request_error;
   }
 
   if (abuf_init(&session->in)) {
-    OONF_WARN(LOG_SOCKET_STREAM, "Cannot allocate memory for comport session");
+    OONF_WARN(LOG_STREAM, "Cannot allocate memory for comport session");
     goto parse_request_error;
   }
   if (abuf_init(&session->out)) {
-    OONF_WARN(LOG_SOCKET_STREAM, "Cannot allocate memory for comport session");
+    OONF_WARN(LOG_STREAM, "Cannot allocate memory for comport session");
     goto parse_request_error;
   }
 
@@ -546,7 +546,7 @@ _create_session(struct oonf_stream_socket *stream_socket,
     }
   }
 
-  OONF_DEBUG(LOG_SOCKET_STREAM, "Got connection through socket %d with %s.\n",
+  OONF_DEBUG(LOG_STREAM, "Got connection through socket %d with %s.\n",
       sock, netaddr_to_string(&buf, remote_addr));
 
   list_add_tail(&stream_socket->session, &session->node);
@@ -590,7 +590,7 @@ _cb_parse_connection(int fd, void *data, bool event_read, bool event_write) {
   session = data;
   s_sock = session->comport;
 
-  OONF_DEBUG(LOG_SOCKET_STREAM, "Parsing connection of socket %d\n", fd);
+  OONF_DEBUG(LOG_STREAM, "Parsing connection of socket %d\n", fd);
 
   /* mark session and s_sock as busy */
   session->busy = true;
@@ -604,12 +604,12 @@ _cb_parse_connection(int fd, void *data, bool event_read, bool event_write) {
       value_len = sizeof(value);
 
       if(getsockopt(fd, SOL_SOCKET, SO_ERROR, &value, &value_len)) {
-        OONF_WARN(LOG_SOCKET_STREAM, "getsockopt failed: %s (%d)",
+        OONF_WARN(LOG_STREAM, "getsockopt failed: %s (%d)",
             strerror(errno), errno);
         session->state = STREAM_SESSION_CLEANUP;
       }
       else if (value != 0) {
-        OONF_WARN(LOG_SOCKET_STREAM, "Connection to %s failed: %s (%d)",
+        OONF_WARN(LOG_STREAM, "Connection to %s failed: %s (%d)",
             netaddr_to_string(&buf, &session->remote_address), strerror(value), value);
         session->state = STREAM_SESSION_CLEANUP;
       }
@@ -629,10 +629,10 @@ _cb_parse_connection(int fd, void *data, bool event_read, bool event_write) {
   if (session->state == STREAM_SESSION_ACTIVE && event_read) {
     len = os_recvfrom(fd, buffer, sizeof(buffer), NULL, 0);
     if (len > 0) {
-      OONF_DEBUG(LOG_SOCKET_STREAM, "  recv returned %d\n", len);
+      OONF_DEBUG(LOG_STREAM, "  recv returned %d\n", len);
       if (abuf_memcpy(&session->in, buffer, len)) {
         /* out of memory */
-        OONF_WARN(LOG_SOCKET_STREAM, "Out of memory for comport session input buffer");
+        OONF_WARN(LOG_STREAM, "Out of memory for comport session input buffer");
         session->state = STREAM_SESSION_CLEANUP;
       } else if (abuf_getlen(&session->in) > s_sock->config.maximum_input_buffer) {
         /* input buffer overflow */
@@ -647,7 +647,7 @@ _cb_parse_connection(int fd, void *data, bool event_read, bool event_write) {
     } else if (len < 0 && errno != EINTR && errno != EAGAIN && errno
         != EWOULDBLOCK) {
       /* error during read */
-      OONF_WARN(LOG_SOCKET_STREAM, "Error while reading from communication stream with %s: %s (%d)\n",
+      OONF_WARN(LOG_STREAM, "Error while reading from communication stream with %s: %s (%d)\n",
           netaddr_to_string(&buf, &session->remote_address), strerror(errno), errno);
       session->state = STREAM_SESSION_CLEANUP;
     } else if (len == 0) {
@@ -668,24 +668,24 @@ _cb_parse_connection(int fd, void *data, bool event_read, bool event_write) {
       len = os_sendto(fd, abuf_getptr(&session->out), abuf_getlen(&session->out), NULL);
 
       if (len > 0) {
-        OONF_DEBUG(LOG_SOCKET_STREAM, "  send returned %d\n", len);
+        OONF_DEBUG(LOG_STREAM, "  send returned %d\n", len);
         abuf_pull(&session->out, len);
         oonf_stream_set_timeout(session, s_sock->config.session_timeout);
       } else if (len < 0 && errno != EINTR && errno != EAGAIN && errno
           != EWOULDBLOCK) {
-        OONF_WARN(LOG_SOCKET_STREAM, "Error while writing to communication stream with %s: %s (%d)\n",
+        OONF_WARN(LOG_STREAM, "Error while writing to communication stream with %s: %s (%d)\n",
             netaddr_to_string(&buf, &session->remote_address), strerror(errno), errno);
         session->state = STREAM_SESSION_CLEANUP;
       }
     } else {
-      OONF_DEBUG(LOG_SOCKET_STREAM, "  activating output in scheduler\n");
+      OONF_DEBUG(LOG_STREAM, "  activating output in scheduler\n");
       oonf_socket_set_write(&session->scheduler_entry, true);
     }
   }
 
   if (abuf_getlen(&session->out) == 0) {
     /* nothing to send anymore */
-    OONF_DEBUG(LOG_SOCKET_STREAM, "  deactivating output in scheduler\n");
+    OONF_DEBUG(LOG_STREAM, "  deactivating output in scheduler\n");
     oonf_socket_set_write(&session->scheduler_entry, false);
     if (session->state == STREAM_SESSION_SEND_AND_QUIT) {
       session->state = STREAM_SESSION_CLEANUP;
@@ -697,7 +697,7 @@ _cb_parse_connection(int fd, void *data, bool event_read, bool event_write) {
 
   /* end of connection ? */
   if (session->state == STREAM_SESSION_CLEANUP || session->removed) {
-    OONF_DEBUG(LOG_SOCKET_STREAM, "  cleanup\n");
+    OONF_DEBUG(LOG_STREAM, "  cleanup\n");
 
     /* clean up connection by calling cleanup directly */
     oonf_stream_close(session, session->state == STREAM_SESSION_CLEANUP);

@@ -118,7 +118,7 @@ oonf_packet_add(struct oonf_packet_socket *pktsocket,
   int s = -1;
 
   /* Init socket */
-  s = os_net_getsocket(local, false, 0, interf, LOG_SOCKET_PACKET);
+  s = os_net_getsocket(local, false, 0, interf, LOG_PACKET);
   if (s < 0) {
     return -1;
   }
@@ -186,14 +186,14 @@ oonf_packet_send(struct oonf_packet_socket *pktsocket, union netaddr_socket *rem
     result = os_sendto(pktsocket->scheduler_entry.fd, data, length, remote);
     if (result > 0) {
       /* successful */
-      OONF_DEBUG(LOG_SOCKET_PACKET, "Sent %d bytes to %s %s",
+      OONF_DEBUG(LOG_PACKET, "Sent %d bytes to %s %s",
           result, netaddr_socket_to_string(&buf, remote),
           pktsocket->interface != NULL ? pktsocket->interface->name : "");
       return 0;
     }
 
     if (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
-      OONF_WARN(LOG_SOCKET_PACKET, "Cannot send UDP packet to %s: %s (%d)",
+      OONF_WARN(LOG_PACKET, "Cannot send UDP packet to %s: %s (%d)",
           netaddr_socket_to_string(&buf, remote), strerror(errno), errno);
       return -1;
     }
@@ -278,7 +278,7 @@ oonf_packet_apply_managed(struct oonf_packet_managed *managed,
     }
   }
 
-  OONF_DEBUG(LOG_SOCKET_PACKET, "Apply changes for managed socket (if %s) with port %d/%d",
+  OONF_DEBUG(LOG_PACKET, "Apply changes for managed socket (if %s) with port %d/%d",
       config->interface == NULL || config->interface[0] == 0 ? "any" : config->interface,
       config->port, config->multicast_port);
   return _apply_managed(managed);
@@ -314,7 +314,7 @@ oonf_packet_send_managed(struct oonf_packet_managed *managed,
     return oonf_packet_send(&managed->socket_v6, remote, data, length);
   }
   errno = 0;
-  OONF_DEBUG(LOG_SOCKET_PACKET,
+  OONF_DEBUG(LOG_PACKET,
       "Managed socket did not sent packet to %s because socket was not active",
       netaddr_socket_to_string(&buf, remote));
 
@@ -443,7 +443,7 @@ _apply_managed_socketpair(struct oonf_packet_managed *managed,
 
     if (real_multicast && data != NULL && data->up) {
       os_net_join_mcast_send(sock->scheduler_entry.fd,
-          mc_ip, data, managed->_managed_config.loop_multicast, LOG_SOCKET_PACKET);
+          mc_ip, data, managed->_managed_config.loop_multicast, LOG_PACKET);
     }
   }
   else if (sockstate < 0) {
@@ -464,7 +464,7 @@ _apply_managed_socketpair(struct oonf_packet_managed *managed,
 
       /* join multicast group */
       os_net_join_mcast_recv(mc_sock->scheduler_entry.fd,
-          mc_ip, data, LOG_SOCKET_PACKET);
+          mc_ip, data, LOG_PACKET);
     }
     else if (sockstate < 0) {
       /* error */
@@ -513,7 +513,7 @@ _apply_managed_socket(struct oonf_packet_managed *managed,
     if (data == NULL) {
       if (memcmp(bindto, &NETADDR_IPV4_ANY, sizeof(*bindto)) != 0
           && memcmp(bindto, &NETADDR_IPV6_ANY, sizeof(*bindto)) != 0) {
-        OONF_WARN(LOG_SOCKET_PACKET, "Cannot use prefix %s to look for "
+        OONF_WARN(LOG_PACKET, "Cannot use prefix %s to look for "
             "an interface address without specified interface",
             netaddr_to_string(&buf, bindto));
         return -1;
@@ -521,7 +521,7 @@ _apply_managed_socket(struct oonf_packet_managed *managed,
     }
     else if (data->up) {
       if (oonf_interface_find_address(&_bind_to, bindto, data)) {
-        OONF_WARN(LOG_SOCKET_PACKET, "Could not find a fitting address for "
+        OONF_WARN(LOG_PACKET, "Could not find a fitting address for "
             "prefix %s on interface %s",
             netaddr_to_string(&buf, bindto), data->name);
         return -1;
@@ -535,7 +535,7 @@ _apply_managed_socket(struct oonf_packet_managed *managed,
   /* create binding socket */
   if (netaddr_socket_init(&sock, bindto, port,
       data == NULL ? 0 : data->index)) {
-    OONF_WARN(LOG_SOCKET_PACKET, "Cannot create managed socket address: %s/%u",
+    OONF_WARN(LOG_PACKET, "Cannot create managed socket address: %s/%u",
         netaddr_to_string(&buf, bindto), port);
     return -1;
   }
@@ -558,7 +558,7 @@ _apply_managed_socket(struct oonf_packet_managed *managed,
   oonf_packet_remove(packet, true);
 
   if (data != NULL && !data->up) {
-    OONF_DEBUG(LOG_SOCKET_PACKET, "Interface %s of socket is down",
+    OONF_DEBUG(LOG_PACKET, "Interface %s of socket is down",
         data->name);
     return 0;
   }
@@ -576,7 +576,7 @@ _apply_managed_socket(struct oonf_packet_managed *managed,
 
   packet->interface = data;
 
-  OONF_DEBUG(LOG_SOCKET_PACKET, "Opened new socket and bound it to %s (if %s)",
+  OONF_DEBUG(LOG_PACKET, "Opened new socket and bound it to %s (if %s)",
       netaddr_to_string(&buf, bindto),
       data != NULL ? data->name : "any");
   return 0;
@@ -648,13 +648,13 @@ _cb_packet_event(int fd, void *data, bool event_read, bool event_write,
       buf[result] = 0;
 
       /* received valid packet */
-      OONF_DEBUG(LOG_SOCKET_PACKET, "Received %d bytes from %s %s (%s)",
+      OONF_DEBUG(LOG_PACKET, "Received %d bytes from %s %s (%s)",
           result, netaddr_socket_to_string(&netbuf, &sock),
           interf, multicast ? "multicast" : "unicast");
       pktsocket->config.receive_data(pktsocket, &sock, result);
     }
     else if (result < 0 && (errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK)) {
-      OONF_WARN(LOG_SOCKET_PACKET, "Cannot read packet from socket %s: %s (%d)",
+      OONF_WARN(LOG_PACKET, "Cannot read packet from socket %s: %s (%d)",
           netaddr_socket_to_string(&netbuf, &pktsocket->local_socket), strerror(errno), errno);
     }
   }
@@ -676,18 +676,18 @@ _cb_packet_event(int fd, void *data, bool event_read, bool event_write,
     result = os_sendto(fd, data, length, skt);
     if (result < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) {
       /* try again later */
-      OONF_DEBUG(LOG_SOCKET_PACKET, "Sending to %s %s could block, try again later",
+      OONF_DEBUG(LOG_PACKET, "Sending to %s %s could block, try again later",
           netaddr_socket_to_string(&netbuf, skt), interf);
       return;
     }
 
     if (result < 0) {
       /* display error message */
-      OONF_WARN(LOG_SOCKET_PACKET, "Cannot send UDP packet to %s: %s (%d)",
+      OONF_WARN(LOG_PACKET, "Cannot send UDP packet to %s: %s (%d)",
           netaddr_socket_to_string(&netbuf, skt), strerror(errno), errno);
     }
     else {
-      OONF_DEBUG(LOG_SOCKET_PACKET, "Sent %d bytes to %s %s",
+      OONF_DEBUG(LOG_PACKET, "Sent %d bytes to %s %s",
           result, netaddr_socket_to_string(&netbuf, skt), interf);
     }
     /* remove data from outgoing buffer (both for success and for final error */
@@ -720,6 +720,6 @@ _cb_interface_listener(struct oonf_interface_listener *l) {
 #endif
       _apply_managed(managed);
 
-  OONF_DEBUG(LOG_SOCKET_PACKET,
+  OONF_DEBUG(LOG_PACKET,
       "Result from interface triggered socket reconfiguration: %d", result);
 }

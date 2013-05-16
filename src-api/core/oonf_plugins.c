@@ -235,7 +235,7 @@ oonf_plugins_load(const char *libname)
 
     /* plugin should be in the tree now */
     if ((plugin = oonf_plugins_get(libname)) == NULL) {
-      OONF_WARN(LOG_PLUGINLOADER, "dynamic library loading failed: \"%s\"!\n", dlerror());
+      OONF_WARN(LOG_PLUGINS, "dynamic library loading failed: \"%s\"!\n", dlerror());
       dlclose(dlhandle);
       return NULL;
     }
@@ -258,10 +258,10 @@ int
 oonf_plugins_call_init(struct oonf_subsystem *plugin) {
   if (!plugin->_initialized && plugin->init != NULL) {
     if (plugin->init()) {
-      OONF_WARN(LOG_PLUGINLOADER, "Init callback failed for plugin %s\n", plugin->name);
+      OONF_WARN(LOG_PLUGINS, "Init callback failed for plugin %s\n", plugin->name);
       return -1;
     }
-    OONF_DEBUG(LOG_PLUGINLOADER, "Load callback of plugin %s successful\n", plugin->name);
+    OONF_DEBUG(LOG_PLUGINS, "Load callback of plugin %s successful\n", plugin->name);
   }
   plugin->_initialized = true;
   return 0;
@@ -300,13 +300,13 @@ _init_plugin_tree(void) {
 static int
 _unload_plugin(struct oonf_subsystem *plugin, bool cleanup) {
   if (!plugin->can_cleanup && !cleanup) {
-    OONF_WARN(LOG_PLUGINLOADER, "Plugin %s does not support unloading",
+    OONF_WARN(LOG_PLUGINS, "Plugin %s does not support unloading",
         plugin->name);
     return -1;
   }
 
   if (plugin->_initialized) {
-    OONF_INFO(LOG_PLUGINLOADER, "Unloading plugin %s\n", plugin->name);
+    OONF_INFO(LOG_PLUGINS, "Unloading plugin %s\n", plugin->name);
 
     /* remove first from tree */
     avl_delete(&oonf_plugin_tree, &plugin->_node);
@@ -335,7 +335,7 @@ _open_plugin(const char *filename) {
   size_t i;
 
   if (abuf_init(&abuf)) {
-    OONF_WARN(LOG_PLUGINLOADER, "Not enough memory for plugin name generation");
+    OONF_WARN(LOG_PLUGINS, "Not enough memory for plugin name generation");
     return NULL;
   }
 
@@ -347,7 +347,7 @@ _open_plugin(const char *filename) {
         _dlopen_data, ARRAYSIZE(_dlopen_data), dlopen_patterns[i]);
 
     if (table == NULL) {
-      OONF_WARN(LOG_PLUGINLOADER, "Could not parse pattern %s for dlopen",
+      OONF_WARN(LOG_PLUGINS, "Could not parse pattern %s for dlopen",
           dlopen_patterns[i]);
       continue;
     }
@@ -356,18 +356,18 @@ _open_plugin(const char *filename) {
     abuf_add_template(&abuf, dlopen_patterns[i], table);
     free(table);
 
-    OONF_DEBUG(LOG_PLUGINLOADER, "Trying to load library: %s", abuf_getptr(&abuf));
+    OONF_DEBUG(LOG_PLUGINS, "Trying to load library: %s", abuf_getptr(&abuf));
     result = dlopen(abuf_getptr(&abuf), RTLD_NOW);
     if (result == NULL) {
-      OONF_DEBUG(LOG_PLUGINLOADER, "Loading of plugin file %s failed: %s",
+      OONF_DEBUG(LOG_PLUGINS, "Loading of plugin file %s failed: %s",
           abuf_getptr(&abuf), dlerror());
     }
   }
   if (result == NULL) {
-    OONF_WARN(LOG_PLUGINLOADER, "Loading of plugin %s failed.\n", filename);
+    OONF_WARN(LOG_PLUGINS, "Loading of plugin %s failed.\n", filename);
   }
   else {
-    OONF_INFO(LOG_PLUGINLOADER, "Loading plugin %s from %s\n", filename, abuf_getptr(&abuf));
+    OONF_INFO(LOG_PLUGINS, "Loading plugin %s from %s\n", filename, abuf_getptr(&abuf));
   }
 
   abuf_free(&abuf);
