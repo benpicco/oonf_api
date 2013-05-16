@@ -71,6 +71,9 @@ const char *LOG_SOURCE_NAMES[LOG_MAXIMUM_SOURCES] = {
   [LOG_ALL]           = "all",
 
   /* the 'default' logging source */
+  [LOG_MAIN]          = "main",
+
+  /* the 'default' logging source */
   [LOG_LOGGING]       = "logging",
   [LOG_CONFIG]        = "config",
   [LOG_PLUGINS]       = "plugins",
@@ -78,8 +81,11 @@ const char *LOG_SOURCE_NAMES[LOG_MAXIMUM_SOURCES] = {
   /* logging sources for subsystems */
   [LOG_CLASS]         = "class",
   [LOG_CLOCK]         = "clock",
+  [LOG_DUPLICATE_SET] = "duplicateset",
   [LOG_HTTP]          = "http",
   [LOG_INTERFACE]     = "interface",
+  [LOG_LAYER2]        = "layer2",
+  [LOG_LINKCONFIG]    = "linkconfig",
   [LOG_PACKET]        = "packet",
   [LOG_RFC5444]       = "rfc5444",
   [LOG_SOCKET]        = "socket",

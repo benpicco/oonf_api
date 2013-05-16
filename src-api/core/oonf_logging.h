@@ -78,7 +78,7 @@ enum log_source {
   /* logging sources for subsystems */
   LOG_CLASS,
   LOG_CLOCK,
-  // LOG_DUPLICATE_SET,
+  LOG_DUPLICATE_SET,
   LOG_HTTP,
   LOG_INTERFACE,
   LOG_LAYER2,
