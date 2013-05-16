@@ -985,7 +985,7 @@ _cb_forward_message(
   OONF_INFO(LOG_RFC5444, "Forwarding message type %u", buffer[0]);
 
   result = rfc5444_writer_forward_msg(&protocol->writer, buffer, length);
-  if (result) {
+  if (result != RFC5444_OKAY && result != RFC5444_NO_MSGCREATOR) {
     OONF_WARN(LOG_RFC5444, "Error while forwarding message: %s (%d)",
         rfc5444_strerror(result), result);
   }
