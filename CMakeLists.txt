@@ -38,6 +38,9 @@ endif(DOXYGEN_FOUND)
 #### Compile targets ####
 #########################
 
+# initialize target list
+set_property(GLOBAL PROPERTY OONF_TARGETS "") 
+
 # include build helper
 include (cmake/OONFBuildLibrary.cmake)
 
@@ -57,6 +60,8 @@ add_subdirectory(src-api)
 add_subdirectory(src-plugins)
 add_subdirectory(external)
 
+get_property (targets GLOBAL PROPERTY OONF_TARGETS)
+export (TARGETS ${targets} FILE "${PROJECT_BINARY_DIR}/OONFLibraryDepends_api.cmake")
 if (NOT OONF_NO_TESTING)
     add_subdirectory(tests)
 endif (NOT OONF_NO_TESTING)

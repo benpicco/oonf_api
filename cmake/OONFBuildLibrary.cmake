@@ -1,6 +1,6 @@
 # generic oonf library creation
 
-function (oonf_internal_create_plugin prefix libname source include linkto)
+function (oonf_internal_create_plugin prefix libname source include link_internal linkto_external)
     add_library(${prefix}_${libname} SHARED ${source})
     add_library(${prefix}_static_${libname} STATIC ${source})
 
@@ -10,10 +10,13 @@ function (oonf_internal_create_plugin prefix libname source include linkto)
 
     set_target_properties(${prefix}_${libname} PROPERTIES SOVERSION ${OONF_VERSION})
 
-    if (linkto)
-        target_link_libraries(${prefix}_${libname} ${linkto})
-        target_link_libraries(${prefix}_static_${libname} ${linkto})
-    endif (linkto)
+    if (linkto_internal)
+        target_link_libraries(${prefix}_${libname} ${linkto_internal})
+        target_link_libraries(${prefix}_static_${libname} ${linkto_internal})
+    endif (linkto_internal)
+    if (linkto_external)
+        target_link_libraries(${prefix}_${libname} ${linkto_external})
+    endif (linkto_external)
     
     foreach(inc ${include})
         get_filename_component(path "${inc}" PATH)
@@ -28,8 +31,8 @@ function (oonf_internal_create_plugin prefix libname source include linkto)
     endforeach(inc)
 endfunction (oonf_internal_create_plugin)
 
-function (oonf_create_library libname source include linkto)
-    oonf_internal_create_plugin("oonf" "${libname}" "${source}" "${include}" "${linkto}")
+function (oonf_create_library libname source include linkto_internal linkto_external)
+    oonf_internal_create_plugin("oonf" "${libname}" "${source}" "${include}" "${linkto_internal}" "${linkto_external}")
     
     install (TARGETS oonf_${libname}
         # IMPORTANT: Add the library to the "export-set"
@@ -42,19 +45,28 @@ function (oonf_create_library libname source include linkto)
         EXPORT OONFLibraryDepends
         ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT stlib
             COMPONENT dev)
+    #
+   
+    get_property (targets GLOBAL PROPERTY OONF_TARGETS)
+    SET (targets ${targets} oonf_${libname} oonf_static_${libname})
+    set_property(GLOBAL PROPERTY OONF_TARGETS "${targets}") 
     
-    export (TARGETS oonf_${libname} oonf_static_${libname}
-            FILE "${PROJECT_BINARY_DIR}/OONFLibraryDepends_${libname}.cmake")
+#    export (TARGETS oonf_${libname} oonf_static_${libname} ${linkto_internal}
+#            FILE "${PROJECT_BINARY_DIR}/OONFLibraryDepends_${libname}.cmake")
 endfunction (oonf_create_library)
 
-function (oonf_create_plugin libname source include linkto)
-    oonf_create_library("${libname}" "${source}" "${include}" "${linkto}")
+function (oonf_create_plugin libname source include linkto_external)
+    SET (linkto_internal oonf_subsystems oonf_core oonf_config oonf_rfc5444 oonf_common)
+    
+    oonf_create_library("${libname}" "${source}" "${include}" "${linkto_internal}" "${linkto_external}")
     
     set_source_files_properties(${source} PROPERTIES COMPILE_FLAGS "-DPLUGIN_FULLNAME=${libname}")
 endfunction (oonf_create_plugin)
 
-function (oonf_create_app_plugin libname source include linkto)
-    oonf_internal_create_plugin("${OONF_APP_LIBPREFIX}" "${libname}" "${source}" "${include}" "${linkto}")
+function (oonf_create_app_plugin libname source include linkto_external)
+    LIST (APPEND linkto_external oonf_subsystems oonf_core oonf_config oonf_rfc5444 oonf_common)
+    
+    oonf_internal_create_plugin("${OONF_APP_LIBPREFIX}" "${libname}" "${source}" "${include}" "" "${linkto_external}")
     
     set_source_files_properties(${source} PROPERTIES COMPILE_FLAGS "-DPLUGIN_FULLNAME=${libname}")
     

@@ -184,9 +184,10 @@ test_delta_add_two_sections(void) {
 static void
 handler_add_two_sections(void) {
   bool n1, n2;
-  callback_counter++;
 
-  CHECK_TRUE(callback_counter <= 2, "Callback was called %d times!", callback_counter);
+  CHECK_TRUE(callback_counter < 2, "Callback was called %d times!", callback_counter+1);
+
+  callback_counter++;
   if (callback_counter > 2) {
     return;
   }
@@ -299,9 +300,10 @@ test_delta_remove_two_sections(void) {
 static void
 handler_remove_two_sections(void) {
   bool n1, n2;
+
+  CHECK_TRUE(callback_counter < 2, "Callback was called %d times!", callback_counter+1);
   callback_counter++;
 
-  CHECK_TRUE(callback_counter <= 2, "Callback was called %d times!", callback_counter);
   if (callback_counter > 2) {
     return;
   }
@@ -431,9 +433,10 @@ test_delta_modify_two_sections(void) {
 static void
 handler_modify_two_sections(void) {
   bool n1, n2;
+
+  CHECK_TRUE(callback_counter < 2, "Callback was called %d times!", callback_counter+1);
   callback_counter++;
 
-  CHECK_TRUE(callback_counter <= 2, "Callback was called %d times!", callback_counter);
   if (callback_counter > 2) {
     return;
   }

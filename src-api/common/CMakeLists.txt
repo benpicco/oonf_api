@@ -19,4 +19,4 @@ SET(OONF_COMMON_INCLUDES autobuf.h
                          string.h
                          template.h)
 
-oonf_create_library("common" "${OONF_COMMON_SRCS}" "${OONF_COMMON_INCLUDES}" false)
+oonf_create_library("common" "${OONF_COMMON_SRCS}" "${OONF_COMMON_INCLUDES}" "" "")

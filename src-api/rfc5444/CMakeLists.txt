@@ -20,4 +20,4 @@ SET(OONF_RFC5444_INCLUDES rfc5444_context.h
                           rfc5444_print.h
                           rfc5444_api_config.h)
 
-oonf_create_library("rfc5444" "${OONF_RFC5444_SRCS}" "${OONF_RFC5444_INCLUDES}" false)
+oonf_create_library("rfc5444" "${OONF_RFC5444_SRCS}" "${OONF_RFC5444_INCLUDES}" "oonf_common" "")

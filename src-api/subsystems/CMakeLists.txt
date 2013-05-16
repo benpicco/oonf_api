@@ -52,4 +52,5 @@ IF(LINUX)
                              )
 ENDIF(LINUX)
 
-oonf_create_library("subsystems" "${OONF_SUBSYSTEMS_SRCS}" "${OONF_SUBSYSTEMS_INCLUDES}" "")
+SET(linkto_internal oonf_common oonf_config oonf_rfc5444 oonf_core)
+oonf_create_library("subsystems" "${OONF_SUBSYSTEMS_SRCS}" "${OONF_SUBSYSTEMS_INCLUDES}" "${linkto_internal}" "")

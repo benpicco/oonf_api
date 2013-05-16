@@ -84,8 +84,8 @@ test_list_1(void) {
 
   cnt = 0;
   FOR_ALL_STRINGS(&entry1->val, ptr) {
+    CHECK_TRUE(cnt < 3, "append did create more than three entries: %d", cnt+1);
     cnt++;
-    CHECK_TRUE(cnt < 4, "append did create more than three entries: %d", cnt);
 
     if (cnt == 3) {
       CHECK_TRUE(strcmp(ptr, "test 1") == 0, "part %d was not 'test 1' but '%s'", cnt, ptr);
@@ -107,8 +107,8 @@ test_list_1(void) {
 
   cnt = 0;
   FOR_ALL_STRINGS(&entry1->val, ptr) {
+    CHECK_TRUE(cnt < 2, "append+remove did create more than two entries: %d", cnt+1);
     cnt++;
-    CHECK_TRUE(cnt < 3, "append+remove did create more than two entries: %d", cnt);
 
     if (cnt == 2) {
       CHECK_TRUE(strcmp(ptr, "test 2") == 0, "part %d was not 'test 2' but '%s'", cnt, ptr);
@@ -150,8 +150,8 @@ test_list_2(void) {
 
   cnt = 0;
   FOR_ALL_STRINGS(&entry1->val, ptr) {
+    CHECK_TRUE(cnt < 3, "append did create more than three entries: %d", cnt+1);
     cnt++;
-    CHECK_TRUE(cnt < 4, "append did create more than three entries: %d", cnt);
 
     if (cnt == 3) {
       CHECK_TRUE(strcmp(ptr, "test 1") == 0, "part %d was not 'test 1' but '%s'", cnt, ptr);
@@ -173,8 +173,8 @@ test_list_2(void) {
 
   cnt = 0;
   FOR_ALL_STRINGS(&entry1->val, ptr) {
+    CHECK_TRUE(cnt < 2, "append+remove did create more than two entries: %d", cnt+1);
     cnt++;
-    CHECK_TRUE(cnt < 3, "append+remove did create more than two entries: %d", cnt);
 
     if (cnt == 2) {
       CHECK_TRUE(strcmp(ptr, "test 1") == 0, "part %d was not 'test 1' but '%s'", cnt, ptr);
@@ -216,8 +216,8 @@ test_list_3(void) {
 
   cnt = 0;
   FOR_ALL_STRINGS(&entry1->val, ptr) {
+    CHECK_TRUE(cnt < 3, "append did create more than three entries: %d", cnt+1);
     cnt++;
-    CHECK_TRUE(cnt < 4, "append did create more than three entries: %d", cnt);
 
     if (cnt == 3) {
       CHECK_TRUE(strcmp(ptr, "test 1") == 0, "part %d was not 'test 1' but '%s'", cnt, ptr);
@@ -239,8 +239,8 @@ test_list_3(void) {
 
   cnt = 0;
   FOR_ALL_STRINGS(&entry1->val, ptr) {
+    CHECK_TRUE(cnt < 2, "append+remove did create more than two entries: %d", cnt+1);
     cnt++;
-    CHECK_TRUE(cnt < 3, "append+remove did create more than two entries: %d", cnt);
 
     if (cnt == 2) {
       CHECK_TRUE(strcmp(ptr, "test 1") == 0, "part %d was not 'test 1' but '%s'", cnt, ptr);

@@ -50,4 +50,6 @@ IF(LINUX)
                        )
 ENDIF(LINUX)
 
-oonf_create_library("core" "${OONF_CORE_SRCS}" "${OONF_CORE_INCLUDES}" "rt")
+SET(linkto_internal oonf_common oonf_config)
+
+oonf_create_library("core" "${OONF_CORE_SRCS}" "${OONF_CORE_INCLUDES}" "${linkto_internal}" "rt")
