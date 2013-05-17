@@ -36,6 +36,7 @@ SET(OONF_CORE_INCLUDES oonf_cfg.h
                        oonf_subsystem.h
                        oonf_libdata.h
                        os_clock.h
+                       os_syslog.h
                        )
 
 # add os_specific source(include files
