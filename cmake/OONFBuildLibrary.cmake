@@ -12,10 +12,10 @@ function (oonf_internal_create_plugin prefix libname source include link_interna
 
     if (linkto_internal)
         target_link_libraries(${prefix}_${libname} ${linkto_internal})
-        target_link_libraries(${prefix}_static_${libname} ${linkto_internal})
     endif (linkto_internal)
     if (linkto_external)
         target_link_libraries(${prefix}_${libname} ${linkto_external})
+        target_link_libraries(${prefix}_static_${libname} ${linkto_external})
     endif (linkto_external)
     
     foreach(inc ${include})
@@ -64,9 +64,9 @@ function (oonf_create_plugin libname source include linkto_external)
 endfunction (oonf_create_plugin)
 
 function (oonf_create_app_plugin libname source include linkto_external)
-    LIST (APPEND linkto_external oonf_subsystems oonf_core oonf_config oonf_rfc5444 oonf_common)
+    SET (linkto_internal oonf_subsystems oonf_core oonf_config oonf_rfc5444 oonf_common)
     
-    oonf_internal_create_plugin("${OONF_APP_LIBPREFIX}" "${libname}" "${source}" "${include}" "" "${linkto_external}")
+    oonf_internal_create_plugin("${OONF_APP_LIBPREFIX}" "${libname}" "${source}" "${include}" "${linkto_internal}" "${linkto_external}")
     
     set_source_files_properties(${source} PROPERTIES COMPILE_FLAGS "-DPLUGIN_FULLNAME=${libname}")
     

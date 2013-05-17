@@ -33,6 +33,12 @@ define Package/oonf-api-git/template
 	URL:=http://www.olsr.org/
 endef
 
+define Package/oonf-api-git
+	$(call Package/oonf-api-git/template) 
+  TITLE:= Build OONF-API static libraries
+  BUILDONLY:=1
+endef
+
 define Package/oonf-api-git-common
 	$(call Package/oonf-api-git/template) 
 	TITLE:=Common-API (generic helpers functions) 
@@ -206,6 +212,7 @@ define Package/oonf-plugin-git-remotecontrol/install
 	$(CP) $(PKG_INSTALL_DIR)/usr/lib/oonf/liboonf_remotecontrol*.so* $(1)/usr/lib/oonf
 endef
 
+$(eval $(call BuildPackage,oonf-api-git))
 $(eval $(call BuildPackage,oonf-api-git-common))
 $(eval $(call BuildPackage,oonf-api-git-config))
 $(eval $(call BuildPackage,oonf-api-git-rfc5444))
