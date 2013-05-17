@@ -54,7 +54,6 @@
 #include "core/oonf_logging_cfg.h"
 
 #define LOG_SECTION     "log"
-#define LOG_LEVEL_ENTRY "level"
 #define LOG_DEBUG_ENTRY "debug"
 #define LOG_INFO_ENTRY  "info"
 #define LOG_WARN_ENTRY  "warn"
@@ -80,7 +79,6 @@ static struct cfg_schema_entry logging_entries[] = {
       "Set logging sources that display warnings",
       .list = true),
 
-  CFG_VALIDATE_INT_MINMAX(LOG_LEVEL_ENTRY, "0", "Set debug level template", -2, 3),
   CFG_VALIDATE_BOOL(LOG_STDERR_ENTRY, "false", "Set to true to activate logging to stderr"),
   CFG_VALIDATE_BOOL(LOG_SYSLOG_ENTRY, "false", "Set to true to activate logging to syslog"),
   CFG_VALIDATE_STRING(LOG_FILE_ENTRY, "", "Set a filename to log to a file"),
@@ -92,9 +90,6 @@ static struct cfg_schema_section logging_section = {
   .entry_count = ARRAYSIZE(logging_entries),
   .cb_delta_handler = _cb_logcfg_apply,
 };
-
-static enum log_source *debug_lvl_1 = NULL;
-static size_t debug_lvl_1_count = 0;
 
 /* global logger configuration */
 static uint8_t logging_cfg[LOG_MAXIMUM_SOURCES];
@@ -110,16 +105,10 @@ static struct log_handler_entry file_handler = {
 
 /**
  * Initialize logging configuration
- * @param debug_lvl_1_ptr array of logging sources for debug level 1
- * @param length number of level 1 logging sources
  */
 void
-oonf_logcfg_init(enum log_source *debug_lvl_1_ptr, size_t length) {
-  debug_lvl_1 = debug_lvl_1_ptr;
-  debug_lvl_1_count = length;
-
+oonf_logcfg_init(void) {
   memset(logging_cfg, 0, LOG_MAXIMUM_SOURCES);
-
   cfg_schema_add_section(oonf_cfg_get_schema(), &logging_section);
 }
 
@@ -155,41 +144,11 @@ int
 oonf_logcfg_apply(struct cfg_db *db) {
   struct cfg_named_section *named;
   const char *ptr, *file_name;
-  size_t i;
   int file_errno = 0;
   bool activate_syslog, activate_file, activate_stderr;
 
   /* clean up logging mask */
   oonf_log_mask_clear(logging_cfg);
-
-  /* first apply debug level */
-  ptr = cfg_db_get_entry_value(db, LOG_SECTION, NULL, LOG_LEVEL_ENTRY)->value;
-  switch (atoi(ptr)) {
-    case -1:
-      /* no logging */
-      break;
-    case 0:
-      /* only warnings */
-      oonf_log_mask_set(logging_cfg, LOG_ALL, LOG_SEVERITY_WARN);
-      break;
-    case 1:
-      /* warnings and some info */
-      oonf_log_mask_set(logging_cfg, LOG_ALL, LOG_SEVERITY_WARN);
-      for (i=0; i<debug_lvl_1_count; i++) {
-        oonf_log_mask_set(logging_cfg, debug_lvl_1[i], LOG_SEVERITY_INFO);
-      }
-      break;
-    case 2:
-      /* warning and info */
-      oonf_log_mask_set(logging_cfg, LOG_ALL, LOG_SEVERITY_INFO);
-      break;
-    case 3:
-      /* all logging messages */
-      oonf_log_mask_set(logging_cfg, LOG_ALL, LOG_SEVERITY_DEBUG);
-      break;
-    default:
-      break;
-  }
 
   /* now apply specific settings */
   named = cfg_db_find_namedsection(db, LOG_SECTION, NULL);

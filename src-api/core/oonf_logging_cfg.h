@@ -50,7 +50,7 @@
 
 #define CFG_VALIDATE_LOGSOURCE(p_name, p_def, p_help, args...) _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = oonf_logcfg_schema_validate, .cb_valhelp = oonf_logcfg_schema_help, ##args )
 
-EXPORT void oonf_logcfg_init(enum log_source *debug_lvl_1, size_t length);
+EXPORT void oonf_logcfg_init(void);
 EXPORT void oonf_logcfg_cleanup(void);
 EXPORT int oonf_logcfg_apply(struct cfg_db *db) __attribute__((warn_unused_result));
 
