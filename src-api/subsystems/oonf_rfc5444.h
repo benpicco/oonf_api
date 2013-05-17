@@ -63,12 +63,6 @@ enum {
 /* Configuration section for global mesh settings */
 #define CFG_RFC5444_SECTION "mesh"
 
-/*
- * Configuration settings for interfaces with rfc5444 default protocol
- */
-#define CFG_INTERFACE_SECTION      "interface"
-#define CFG_INTERFACE_SECTION_MODE CFG_SSMODE_NAMED_MANDATORY
-
 enum {
   /* Maximum packet size for this RFC5444 multiplexer */
   RFC5444_MAX_PACKET_SIZE = 1500-20-8,

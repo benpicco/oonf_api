@@ -52,6 +52,12 @@
 #include "subsystems/oonf_timer.h"
 #include "subsystems/os_net.h"
 
+/*
+ * Configuration settings for interface section
+ */
+#define CFG_INTERFACE_SECTION      "interface"
+#define CFG_INTERFACE_SECTION_MODE CFG_SSMODE_NAMED_MANDATORY
+
 struct oonf_interface_listener {
   /* name of interface */
   const char *name;
