@@ -5,11 +5,11 @@ LEN=`cat ./files/default_licence.txt |wc -c`
 OKAY=0
 BAD=0
 
-EXCEPT=./src-plugins/nl80211_listener/nl80211.h
-for file in $(eval find ./src* -type f -name *[.][ch] -not -wholename $EXCEPT)
+EXCEPT="-not -wholename ./src-plugins/nl80211_listener/nl80211.h"
+for file in $(eval find ./src* -type f -name *[.][ch] ${EXCEPT})
 do
-	cmp --bytes $LEN $file ./files/default_licence.txt
-	if [ $? != 0 ]
+	cmp --bytes ${LEN} ${file} ./files/default_licence.txt
+	if [ ${?} != 0 ]
 	then
 		BAD=$((${BAD} + 1))
 	else
