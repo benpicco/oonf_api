@@ -23,7 +23,8 @@ CMAKE_OPTIONS=-DOONF_DO_NOT_REGISTER_PACKAGE:Bool=true \
               -DOONF_NO_TESTING:Bool=true \
               -DINSTALL_LIB_DIR:Path=lib/oonf \
               -DINSTALL_INCLUDE_DIR:Path=include/oonf \
-              -DINSTALL_CMAKE_DIR:Path=lib/oonf
+              -DINSTALL_CMAKE_DIR:Path=lib/oonf \
+              -DCMAKE_PREFIX_PATH=$(STAGING_DIR)/usr
 
 define Package/oonf-api-git/template
 	SECTION:=net
