@@ -56,6 +56,10 @@ struct _parsed_argument {
   char *value;
 };
 
+static int _print_schema_section(struct autobuf *log, struct cfg_db *db,
+    const char *section);
+static int _print_schema_entry(struct autobuf *log, struct cfg_db *db,
+    const char *section, const char *entry);
 static int _do_parse_arg(struct cfg_instance *instance,
     char *arg, struct _parsed_argument *pa, struct autobuf *log);
 
@@ -354,12 +358,8 @@ int
 cfg_cmd_handle_schema(struct cfg_db *db,
     const char *arg, struct autobuf *log) {
   struct cfg_schema_section *s_section;
-  struct cfg_schema_entry *s_entry, *s_entry_it, *s_entry_last;
-  struct cfg_schema_entry_key key;
-  const char *c_ptr;
   char *copy, *ptr;
   int result;
-  bool first;
 
   if (db->schema == NULL) {
     abuf_puts(log, "Internal error, database not connected to schema\n");
@@ -384,6 +384,13 @@ cfg_cmd_handle_schema(struct cfg_db *db,
     return 0;
   }
 
+  if (strcmp(arg, "all") == 0) {
+    avl_for_each_element(&db->schema->sections, s_section, _section_node) {
+      _print_schema_section(log, db, s_section->type);
+    }
+    return 0;
+  }
+
   /* copy string into stack*/
   copy = strdup(arg);
 
@@ -396,92 +403,111 @@ cfg_cmd_handle_schema(struct cfg_db *db,
   }
 
   if (ptr == NULL) {
-    /* show all schema entries for a section */
-    key.type = copy;
-    key.entry = NULL;
-
-    s_entry = avl_find_ge_element(&db->schema->entries, &key, s_entry, _node);
-    if (s_entry == NULL || cfg_cmp_keys(s_entry->key.type, copy) != 0) {
-      cfg_append_printable_line(log, "Unknown section type '%s'", copy);
-      goto handle_schema_cleanup;
-    }
-
-    if (s_entry->_parent->mode == CFG_SSMODE_NAMED_WITH_DEFAULT) {
-      cfg_append_printable_line(log, "Section '%s' has default name '%s'",
-          s_entry->_parent->type, s_entry->_parent->def_name);
-    }
-    cfg_append_printable_line(log, "List of entries in section type '%s':", copy);
-    abuf_puts(log, "(use this command with 'type.name' as parameter for more information)\n");
-
-    s_entry_it = s_entry;
-    avl_for_element_to_last(&db->schema->entries, s_entry, s_entry_it, _node) {
-      if (cfg_cmp_keys(s_entry_it->key.type, copy) != 0) {
-        break;
-      }
-
-      if (!s_entry_it->_node.follower) {
-        cfg_append_printable_line(log, "    %s%s%s",
-            s_entry_it->key.entry,
-            strarray_is_empty_c(&s_entry_it->def) ? " (mandatory)" : "",
-                s_entry_it->list ? " (list)" : "");
-      }
-      if (s_entry_it->help) {
-        cfg_append_printable_line(log, "        %s", s_entry_it->help);
-      }
-    }
-    result = 0;
+    result = _print_schema_section(log, db, copy);
   }
   else {
-    /* show all schema entries of a type/entry pair */
-    key.type = copy;
-    key.entry = ptr;
+    result = _print_schema_entry(log, db, copy, ptr);
+  }
 
-    s_entry_last = NULL;
+  free (copy);
+  return result;
+}
 
-    avl_for_each_elements_with_key(&db->schema->entries, s_entry_it, _node, s_entry, &key) {
-      if (!s_entry_it->_node.follower) {
-        /* print type/parameter */
-        cfg_append_printable_line(log, "    %s%s%s",
-            s_entry->key.entry,
-            strarray_is_empty_c(&s_entry->def) ? " (mandatory)" : "",
-            s_entry->list ? " (list)" : "");
+static int
+_print_schema_section(struct autobuf *log, struct cfg_db *db, const char *section) {
+  struct cfg_schema_entry *s_entry, *s_entry_it;
+  struct cfg_schema_entry_key key;
 
-        /* print defaults */
-        if (!strarray_is_empty_c(&s_entry->def)) {
-          cfg_append_printable_line(log, "    Default value:");
-          FOR_ALL_STRINGS(&s_entry->def, c_ptr) {
-            cfg_append_printable_line(log, "        '%s'", c_ptr);
-          }
-        }
-      }
+  /* show all schema entries for a section */
+  key.type = section;
+  key.entry = NULL;
 
-      if (s_entry_it->cb_valhelp) {
-        /* print validator help if different from last validator */
-        if (s_entry_last == NULL || s_entry_last->cb_valhelp != s_entry_it->cb_valhelp
-            || memcmp(&s_entry_last->validate_param, &s_entry_it->validate_param,
-                sizeof(s_entry_it->validate_param)) != 0) {
-          s_entry_it->cb_valhelp(s_entry_it, log);
-          s_entry_last = s_entry_it;
+  s_entry = avl_find_ge_element(&db->schema->entries, &key, s_entry, _node);
+  if (s_entry == NULL || cfg_cmp_keys(s_entry->key.type, section) != 0) {
+    cfg_append_printable_line(log, "Unknown section type '%s'", section);
+    return -1;
+  }
+
+  if (s_entry->_parent->mode == CFG_SSMODE_NAMED_WITH_DEFAULT) {
+    cfg_append_printable_line(log, "Section '%s' has default name '%s'",
+        s_entry->_parent->type, s_entry->_parent->def_name);
+  }
+  cfg_append_printable_line(log, "List of entries in section type '%s':", section);
+  abuf_puts(log, "(use this command with 'type.name' as parameter for more information)\n");
+
+  s_entry_it = s_entry;
+  avl_for_element_to_last(&db->schema->entries, s_entry, s_entry_it, _node) {
+    if (cfg_cmp_keys(s_entry_it->key.type, section) != 0) {
+      break;
+    }
+
+    if (!s_entry_it->_node.follower) {
+      cfg_append_printable_line(log, "    %s%s%s",
+          s_entry_it->key.entry,
+          strarray_is_empty_c(&s_entry_it->def) ? " (mandatory)" : "",
+              s_entry_it->list ? " (list)" : "");
+    }
+    if (s_entry_it->help) {
+      cfg_append_printable_line(log, "        %s", s_entry_it->help);
+    }
+  }
+  return 0;
+}
+
+static int
+_print_schema_entry(struct autobuf *log, struct cfg_db *db,
+    const char *section, const char *entry) {
+  struct cfg_schema_entry *s_entry, *s_entry_it, *s_entry_last;
+  struct cfg_schema_entry_key key;
+  const char *c_ptr;
+  bool first;
+
+  /* show all schema entries of a type/entry pair */
+  key.type = section;
+  key.entry = entry;
+
+  s_entry_last = NULL;
+
+  avl_for_each_elements_with_key(&db->schema->entries, s_entry_it, _node, s_entry, &key) {
+    if (!s_entry_it->_node.follower) {
+      /* print type/parameter */
+      cfg_append_printable_line(log, "    %s%s%s",
+          s_entry->key.entry,
+          strarray_is_empty_c(&s_entry->def) ? " (mandatory)" : "",
+          s_entry->list ? " (list)" : "");
+
+      /* print defaults */
+      if (!strarray_is_empty_c(&s_entry->def)) {
+        cfg_append_printable_line(log, "    Default value:");
+        FOR_ALL_STRINGS(&s_entry->def, c_ptr) {
+          cfg_append_printable_line(log, "        '%s'", c_ptr);
         }
       }
     }
-    first = true;
 
-    avl_for_each_elements_with_key(&db->schema->entries, s_entry_it, _node, s_entry, &key) {
-      /* print help text */
-      if (s_entry_it->help) {
-        if (first) {
-          abuf_puts(log, "    Description:\n");
-          first = false;
-        }
-        cfg_append_printable_line(log, "        %s", s_entry_it->help);
+    if (s_entry_it->cb_valhelp) {
+      /* print validator help if different from last validator */
+      if (s_entry_last == NULL || s_entry_last->cb_valhelp != s_entry_it->cb_valhelp
+          || memcmp(&s_entry_last->validate_param, &s_entry_it->validate_param,
+              sizeof(s_entry_it->validate_param)) != 0) {
+        s_entry_it->cb_valhelp(s_entry_it, log);
+        s_entry_last = s_entry_it;
       }
     }
   }
+  first = true;
 
-handle_schema_cleanup:
-  free (copy);
-  return result;
+  avl_for_each_elements_with_key(&db->schema->entries, s_entry_it, _node, s_entry, &key) {
+    /* print help text */
+    if (s_entry_it->help) {
+      if (first) {
+        abuf_puts(log, "    Description:\n");
+        first = false;
+      }
+      cfg_append_printable_line(log, "        %s", s_entry_it->help);
+    }
+  }
+  return 0;
 }
 
 /**
