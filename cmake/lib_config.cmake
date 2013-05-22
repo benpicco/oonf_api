@@ -5,11 +5,6 @@ else ()
   set(DEF_INSTALL_CMAKE_DIR lib/oonf)
 endif ()
 
-# set to debug build if variable not set
-IF (NOT CMAKE_BUILD_TYPE)
-    set (CMAKE_BUILD_TYPE debug)
-ENDIF (NOT CMAKE_BUILD_TYPE)
-
 ###########################
 #### API configuration ####
 ###########################
