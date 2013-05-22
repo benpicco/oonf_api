@@ -14,8 +14,9 @@ ENDIF()
 # compare with version number
 STRING(REGEX MATCH "v${OONF_VERSION}-" FOUND_VERSION ${OONF_LIB_GIT})
 IF (NOT FOUND_VERSION)
-	message (FATAL_ERROR "Library version '${OONF_VERSION}' is not present in git description '${OONF_LIB_GIT}'."
-		"Please re-run 'cmake ..' to update build files")
+	message (FATAL_ERROR "Library version '${OONF_VERSION}'"
+		" is not present in git description '${OONF_LIB_GIT}'."
+		" Please re-run 'cmake ..' to update build files")
 ENDIF (NOT FOUND_VERSION)
 
 # create builddata file
