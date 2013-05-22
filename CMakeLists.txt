@@ -5,20 +5,15 @@ cmake_minimum_required(VERSION 2.8.5 FATAL_ERROR)
 #### API configuration ####
 ###########################
 
-# set library version
-set (OONF_MAJOR_VERSION 0)
-set (OONF_MINOR_VERSION 7)
-set (OONF_PATCH_VERSION 0)
-
-# calculate complete library version
-set (OONF_VERSION ${OONF_MAJOR_VERSION}.${OONF_MINOR_VERSION}.${OONF_PATCH_VERSION})
-
 # set cached variables
 include (./cmake/lib_config.cmake)
 
 # include compiler flags
 include (./cmake/cc_flags.cmake)
 
+# get library version from git tag
+include (./cmake/generate_version.cmake)
+ 
 ########################
 #### Doxygen target ####
 ########################
