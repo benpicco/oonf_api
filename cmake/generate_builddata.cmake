@@ -1,6 +1,7 @@
 #!/bin/cmake
 
-# look for git executable 
+# look for git executable
+SET(found_git false) 
 find_program(found_git git)
 
 SET(OONF_LIB_GIT "cannot read git repository")
