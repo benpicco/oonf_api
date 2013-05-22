@@ -122,10 +122,6 @@ struct oonf_appdata {
   const char *default_config;
 
   const char *git_commit;
-  const char *git_change;
-
-  const char *builddate;
-  const char *buildsystem;
 
   const char *sharedlibrary_prefix;
   const char *sharedlibrary_postfix;

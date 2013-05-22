@@ -45,10 +45,6 @@ static struct oonf_libdata _libdata = {
   .lib_version = "${OONF_VERSION}",
   
   .git_commit = "${OONF_LIB_GIT}",
-  .git_change = "${OONF_LIB_CHANGE}",
-  
-  .builddate = __DATE__" "__TIME__,
-  .buildsystem = "${CMAKE_SYSTEM}",
   
   .sharedlibrary_prefix = "${CMAKE_SHARED_LIBRARY_PREFIX}oonf_",
   .sharedlibrary_postfix = "${CMAKE_SHARED_LIBRARY_SUFFIX}",

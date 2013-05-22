@@ -287,20 +287,12 @@ oonf_log_get_libdata(void) {
  */
 void
 oonf_log_printversion(struct autobuf *abuf) {
-  abuf_appendf(abuf," %s version %s (%s)\n"
-            " Built on %s\n"
+  abuf_appendf(abuf," %s version %s\n"
             " Application commit: %s\n",
             _appdata->app_name,
             _appdata->app_version,
-            _appdata->builddate, _appdata->buildsystem,
             _appdata->git_commit);
-  if (_appdata->git_change[0]) {
-    abuf_appendf(abuf, "      %s\n", _appdata->git_change);
-  }
   abuf_appendf(abuf, " Library commit: %s\n", _libdata->git_commit);
-  if (_libdata->git_change[0]) {
-    abuf_appendf(abuf, "      %s\n", _libdata->git_change);
-  }
   abuf_puts(abuf, _appdata->versionstring_trailer);
 }
 

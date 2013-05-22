@@ -522,10 +522,8 @@ _create_http_header(struct oonf_stream_session *session,
   abuf_strftime(&buf, "Date: %a, %d %b %Y %H:%M:%S GMT\r\n", localtime(&currtime.tv_sec));
 
   /* Server version */
-  abuf_appendf(&buf, "Server: %s %s %s\r\n",
-      oonf_log_get_appdata()->app_version,
-      oonf_log_get_appdata()->builddate,
-      oonf_log_get_appdata()->buildsystem);
+  abuf_appendf(&buf, "Server: %s\r\n",
+      oonf_log_get_appdata()->app_version);
 
   /* connection-type */
   abuf_puts(&buf, "Connection: closed\r\n");
