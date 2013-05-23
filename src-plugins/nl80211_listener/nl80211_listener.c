@@ -742,7 +742,7 @@ _cb_nl_message(struct nlmsghdr *hdr) {
     }
   }
 
-  OONF_WARN(LOG_NL80211, "Unhandled incoming netlink message type %u cmd %u\n",
+  OONF_INFO(LOG_NL80211, "Unhandled incoming netlink message type %u cmd %u\n",
       hdr->nlmsg_type, gen_hdr->cmd);
 }
 
