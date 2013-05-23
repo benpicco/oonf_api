@@ -36,8 +36,8 @@ endef
 
 define Package/oonf-api-git
 	$(call Package/oonf-api-git/template) 
-  TITLE:= Build OONF-API static libraries
-  BUILDONLY:=1
+	TITLE:= Build OONF-API static libraries
+	BUILDONLY:=1
 endef
 
 define Package/oonf-api-git-common
