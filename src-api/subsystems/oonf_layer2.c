@@ -154,10 +154,8 @@ oonf_layer2_add_network(struct netaddr *radio_id, uint32_t if_index,
     uint64_t vtime) {
   struct oonf_layer2_network *net;
 
-  assert (vtime > 0);
-
   net = oonf_layer2_get_network_by_id(radio_id);
-  if (net) {
+  if (!net) {
     net = oonf_class_malloc(&_network_cookie);
     if (!net) {
       return NULL;

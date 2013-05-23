@@ -236,7 +236,7 @@ EXPORT void oonf_log_file(struct log_handler_entry *,
  */
 static INLINE void
 oonf_log_mask_clear(uint8_t *mask) {
-  memset(mask, 0, LOG_MAXIMUM_SOURCES);
+  memset(mask, LOG_SEVERITY_WARN, LOG_MAXIMUM_SOURCES);
 }
 
 /**

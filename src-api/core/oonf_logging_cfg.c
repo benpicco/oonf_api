@@ -56,7 +56,6 @@
 #define LOG_SECTION     "log"
 #define LOG_DEBUG_ENTRY "debug"
 #define LOG_INFO_ENTRY  "info"
-#define LOG_WARN_ENTRY  "warn"
 #define LOG_STDERR_ENTRY "stderr"
 #define LOG_SYSLOG_ENTRY "syslog"
 #define LOG_FILE_ENTRY   "file"
@@ -74,9 +73,6 @@ static struct cfg_schema_entry logging_entries[] = {
       .list = true),
   CFG_VALIDATE_LOGSOURCE(LOG_INFO_ENTRY, "",
       "Set logging sources that display info and warnings",
-      .list = true),
-  CFG_VALIDATE_LOGSOURCE(LOG_WARN_ENTRY, "",
-      "Set logging sources that display warnings",
       .list = true),
 
   CFG_VALIDATE_BOOL(LOG_STDERR_ENTRY, "false", "Set to true to activate logging to stderr"),
@@ -153,7 +149,6 @@ oonf_logcfg_apply(struct cfg_db *db) {
   /* now apply specific settings */
   named = cfg_db_find_namedsection(db, LOG_SECTION, NULL);
   if (named != NULL) {
-    _apply_log_setting(named, LOG_WARN_ENTRY, LOG_SEVERITY_WARN);
     _apply_log_setting(named, LOG_INFO_ENTRY, LOG_SEVERITY_INFO);
     _apply_log_setting(named, LOG_DEBUG_ENTRY, LOG_SEVERITY_DEBUG);
   }

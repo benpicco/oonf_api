@@ -76,27 +76,16 @@
 
 /* definitions */
 struct _nl80211_config {
-  struct strarray interf;
   uint64_t interval;
-
-  /* list of MACs that should be anonymized */
-  struct netaddr_acl anonymize_macs;
-
-  /* list of interfaces that should be anonymized */
-  struct strarray anonymize_ifs;
-
-  /* prefix for anonymized mac addresses */
-  struct netaddr anonymized_prefix;
-
-  /* Array of interface listeners */
-  struct oonf_interface_listener *if_listener;
-  int if_listener_count;
 };
 
-struct anonymized_mac {
-  struct avl_node _node;
-  struct netaddr mac;
-  struct netaddr anonymized;
+enum query_type {
+  QUERY_FIRST = 0,
+  QUERY_STATION_DUMP = 0,
+  QUERY_SCAN_DUMP,
+
+  /* must be last */
+  QUERY_COUNT,
 };
 
 /* prototypes */
@@ -104,31 +93,24 @@ static int _init(void);
 static void _cleanup(void);
 
 static void _cb_config_changed(void);
-static int _cb_config_validate(const char *section_name,
-    struct cfg_named_section *, struct autobuf *);
 static void _send_genl_getfamily(void);
+
 static void _cb_nl_message(struct nlmsghdr *hdr);
+static void _cb_nl_error(uint32_t seq, int error);
+static void _cb_nl_timeout(void);
+static void _cb_nl_done(uint32_t seq);
+
 static void _cb_transmission_event(void *);
 
 /* configuration */
 static struct cfg_schema_entry _nl80211_entries[] = {
-  CFG_MAP_STRINGLIST(_nl80211_config, interf, "if", "wlan0",
-      "List of interfaces to request nl80211 linklayer information from."),
   CFG_MAP_CLOCK_MIN(_nl80211_config, interval, "interval", "1.0",
       "Interval between two linklayer information updates", 100),
-  CFG_MAP_ACL_MAC48(_nl80211_config, anonymize_macs, "anon_mac", ACL_DEFAULT_REJECT,
-      "All mac addresses matching this ACL will be anonymized"),
-  CFG_MAP_STRINGLIST(_nl80211_config, anonymize_ifs, "anon_ifs", "",
-      "List of wifi interfaces that will be anonymized"),
-  CFG_MAP_NETADDR_MAC48(_nl80211_config, anonymized_prefix, "anon_prefix",
-      "10:00:00:00:00:00/32",
-      "Prefix used for anonymized mac addresses, must be a /32 prefix", true, false),
 };
 
 static struct cfg_schema_section _nl80211_section = {
   .type = OONF_PLUGIN_GET_NAME(),
   .cb_delta_handler = _cb_config_changed,
-  .cb_validate = _cb_config_validate,
   .entries = _nl80211_entries,
   .entry_count = ARRAYSIZE(_nl80211_entries),
 };
@@ -151,12 +133,18 @@ DECLARE_OONF_PLUGIN(nl80211_listener_subsystem);
 /* netlink specific data */
 static struct os_system_netlink _netlink_handler = {
   .cb_message = _cb_nl_message,
+  .cb_error = _cb_nl_error,
+  .cb_done = _cb_nl_done,
+  .cb_timeout = _cb_nl_timeout,
 };
 
 static struct nlmsghdr *_msgbuf;
 
 static int _nl80211_id = -1;
 static bool _nl80211_mc_set = false;
+
+static char _last_queried_if[IF_NAMESIZE];
+static enum query_type _next_query_type;
 
 /* timer for generating netlink requests */
 static struct oonf_timer_info _transmission_timer_info = {
@@ -168,15 +156,6 @@ static struct oonf_timer_info _transmission_timer_info = {
 struct oonf_timer_entry _transmission_timer = {
   .info = &_transmission_timer_info
 };
-
-/* anonymization */
-static struct avl_tree _anonymized_tree;
-
-static struct oonf_class _amac_info = {
-  .name = "anonymized macs",
-  .size = sizeof(struct anonymized_mac),
-};
-
 
 /* logging source */
 enum log_source LOG_NL80211;
@@ -200,14 +179,10 @@ _init(void) {
     return -1;
   }
 
-  avl_init(&_anonymized_tree, avl_comp_netaddr, false);
-
-  oonf_class_add(&_amac_info);
-  strarray_init(&_config.interf);
-  strarray_init(&_config.anonymize_ifs);
-  netaddr_acl_add(&_config.anonymize_macs);
-
   oonf_timer_add(&_transmission_timer_info);
+
+  memset(_last_queried_if, 0, sizeof(_last_queried_if));
+  _next_query_type = QUERY_STATION_DUMP;
 
   _send_genl_getfamily();
   return 0;
@@ -218,78 +193,11 @@ _init(void) {
  */
 static void
 _cleanup(void) {
-  struct anonymized_mac *mac, *mac_it;
-  int i;
-  char *ptr;
-
+  oonf_timer_stop(&_transmission_timer);
   oonf_timer_remove(&_transmission_timer_info);
   os_system_netlink_remove(&_netlink_handler);
 
-  /* free old resources */
-  if (_config.if_listener) {
-    i = 0;
-    FOR_ALL_STRINGS(&_config.interf, ptr) {
-      oonf_interface_remove_listener(&_config.if_listener[i]);
-      i++;
-    }
-    free(_config.if_listener);
-  }
-  strarray_free(&_config.interf);
-  strarray_free(&_config.anonymize_ifs);
-  netaddr_acl_remove(&_config.anonymize_macs);
-
-  /* free anonymized macs */
-  avl_for_each_element_safe(&_anonymized_tree, mac, _node, mac_it) {
-    oonf_class_free(&_amac_info, mac);
-  }
-  oonf_class_remove(&_amac_info);
-
   free (_msgbuf);
-}
-
-/**
- * Anonymize the mac address if either the interface or the mac is on the
- * configured list.
- * @param interf pointer to interface name
- * @param mac pointer to mac address, will be changed if necessary
- */
-static void
-_anonymize_if_necessary(const char *interf, struct netaddr *mac) {
-  static uint32_t count = 0;
-
-  struct anonymized_mac *amac;
-  bool anonymize;
-  char *ptr;
-
-  /* check if interface should be anonymized */
-  FOR_ALL_STRINGS(&_config.anonymize_ifs, ptr) {
-    if (strcmp(ptr, interf) == 0) {
-      anonymize = true;
-      break;
-    }
-  }
-
-  if (anonymize || netaddr_acl_check_accept(&_config.anonymize_macs, mac)) {
-    /* anonymize mac address */
-    if ((amac = avl_find_element(&_anonymized_tree, mac, amac, _node)) != NULL) {
-      memcpy(mac, &amac->anonymized, sizeof(*mac));
-      return;
-    }
-
-    /* generate new anonymized mac */
-    amac = oonf_class_malloc(&_amac_info);
-    if (amac == NULL) {
-      OONF_WARN(LOG_NL80211, "Out of memory for anonymized mac!");
-      return;
-    }
-
-    /* copy original address */
-    memcpy(&amac->mac, mac, sizeof(*mac));
-
-    netaddr_create_host_bin(&amac->anonymized, &_config.anonymized_prefix,
-        &count, sizeof(count));
-    count++;
-  }
 }
 
 /**
@@ -437,8 +345,6 @@ _parse_cmd_new_station(struct nlmsghdr *hdr) {
     return;
   }
 
-  _anonymize_if_necessary(if_name, &mac);
-
   OONF_DEBUG(LOG_NL80211, "Add neighbor %s for network %s",
       netaddr_to_string(&buf1, &mac), netaddr_to_string(&buf2, &if_data->mac));
 
@@ -450,13 +356,8 @@ _parse_cmd_new_station(struct nlmsghdr *hdr) {
   }
 
   /* make sure that the network is there */
-  if (oonf_layer2_get_network_by_id(&if_data->mac) == NULL) {
-    OONF_DEBUG(LOG_NL80211, "Add empty network %s for neighbor %s",
-        netaddr_to_string(&buf2, &if_data->mac), netaddr_to_string(&buf1, &mac));
-
-    oonf_layer2_add_network(&if_data->mac, if_index,
+  oonf_layer2_add_network(&if_data->mac, if_index,
         _config.interval + _config.interval / 4);
-  }
 
   /* reset all existing data */
   oonf_layer2_neighbor_clear(neigh);
@@ -924,33 +825,63 @@ _send_nl80211_get_scan_dump(int if_idx) {
  */
 static void
 _cb_transmission_event(void *ptr __attribute__((unused))) {
-  static bool station_dump = false;
-  static int if_number = -1;
-  struct oonf_interface_data *data;
+  struct oonf_interface *interf;
 
-  if (_nl80211_id == -1 || _config.if_listener == NULL
-      || _config.if_listener_count == 0) {
-    return;
-  }
-
-  if_number++;
-  if (if_number >= _config.if_listener_count) {
-    if_number = 0;
-    station_dump = !station_dump;
-  }
-
-  data = &_config.if_listener[if_number].interface->data;
-  if (!data->up) {
-    return;
-  }
-
-  OONF_DEBUG(LOG_NL80211, "Send Query to NL80211 interface %s", data->name);
-  if (station_dump) {
-    _send_nl80211_get_station_dump(data->index);
+  if (_last_queried_if[0] == 0) {
+    /* get first interface */
+    interf = avl_first_element(&oonf_interface_tree, interf, _node);
   }
   else {
-    _send_nl80211_get_scan_dump(data->index);
+    /* get next interface */
+    interf = avl_find_ge_element(&oonf_interface_tree, _last_queried_if, interf, _node);
+
+    if (interf != NULL && strcmp(_last_queried_if, interf->data.name) == 0) {
+      interf = avl_next_element_safe(&oonf_interface_tree, interf, _node);
+    }
   }
+
+  if (!interf && _next_query_type < QUERY_COUNT-1) {
+    /* begin next query type */
+    _next_query_type++;
+    interf = avl_first_element(&oonf_interface_tree, interf, _node);
+  }
+
+  if (!interf) {
+    /* nothing to do anymore */
+    memset(_last_queried_if, 0, sizeof(_last_queried_if));
+    _next_query_type = QUERY_FIRST;
+    return;
+  }
+  else {
+    strscpy(_last_queried_if, interf->data.name, sizeof(_last_queried_if));
+  }
+
+  OONF_DEBUG(LOG_NL80211, "Send Query %d to NL80211 interface %s",
+      _next_query_type, interf->data.name);
+  if (_next_query_type == QUERY_STATION_DUMP) {
+    _send_nl80211_get_station_dump(interf->data.index);
+  }
+  else if (_next_query_type == QUERY_SCAN_DUMP){
+    _send_nl80211_get_scan_dump(interf->data.index);
+  }
+}
+
+static void
+_cb_nl_error(uint32_t seq, int error) {
+  OONF_DEBUG(LOG_NL80211, "%u: Received error %d", seq, error);
+  _cb_transmission_event(NULL);
+}
+
+static void
+_cb_nl_timeout(void) {
+  OONF_DEBUG(LOG_NL80211, "Received timeout");
+  _cb_transmission_event(NULL);
+}
+
+static void
+_cb_nl_done(uint32_t seq) {
+  OONF_DEBUG(LOG_NL80211, "%u: Received done", seq);
+  _cb_transmission_event(NULL);
 }
 
 /**
@@ -958,102 +889,13 @@ _cb_transmission_event(void *ptr __attribute__((unused))) {
  */
 static void
 _cb_config_changed(void) {
-  struct _nl80211_config cfg;
-  int i;
-  char *ptr;
-
-  memset(&cfg, 0, sizeof(cfg));
-  if (cfg_schema_tobin(&cfg, _nl80211_section.post,
+  if (cfg_schema_tobin(&_config, _nl80211_section.post,
       _nl80211_entries, ARRAYSIZE(_nl80211_entries))) {
-    OONF_WARN(LOG_NL80211, "Could not convert nl80211_listener config to bin");
+    OONF_WARN(LOG_NL80211, "Could not convert %s config to bin",
+        OONF_PLUGIN_GET_NAME());
     return;
   }
-
-  /* count interfaces */
-  i = 0;
-  FOR_ALL_STRINGS(&cfg.interf, ptr) {
-    i++;
-  }
-
-  OONF_DEBUG(LOG_NL80211, "Configure nl80211 to %d interfaces", i);
-
-  cfg.if_listener = calloc(i, sizeof(struct oonf_interface_listener));
-  if (cfg.if_listener == NULL) {
-    OONF_WARN(LOG_NL80211, "Not enough memory for nl80211 interface listener");
-    return;
-  }
-
-  /* initialize olsr interface listeners */
-  i = 0;
-  FOR_ALL_STRINGS(&cfg.interf, ptr) {
-    cfg.if_listener[i].name = ptr;
-    oonf_interface_add_listener(&cfg.if_listener[i]);
-    i++;
-  }
-
-  cfg.if_listener_count = i;
-
-  /* free old resources */
-  if (_config.if_listener) {
-    i = 0;
-    FOR_ALL_STRINGS(&_config.interf, ptr) {
-      oonf_interface_remove_listener(&_config.if_listener[i]);
-      i++;
-    }
-    free(_config.if_listener);
-  }
-  strarray_free(&_config.interf);
-
-  /* copy temporary configuration */
-  memcpy(&_config, &cfg, sizeof(_config));
 
   /* half of them station dumps, half of them passive scans */
-  oonf_timer_start(&_transmission_timer, _config.interval / (2*i));
-}
-
-/**
- * Check configuration section
- * @param section_name
- * @param named
- * @param out
- * @return
- */
-static int
-_cb_config_validate(const char *section_name,
-    struct cfg_named_section *named, struct autobuf *out) {
-  struct _nl80211_config cfg;
-  char *ptr1, *ptr2;
-  bool found;
-
-  memset(&cfg, 0, sizeof(cfg));
-  if (cfg_schema_tobin(&cfg, named,
-      _nl80211_entries, ARRAYSIZE(_nl80211_entries))) {
-    return -1;
-  }
-
-  if (netaddr_get_address_family(&cfg.anonymized_prefix) != AF_MAC48
-      || netaddr_get_prefix_length(&cfg.anonymized_prefix) != 32) {
-    cfg_append_printable_line(out,
-        "Prefix %s for anonymized macs must be 32 bit long", section_name);
-    return -1;
-  }
-
-  FOR_ALL_STRINGS(&cfg.anonymize_ifs, ptr1) {
-    found = false;
-
-    FOR_ALL_STRINGS(&cfg.interf, ptr2) {
-      if (strcmp(ptr1, ptr2) == 0) {
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
-      cfg_append_printable_line(out,
-          "Anonymized interface '%s' in entry '%s' is not found in list of interfaces to probe",
-          ptr1, section_name);
-      return -1;
-    }
-  }
-  return 0;
+  oonf_timer_start(&_transmission_timer, _config.interval);
 }
