@@ -88,4 +88,12 @@ os_net_bindto_interface(int sock, struct oonf_interface_data *data) {
   return setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, data->name, strlen(data->name) + 1);
 }
 
+/**
+ * @return name of loopback interface
+ */
+static inline const char *
+on_net_get_loopback_name(void) {
+  return "lo";
+}
+
 #endif /* OS_NET_LINUX_H_ */

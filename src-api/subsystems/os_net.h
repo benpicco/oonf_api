@@ -111,6 +111,7 @@ static INLINE int os_net_bindto_interface(int, struct oonf_interface_data *data)
 static INLINE int os_close(int fd);
 static INLINE int os_select(
     int num, fd_set *r,fd_set *w,fd_set *e, struct timeval *timeout);
+static INLINE const char *on_net_get_loopback_name(void);
 
 /* include os-specific headers */
 #if defined(__linux__)
