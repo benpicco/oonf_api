@@ -188,9 +188,8 @@ os_net_update_interface(struct oonf_interface_data *ifdata,
     return -1;
   }
 
-  if ((ifr.ifr_flags & (IFF_UP | IFF_RUNNING)) == (IFF_UP|IFF_RUNNING)) {
-    ifdata->up = true;
-  }
+  ifdata->up = (ifr.ifr_flags & (IFF_UP | IFF_RUNNING)) == (IFF_UP|IFF_RUNNING);
+  ifdata->loopback = (ifr.ifr_flags & IFF_LOOPBACK) != 0;
 
   memset(&ifr, 0, sizeof(ifr));
   strscpy(ifr.ifr_name, ifdata->name, IF_NAMESIZE);

@@ -74,6 +74,9 @@ struct oonf_interface_data {
 
   /* true if the interface exists and is up */
   bool up;
+
+  /* true if this is a loopback interface */
+  bool loopback;
 };
 
 struct oonf_interface {
