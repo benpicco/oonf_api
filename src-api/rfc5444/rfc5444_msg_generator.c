@@ -201,6 +201,11 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
     }
   }
 
+  /* make sure all address index values are initialized */
+  list_for_each_element(&msg->_addr_head, addr, _addr_node) {
+ //   addr->index = -1;
+  }
+
   not_fragmented = true;
   /* no addresses ? */
   if (list_is_empty(&msg->_addr_head)) {
@@ -953,9 +958,9 @@ _write_tlvtype(struct rfc5444_writer_address *addr_start, struct rfc5444_writer_
   uint8_t *flag;
 
   /* find first/last tlv for this address block */
-  tlv_start = avl_find_ge_element(&tlvtype->_tlv_tree, &addr_start->index, tlv_start, tlv_node);
+  tlv_start = avl_find_ge_element(&tlvtype->_tlv_tree, &addr_start->_orig_index, tlv_start, tlv_node);
 
-  while (tlv_start != NULL && tlv_start->address->index <= addr_end->index) {
+  while (tlv_start != NULL && tlv_start->address->_orig_index <= addr_end->_orig_index) {
     bool same_value;
 
     /* get end of local TLV-Block and value-mode */
@@ -1068,6 +1073,7 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
 #endif
 
     addr_end = addr_start->_block_end;
+
 #if DO_ADDR_COMPRESSION == true
     if (addr_start != addr_end) {
       /* only use head/tail for address blocks with multiple addresses */

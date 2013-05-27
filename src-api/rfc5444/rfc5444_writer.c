@@ -210,7 +210,7 @@ rfc5444_writer_add_addrtlv(struct rfc5444_writer *writer, struct rfc5444_writer_
   avl_insert(&addr->_addrtlv_tree, &addrtlv->addrtlv_node);
 
   /* add to tlvtype tree */
-  addrtlv->tlv_node.key = &addr->index;
+  addrtlv->tlv_node.key = &addr->_orig_index;
   avl_insert(&tlvtype->_tlv_tree, &addrtlv->tlv_node);
 
   return RFC5444_OKAY;
@@ -275,9 +275,14 @@ rfc5444_writer_add_address(struct rfc5444_writer *writer __attribute__ ((unused)
 #endif
     address->prefixlen = prefix;
 
-    address->_addr_tree_node.key = address->addr;
+    /* calculate original index of address */
+    address->_orig_index = msg->_addr_tree.count;
 
+    /* add address to address list */
     list_add_tail(&msg->_addr_head, &address->_addr_node);
+
+    /* add address into message address tree */
+    address->_addr_tree_node.key = address->addr;
     avl_insert(&msg->_addr_tree, &address->_addr_tree_node);
 
     avl_init(&address->_addrtlv_tree, avl_comp_uint32, true);
@@ -692,6 +697,7 @@ _rfc5444_writer_free_addresses(struct rfc5444_writer *writer, struct rfc5444_wri
   /* allow overwriting of addrtlv-value buffer */
   writer->_addrtlv_used = 0;
 }
+
 /**
  * Free message object if not in use anymore
  * @param writer pointer to writer context

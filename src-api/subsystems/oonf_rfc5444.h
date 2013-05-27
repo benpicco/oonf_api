@@ -272,7 +272,8 @@ oonf_rfc5444_get_core_interface(struct oonf_rfc5444_interface *interf) {
  */
 static inline bool
 oonf_rfc5444_is_target_active(struct oonf_rfc5444_target *target) {
-  return oonf_packet_managed_is_active(&target->interface->_socket,
+  return target != NULL &&
+      oonf_packet_managed_is_active(&target->interface->_socket,
       netaddr_get_address_family(&target->dst));
 }
 

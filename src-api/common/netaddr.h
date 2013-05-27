@@ -70,6 +70,13 @@ enum {
 /* maximum number of octets for address */
 enum { NETADDR_MAX_LENGTH = 16 };
 
+/* text names for defining netaddr prefixes */
+#define NETADDR_STR_ANY4       "any4"
+#define NETADDR_STR_ANY6       "any6"
+#define NETADDR_STR_LINKLOCAL4 "linklocal4"
+#define NETADDR_STR_LINKLOCAL6 "linklocal6"
+#define NETADDR_STR_ULA        "ula"
+
 /**
  * Representation of an address including address type
  * At the moment we support AF_INET, AF_INET6 and AF_MAC48
@@ -124,7 +131,7 @@ EXPORT extern const struct netaddr NETADDR_UNSPEC;
 EXPORT extern const struct netaddr NETADDR_IPV4_ANY;
 EXPORT extern const struct netaddr NETADDR_IPV4_MULTICAST;
 EXPORT extern const struct netaddr NETADDR_IPV4_LINKLOCAL;
-EXPORT extern const struct netaddr NETADDR_IPV4_LOOPBACK;
+EXPORT extern const struct netaddr NETADDR_IPV4_LOOPBACK_NET;
 
 EXPORT extern const struct netaddr NETADDR_IPV6_ANY;
 EXPORT extern const struct netaddr NETADDR_IPV6_MULTICAST;

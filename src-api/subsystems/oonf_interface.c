@@ -219,28 +219,6 @@ oonf_interface_get_data(const char *name, struct oonf_interface_data *buf) {
 }
 
 /**
- * Find an IP address of an interface fitting to a specified prefix.
- * Destination will only be overwritten if address was found.
- * @param dst pointer to target address buffer
- * @param prefix specified prefix of address
- * @param ifdata interface data
- * @return 0 if an address was found, -1 otherwise
- */
-int
-oonf_interface_find_address(struct netaddr *dst,
-    struct netaddr *prefix, struct oonf_interface_data *ifdata) {
-  size_t i;
-
-  for (i=0; i<ifdata->addrcount; i++) {
-    if (netaddr_is_in_subnet(prefix, &ifdata->addresses[i])) {
-      memcpy(dst, &ifdata->addresses[i], sizeof(*dst));
-      return 0;
-    }
-  }
-  return -1;
-}
-
-/**
  * Add an interface to the listener system
  * @param if_index index of interface
  * @param mesh true if interface is used for mesh traffic

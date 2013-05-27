@@ -100,7 +100,4 @@ EXPORT struct oonf_interface_data *oonf_interface_get_data(
 EXPORT void oonf_interface_trigger_change(const char *name, bool down);
 EXPORT void oonf_interface_trigger_handler(struct oonf_interface *interf);
 
-EXPORT int oonf_interface_find_address(struct netaddr *dst,
-    struct netaddr *prefix, struct oonf_interface_data *);
-
 #endif /* INTERFACE_H_ */

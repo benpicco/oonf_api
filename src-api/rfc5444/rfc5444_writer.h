@@ -141,6 +141,9 @@ struct rfc5444_writer_address {
   uint8_t _block_headlen;
   bool _block_multiple_prefixlen;
 
+  /* original index of the address when it was added to the output list */
+  int _orig_index;
+
   /* handle mandatory addresses for message fragmentation */
   bool _mandatory_addr;
   bool _done;

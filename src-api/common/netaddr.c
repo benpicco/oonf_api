@@ -75,8 +75,20 @@ const struct netaddr NETADDR_IPV6_ULA = { { 0xfc,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 const struct netaddr NETADDR_IPV6_IPV4COMPATIBLE = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET6, 96 };
 const struct netaddr NETADDR_IPV6_IPV4MAPPED = { {0,0,0,0,0,0,0,0,0,0,0xff,0xff,0,0,0,0}, AF_INET6, 96 };
 
-const struct netaddr NETADDR_IPV4_LOOPBACK = { {127,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET, 8 };
+const struct netaddr NETADDR_IPV4_LOOPBACK_NET = { {127,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0}, AF_INET, 8 };
 const struct netaddr NETADDR_IPV6_LOOPBACK = { {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1}, AF_INET6, 128 };
+
+/* List of predefined address prefixes */
+const struct {
+  const char *name;
+  const struct netaddr *prefix;
+} _known_prefixes[] = {
+  { NETADDR_STR_ANY4, &NETADDR_IPV4_ANY },
+  { NETADDR_STR_ANY6, &NETADDR_IPV6_ANY },
+  { NETADDR_STR_LINKLOCAL4, &NETADDR_IPV4_LINKLOCAL },
+  { NETADDR_STR_LINKLOCAL6, &NETADDR_IPV6_LINKLOCAL },
+  { NETADDR_STR_ULA, &NETADDR_IPV6_ULA },
+};
 
 /**
  * Read the binary representation of an address into a netaddr object
@@ -400,12 +412,21 @@ netaddr_from_string(struct netaddr *dst, const char *src) {
   bool has_coloncolon, has_point;
   bool last_was_colon;
   char *ptr1, *ptr2, *ptr3;
+  size_t i;
 
   memset(dst, 0, sizeof(*dst));
 
   if (strcmp(src, "-") == 0) {
     /* unspec */
     return 0;
+  }
+
+  /* handle string representations of prefixes */
+  for (i=0; i<ARRAYSIZE(_known_prefixes); i++) {
+    if (strcasecmp(src, _known_prefixes[i].name) == 0) {
+      memcpy(dst, _known_prefixes[i].prefix, sizeof(*dst));
+      return 0;
+    }
   }
 
   colon_count = 0;

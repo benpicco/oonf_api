@@ -232,6 +232,10 @@ os_net_update_interface(struct oonf_interface_data *ifdata,
     return -1;
   }
 
+  ifdata->if_v4 = &NETADDR_UNSPEC;
+  ifdata->if_v6 = &NETADDR_UNSPEC;
+  ifdata->linklocal_v6_ptr = &NETADDR_UNSPEC;
+
   for (ifa = ifaddrs; ifa != NULL; ifa = ifa->ifa_next) {
     if (strcmp(ifdata->name, ifa->ifa_name) == 0 &&
         (ifa->ifa_addr->sa_family == AF_INET || ifa->ifa_addr->sa_family == AF_INET6)) {
@@ -242,8 +246,7 @@ os_net_update_interface(struct oonf_interface_data *ifdata,
         ifdata->addrcount++;
 
         if (netaddr_get_address_family(addr) == AF_INET) {
-          if (!(netaddr_is_in_subnet(&NETADDR_IPV4_LOOPBACK, addr)
-              || netaddr_is_in_subnet(&NETADDR_IPV4_MULTICAST, addr))) {
+          if (!netaddr_is_in_subnet(&NETADDR_IPV4_MULTICAST, addr)) {
             ifdata->if_v4 = addr;
           }
         }
@@ -251,8 +254,7 @@ os_net_update_interface(struct oonf_interface_data *ifdata,
           if (netaddr_is_in_subnet(&NETADDR_IPV6_LINKLOCAL, addr)) {
             ifdata->linklocal_v6_ptr = addr;
           }
-          else if (!(netaddr_cmp(&NETADDR_IPV6_LOOPBACK, addr) == 0
-              || netaddr_is_in_subnet(&NETADDR_IPV6_MULTICAST, addr)
+          else if (!(netaddr_is_in_subnet(&NETADDR_IPV6_MULTICAST, addr)
               || netaddr_is_in_subnet(&NETADDR_IPV6_IPV4COMPATIBLE, addr)
               || netaddr_is_in_subnet(&NETADDR_IPV6_IPV4MAPPED, addr))) {
             ifdata->if_v6 = addr;

@@ -46,6 +46,7 @@
 #include "common/list.h"
 #include "common/autobuf.h"
 #include "common/netaddr.h"
+#include "common/netaddr_acl.h"
 #include "core/oonf_logging.h"
 #include "core/oonf_subsystem.h"
 #include "subsystems/os_net.h"
@@ -58,9 +59,12 @@ static int _init(void);
 static void _cleanup(void);
 
 static int _apply_managed(struct oonf_packet_managed *managed);
-static int _apply_managed_socketpair(struct oonf_packet_managed *managed,
+static int _get_socket_bindaddress(struct netaddr *bindto, int af_type,
+    struct netaddr_acl *filter, struct oonf_interface_data *ifdata);
+static int _apply_managed_socketpair(int af_type,
+    struct oonf_packet_managed *managed,
     struct oonf_interface_data *data, bool *changed,
-    struct oonf_packet_socket *sock, struct netaddr *bind_ip,
+    struct oonf_packet_socket *sock, struct netaddr_acl *bind_ip,
     struct oonf_packet_socket *mc_sock, struct netaddr *mc_ip);
 static int _apply_managed_socket(struct oonf_packet_managed *managed,
     struct oonf_packet_socket *stream, struct netaddr *bindto, int port,
@@ -379,14 +383,14 @@ _apply_managed(struct oonf_packet_managed *managed) {
     data = &managed->_if_listener.interface->data;
   }
 
-  if (_apply_managed_socketpair(managed, data, &changed,
-      &managed->socket_v4, &managed->_managed_config.bindto_v4,
+  if (_apply_managed_socketpair(AF_INET, managed, data, &changed,
+      &managed->socket_v4, &managed->_managed_config.bindto,
       &managed->multicast_v4, &managed->_managed_config.multicast_v4)) {
     result = -1;
   }
 
-  if (_apply_managed_socketpair(managed, data, &changed,
-      &managed->socket_v6, &managed->_managed_config.bindto_v6,
+  if (_apply_managed_socketpair(AF_INET6, managed, data, &changed,
+      &managed->socket_v6, &managed->_managed_config.bindto,
       &managed->multicast_v6, &managed->_managed_config.multicast_v6)) {
     result = -1;
   }
@@ -395,6 +399,55 @@ _apply_managed(struct oonf_packet_managed *managed) {
     managed->cb_settings_change(managed, changed);
   }
   return result;
+}
+
+/**
+ * Calculate the IP address a socket should bind to
+ * @param bindto pointer to buffer for result, will only be
+ *   overwritten if a fitting address is found.
+ * @param filter filter for IP address to bind on
+ * @param ifdata interface to bind to socket on, NULL if not
+ *   bound to an interface.
+ * @return 0 if an IP was calculated, -1 otherwise
+ */
+static int
+_get_socket_bindaddress(struct netaddr *bindto, int af_type,
+    struct netaddr_acl *filter, struct oonf_interface_data *ifdata) {
+  size_t i;
+
+  if (ifdata == NULL) {
+    /*
+     * run through accept list of filter, looking for address
+     * with full prefix length or zero prefix length
+     */
+    for (i=0; i<filter->accept_count; i++) {
+      if (netaddr_get_address_family(&filter->accept[i]) != af_type) {
+        continue;
+      }
+
+      if (netaddr_get_prefix_length(&filter->accept[i]) == 0
+          || netaddr_get_prefix_length(&filter->accept[i])
+             == netaddr_get_maxprefix(&filter->accept[i])) {
+        /* full address or any address match */
+        memcpy(bindto, &filter->accept[i], sizeof(*bindto));
+        return 0;
+      }
+    }
+  }
+  else {
+    /* run through interface address list looking for filter match */
+    for (i=0; i<ifdata->addrcount; i++) {
+      if (netaddr_get_address_family(&ifdata->addresses[i]) != af_type) {
+        continue;
+      }
+
+      if (netaddr_acl_check_accept(filter, &ifdata->addresses[i])) {
+        memcpy(bindto, &ifdata->addresses[i], sizeof(*bindto));
+        return 0;
+      }
+    }
+  }
+  return -1;
 }
 
 /**
@@ -408,13 +461,14 @@ _apply_managed(struct oonf_packet_managed *managed) {
  * @return
  */
 static int
-_apply_managed_socketpair(struct oonf_packet_managed *managed,
+_apply_managed_socketpair(int af_type, struct oonf_packet_managed *managed,
     struct oonf_interface_data *data, bool *changed,
-    struct oonf_packet_socket *sock, struct netaddr *bind_ip,
+    struct oonf_packet_socket *sock, struct netaddr_acl *bind_ip_acl,
     struct oonf_packet_socket *mc_sock, struct netaddr *mc_ip) {
   int sockstate = 0, result = 0;
   uint16_t mc_port;
   bool real_multicast;
+  struct netaddr bind_ip;
 
   /* copy unicast port if necessary */
   mc_port = managed->_managed_config.multicast_port;
@@ -422,10 +476,17 @@ _apply_managed_socketpair(struct oonf_packet_managed *managed,
     mc_port = managed->_managed_config.port;
   }
 
-  if (netaddr_get_address_family(bind_ip) == AF_UNSPEC) {
+  /* Get address the unicast socket should bind on */
+  if (_get_socket_bindaddress(&bind_ip, af_type, bind_ip_acl, data)) {
     oonf_packet_remove(sock, false);
     oonf_packet_remove(mc_sock, false);
     return 0;
+  }
+
+  /* handle loopback interface */
+  if (data != NULL && data->loopback
+      && netaddr_get_address_family(mc_ip) != AF_UNSPEC) {
+    memcpy(mc_ip, &bind_ip, sizeof(*mc_ip));
   }
 
   /* check if multicast IP is a real multicast (and not a broadcast) */
@@ -435,7 +496,7 @@ _apply_managed_socketpair(struct oonf_packet_managed *managed,
       mc_ip);
 
   sockstate = _apply_managed_socket(
-      managed, sock, bind_ip, managed->_managed_config.port, data);
+      managed, sock, &bind_ip, managed->_managed_config.port, data);
   if (sockstate == 0) {
     /* settings really changed */
     *changed = true;
@@ -502,32 +563,7 @@ _apply_managed_socket(struct oonf_packet_managed *managed,
     struct netaddr *bindto, int port,
     struct oonf_interface_data *data) {
   union netaddr_socket sock;
-  struct netaddr _bind_to;
   struct netaddr_str buf;
-
-  /* Handle prefix based address selection */
-  if (netaddr_get_prefix_length(bindto) != netaddr_get_maxprefix(bindto)) {
-    if (data == NULL) {
-      if (memcmp(bindto, &NETADDR_IPV4_ANY, sizeof(*bindto)) != 0
-          && memcmp(bindto, &NETADDR_IPV6_ANY, sizeof(*bindto)) != 0) {
-        OONF_WARN(LOG_PACKET, "Cannot use prefix %s to look for "
-            "an interface address without specified interface",
-            netaddr_to_string(&buf, bindto));
-        return -1;
-      }
-    }
-    else if (data->up) {
-      if (oonf_interface_find_address(&_bind_to, bindto, data)) {
-        OONF_WARN(LOG_PACKET, "Could not find a fitting address for "
-            "prefix %s on interface %s",
-            netaddr_to_string(&buf, bindto), data->name);
-        return -1;
-      }
-      else {
-        bindto = &_bind_to;
-      }
-    }
-  }
 
   /* create binding socket */
   if (netaddr_socket_init(&sock, bindto, port,

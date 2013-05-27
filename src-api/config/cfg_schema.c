@@ -68,7 +68,6 @@ static void _handle_named_section_change(struct cfg_schema_section *s_section,
     struct cfg_named_section *post_defnamed);
 static int _handle_db_changes(struct cfg_db *pre_change,
     struct cfg_db *post_change, bool startup);
-static int _get_known_prefix(struct netaddr *dst, const char *name);
 
 const char *CFGLIST_BOOL_TRUE[] = { "true", "1", "on", "yes" };
 const char *CFGLIST_BOOL[] = { "true", "1", "on", "yes", "false", "0", "off", "no" };
@@ -78,18 +77,6 @@ const char *CFG_SCHEMA_SECTIONMODE[CFG_SSMODE_MAX] = {
   [CFG_SSMODE_NAMED] = "named",
   [CFG_SSMODE_NAMED_MANDATORY] = "named, mandatory",
   [CFG_SSMODE_NAMED_WITH_DEFAULT] = "named, default name",
-};
-
-/* List of predefined address prefixes */
-const struct {
-  const char *name;
-  const struct netaddr *prefix;
-} _known_prefixes[] = {
-  { NETADDR_STR_ANY4, &NETADDR_IPV4_ANY },
-  { NETADDR_STR_ANY6, &NETADDR_IPV6_ANY },
-  { NETADDR_STR_LINKLOCAL4, &NETADDR_IPV4_LINKLOCAL },
-  { NETADDR_STR_LINKLOCAL6, &NETADDR_IPV6_LINKLOCAL },
-  { NETADDR_STR_ULA, &NETADDR_IPV6_ULA },
 };
 
 /**
@@ -575,13 +562,11 @@ cfg_schema_validate_netaddr(const struct cfg_schema_entry *entry,
   uint8_t max_prefix;
   int i;
 
-  if (_get_known_prefix(&addr, value)) {
-    if (netaddr_from_string(&addr, value)) {
-      cfg_append_printable_line(out, "Value '%s' for entry '%s'"
-          " in section %s is no valid network address",
-          value, entry->key.entry, section_name);
-      return -1;
-    }
+  if (netaddr_from_string(&addr, value)) {
+    cfg_append_printable_line(out, "Value '%s' for entry '%s'"
+        " in section %s is no valid network address",
+        value, entry->key.entry, section_name);
+    return -1;
   }
 
   max_prefix = netaddr_get_maxprefix(&addr);
@@ -1005,9 +990,6 @@ cfg_schema_tobin_netaddr(const struct cfg_schema_entry *s_entry __attribute__((u
 
   ptr = (struct netaddr *)reference;
 
-  if (!_get_known_prefix(ptr, strarray_get_first_c(value))) {
-    return 0;
-  }
   return netaddr_from_string(ptr, strarray_get_first_c(value));
 }
 
@@ -1365,26 +1347,4 @@ _handle_named_section_change(struct cfg_schema_section *s_section,
     s_section->section_name = name;
     s_section->cb_delta_handler();
   }
-}
-
-/**
- * Lookup if the name is in the list of known prefixes and
- * sets the address if the name is found.
- * Netaddr target will not be touched if name is not in known
- * prefix list.
- * @param dst pointer to target netaddr
- * @param name text name to look for
- * @return 0 if name was found, -1 otherwise
- */
-static int
-_get_known_prefix(struct netaddr *dst, const char *name) {
-  size_t i;
-
-  for (i=0; i<ARRAYSIZE(_known_prefixes); i++) {
-    if (strcasecmp(name, _known_prefixes[i].name) == 0) {
-      memcpy(dst, _known_prefixes[i].prefix, sizeof(*dst));
-      return 0;
-    }
-  }
-  return -1;
 }

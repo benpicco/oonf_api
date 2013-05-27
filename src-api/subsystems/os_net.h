@@ -54,10 +54,10 @@
 
 struct oonf_interface_data {
   /* Interface addresses with mesh-wide scope (at least) */
-  struct netaddr *if_v4, *if_v6;
+  const struct netaddr *if_v4, *if_v6;
 
   /* IPv6 Interface address with global scope */
-  struct netaddr *linklocal_v6_ptr;
+  const struct netaddr *linklocal_v6_ptr;
 
   /* mac address of interface */
   struct netaddr mac;
