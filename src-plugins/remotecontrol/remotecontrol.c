@@ -97,8 +97,8 @@ static enum oonf_telnet_result _start_logging(struct oonf_telnet_data *data,
     struct _remotecontrol_session *rc_session);
 static void _stop_logging(struct oonf_telnet_data *data);
 
-static void _cb_print_log(struct log_handler_entry *,
-    struct log_parameters *);
+static void _cb_print_log(struct oonf_log_handler_entry *,
+    struct oonf_log_parameters *);
 
 static void _cb_route_finished(struct os_route *, int error);
 static void _cb_route_get(struct os_route *filter, struct os_route *route);
@@ -186,7 +186,7 @@ static struct oonf_telnet_command _telnet_cmds[] = {
 /* list of telnet sessions with logging mask data */
 static struct list_entity _remote_sessions;
 
-static enum log_source LOG_REMOTECONTROL;
+static enum oonf_log_source LOG_REMOTECONTROL;
 
 /**
  * Initialize remotecontrol plugin
@@ -295,8 +295,8 @@ static enum oonf_telnet_result
 _update_logfilter(struct oonf_telnet_data *data,
     uint8_t *mask, const char *param, bool value) {
   const char *next;
-  enum log_source src;
-  enum log_severity sev;
+  enum oonf_log_source src;
+  enum oonf_log_severity sev;
 
   OONF_FOR_ALL_LOGSEVERITIES(sev) {
     if ((next = str_hasnextword(param, LOG_SEVERITY_NAMES[sev])) != NULL) {
@@ -338,8 +338,8 @@ _update_logfilter(struct oonf_telnet_data *data,
  * @param param logging parameter set
  */
 static void
-_cb_print_log(struct log_handler_entry *h __attribute__((unused)),
-    struct log_parameters *param) {
+_cb_print_log(struct oonf_log_handler_entry *h __attribute__((unused)),
+    struct oonf_log_parameters *param) {
   struct oonf_telnet_data *data = h->custom;
 
   abuf_puts(data->out, param->buffer);
@@ -355,7 +355,7 @@ _cb_print_log(struct log_handler_entry *h __attribute__((unused)),
  */
 static void
 _stop_logging(struct oonf_telnet_data *session) {
-  struct log_handler_entry *log_handler;
+  struct oonf_log_handler_entry *log_handler;
 
   log_handler = session->stop_data[0];
 
@@ -374,7 +374,7 @@ _stop_logging(struct oonf_telnet_data *session) {
 static enum oonf_telnet_result
 _start_logging(struct oonf_telnet_data *data,
     struct _remotecontrol_session *rc_session) {
-  struct log_handler_entry *log_handler;
+  struct oonf_log_handler_entry *log_handler;
 
   log_handler = calloc(1, sizeof(*log_handler));
   if (log_handler == NULL) {
@@ -400,7 +400,7 @@ static enum oonf_telnet_result
 _cb_handle_log(struct oonf_telnet_data *data) {
   struct _remotecontrol_session *rc_session;
   const char *next;
-  enum log_source src;
+  enum oonf_log_source src;
 
   rc_session = _get_remotecontrol_session(data);
   if (rc_session == NULL) {

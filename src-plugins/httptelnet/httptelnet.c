@@ -92,7 +92,7 @@ struct oonf_subsystem oonf_httptelnet_subsystem = {
 };
 DECLARE_OONF_PLUGIN(oonf_httptelnet_subsystem);
 
-static enum log_source LOG_HTTPTELNET;
+static enum oonf_log_source LOG_HTTPTELNET;
 
 /**
  * Constructor of plugin

@@ -112,10 +112,10 @@ const char *LOG_SEVERITY_NAMES[LOG_SEVERITY_MAX+1] = {
  * @return -1 if an error happened, 0 otherwise
  */
 int
-oonf_log_init(const struct oonf_appdata *data, enum log_severity def_severity)
+oonf_log_init(const struct oonf_appdata *data, enum oonf_log_severity def_severity)
 {
-  enum log_severity sev;
-  enum log_source src;
+  enum oonf_log_severity sev;
+  enum oonf_log_source src;
   size_t len;
 
   _appdata = data;
@@ -167,8 +167,8 @@ oonf_log_init(const struct oonf_appdata *data, enum log_severity def_severity)
 void
 oonf_log_cleanup(void)
 {
-  struct log_handler_entry *h, *iterator;
-  enum log_source src;
+  struct oonf_log_handler_entry *h, *iterator;
+  enum oonf_log_source src;
 
   /* remove all handlers */
   FOR_ALL_LOGHANDLERS(h, iterator) {
@@ -189,7 +189,7 @@ oonf_log_cleanup(void)
  * @return -1 if an out of memory error happened, 0 otherwise
  */
 void
-oonf_log_addhandler(struct log_handler_entry *h)
+oonf_log_addhandler(struct oonf_log_handler_entry *h)
 {
   list_add_tail(&_handler_list, &h->node);
   oonf_log_updatemask();
@@ -200,7 +200,7 @@ oonf_log_addhandler(struct log_handler_entry *h)
  * @param h pointer to handler entry
  */
 void
-oonf_log_removehandler(struct log_handler_entry *h)
+oonf_log_removehandler(struct oonf_log_handler_entry *h)
 {
   list_remove(&h->node);
   oonf_log_updatemask();
@@ -304,8 +304,8 @@ oonf_log_printversion(struct autobuf *abuf) {
 void
 oonf_log_updatemask(void)
 {
-  enum log_source src;
-  struct log_handler_entry *h, *iterator;
+  enum oonf_log_source src;
+  struct oonf_log_handler_entry *h, *iterator;
   uint8_t mask;
 
   /* first reset global mask */
@@ -376,11 +376,11 @@ oonf_log_get_walltime(void) {
  * @param format printf format string for log output plus a variable number of arguments
  */
 void
-oonf_log(enum log_severity severity, enum log_source source, bool no_header,
+oonf_log(enum oonf_log_severity severity, enum oonf_log_source source, bool no_header,
     const char *file, int line, const char *format, ...)
 {
-  struct log_handler_entry *h, *iterator;
-  struct log_parameters param;
+  struct oonf_log_handler_entry *h, *iterator;
+  struct oonf_log_parameters param;
   va_list ap;
   int p1 = 0, p2 = 0, p3 = 0;
 
@@ -431,8 +431,8 @@ oonf_log(enum log_severity severity, enum log_source source, bool no_header,
  * @param param logging parameter set
  */
 void
-oonf_log_stderr(struct log_handler_entry *entry __attribute__ ((unused)),
-    struct log_parameters *param)
+oonf_log_stderr(struct oonf_log_handler_entry *entry __attribute__ ((unused)),
+    struct oonf_log_parameters *param)
 {
   fputs(param->buffer, stderr);
   fputc('\n', stderr);
@@ -444,8 +444,8 @@ oonf_log_stderr(struct log_handler_entry *entry __attribute__ ((unused)),
  * @param param logging parameter set
  */
 void
-oonf_log_file(struct log_handler_entry *entry,
-    struct log_parameters *param)
+oonf_log_file(struct oonf_log_handler_entry *entry,
+    struct oonf_log_parameters *param)
 {
   FILE *f;
 
@@ -461,8 +461,8 @@ oonf_log_file(struct log_handler_entry *entry,
  * @param param logging parameter set
  */
 void
-oonf_log_syslog(struct log_handler_entry *entry __attribute__ ((unused)),
-    struct log_parameters *param)
+oonf_log_syslog(struct oonf_log_handler_entry *entry __attribute__ ((unused)),
+    struct oonf_log_parameters *param)
 {
   os_syslog_log(param->severity, param->buffer + param->timeLength);
 }

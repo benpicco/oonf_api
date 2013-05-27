@@ -82,7 +82,7 @@ _cleanup(void) {
  * @param msg line to print
  */
 void
-os_syslog_log(enum log_severity severity, const char *msg) {
+os_syslog_log(enum oonf_log_severity severity, const char *msg) {
   int log_sev;
 
   switch (severity) {

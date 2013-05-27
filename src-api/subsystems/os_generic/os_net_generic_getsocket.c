@@ -60,7 +60,7 @@
 int
 os_net_getsocket(union netaddr_socket *bind_to,
     bool tcp, int recvbuf, struct oonf_interface_data *interf,
-    enum log_source log_src __attribute__((unused))) {
+    enum oonf_log_source log_src __attribute__((unused))) {
 
   int sock;
 

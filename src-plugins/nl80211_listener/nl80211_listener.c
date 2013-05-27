@@ -158,7 +158,7 @@ struct oonf_timer_entry _transmission_timer = {
 };
 
 /* logging source */
-enum log_source LOG_NL80211;
+enum oonf_log_source LOG_NL80211;
 
 /**
  * Constructor of plugin

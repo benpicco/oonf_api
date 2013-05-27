@@ -131,14 +131,14 @@ EXPORT extern struct oonf_subsystem oonf_os_net_subsystem;
 
 /* prototypes for all os_net functions */
 EXPORT int os_net_getsocket(union netaddr_socket *bindto,
-    bool tcp, int recvbuf, struct oonf_interface_data *, enum log_source log_src);
+    bool tcp, int recvbuf, struct oonf_interface_data *, enum oonf_log_source log_src);
 EXPORT int os_net_configsocket(int sock, union netaddr_socket *bindto,
-    int recvbuf, struct oonf_interface_data *, enum log_source log_src);
+    int recvbuf, struct oonf_interface_data *, enum oonf_log_source log_src);
 EXPORT int os_net_set_nonblocking(int sock);
 EXPORT int os_net_join_mcast_recv(int sock, struct netaddr *multicast,
-    struct oonf_interface_data *oif, enum log_source log_src);
+    struct oonf_interface_data *oif, enum oonf_log_source log_src);
 EXPORT int os_net_join_mcast_send(int sock, struct netaddr *multicast,
-    struct oonf_interface_data *oif, bool loop, enum log_source log_src);
+    struct oonf_interface_data *oif, bool loop, enum oonf_log_source log_src);
 EXPORT int os_net_update_interface(struct oonf_interface_data *, const char *);
 EXPORT int os_recvfrom(int fd, void *buf, size_t length,
     union netaddr_socket *source, struct oonf_interface_data *);

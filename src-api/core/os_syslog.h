@@ -48,6 +48,6 @@
 
 EXPORT extern struct oonf_subsystem oonf_os_syslog_subsystem;
 
-EXPORT void os_syslog_log(enum log_severity, const char *);
+EXPORT void os_syslog_log(enum oonf_log_severity, const char *);
 
 #endif /* OS_SYSLOG_H_ */

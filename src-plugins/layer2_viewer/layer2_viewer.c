@@ -252,7 +252,7 @@ struct _command_params _neigh_params = {
   .headline_filtered_table = "If\tRadio            \tNeighbor\n",
 };
 
-static enum log_source LOG_LAYER2_VIEWER;
+static enum oonf_log_source LOG_LAYER2_VIEWER;
 
 /**
  * Constructor of plugin

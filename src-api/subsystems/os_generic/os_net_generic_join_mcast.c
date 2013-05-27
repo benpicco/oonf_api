@@ -60,7 +60,7 @@
 int
 os_net_join_mcast_recv(int sock, struct netaddr *multicast,
     struct oonf_interface_data *oif,
-    enum log_source log_src __attribute__((unused))) {
+    enum oonf_log_source log_src __attribute__((unused))) {
   struct netaddr_str buf1, buf2;
   char if_buf[IF_NAMESIZE];
   struct ip_mreq   v4_mreq;
@@ -127,7 +127,7 @@ int
 os_net_join_mcast_send(int sock,
     struct netaddr *multicast,
     struct oonf_interface_data *oif, bool loop,
-    enum log_source log_src __attribute__((unused))) {
+    enum oonf_log_source log_src __attribute__((unused))) {
 #ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str buf1, buf2;
 #endif

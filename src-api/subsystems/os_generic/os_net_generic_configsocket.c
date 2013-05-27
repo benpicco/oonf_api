@@ -62,7 +62,7 @@
 int
 os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
     struct oonf_interface_data *interf __attribute__((unused)),
-    enum log_source log_src __attribute__((unused))) {
+    enum oonf_log_source log_src __attribute__((unused))) {
   int yes;
   socklen_t addrlen;
   union netaddr_socket bindto;

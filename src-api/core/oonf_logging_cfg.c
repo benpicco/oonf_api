@@ -63,7 +63,7 @@
 /* prototype for configuration change handler */
 static void _cb_logcfg_apply(void);
 static void _apply_log_setting(struct cfg_named_section *named,
-    const char *entry_name, enum log_severity severity);
+    const char *entry_name, enum oonf_log_severity severity);
 
 /* define logging configuration template */
 static struct cfg_schema_entry logging_entries[] = {
@@ -89,13 +89,13 @@ static struct cfg_schema_section logging_section = {
 
 /* global logger configuration */
 static uint8_t logging_cfg[LOG_MAXIMUM_SOURCES];
-static struct log_handler_entry stderr_handler = {
+static struct oonf_log_handler_entry stderr_handler = {
   .handler = oonf_log_stderr
 };
-static struct log_handler_entry syslog_handler = {
+static struct oonf_log_handler_entry syslog_handler = {
   .handler = oonf_log_syslog
 };
-static struct log_handler_entry file_handler = {
+static struct oonf_log_handler_entry file_handler = {
   .handler = oonf_log_file
 };
 
@@ -284,7 +284,7 @@ oonf_logcfg_schema_help(
  */
 static void
 _apply_log_setting(struct cfg_named_section *named,
-    const char *entry_name, enum log_severity severity) {
+    const char *entry_name, enum oonf_log_severity severity) {
   struct cfg_entry *entry;
   char *ptr;
   size_t i;

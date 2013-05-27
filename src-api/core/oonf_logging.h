@@ -42,7 +42,7 @@
 #ifndef OONF_LOGGING_H_
 #define OONF_LOGGING_H_
 
-struct log_handler_entry;
+struct oonf_log_handler_entry;
 
 #include "string.h"
 
@@ -54,7 +54,7 @@ struct log_handler_entry;
 /**
  * defines the severity of a logging event
  */
-enum log_severity {
+enum oonf_log_severity {
   LOG_SEVERITY_MIN   = 1<<0,
   LOG_SEVERITY_DEBUG = 1<<0,
   LOG_SEVERITY_INFO  = 1<<1,
@@ -63,7 +63,7 @@ enum log_severity {
 };
 
 /* Defines the builtin sources of a logging event. */
-enum log_source {
+enum oonf_log_source {
   /* all logging sources */
   LOG_ALL,
 
@@ -101,9 +101,9 @@ enum log_source {
   LOG_MAXIMUM_SOURCES = 64,
 };
 
-struct log_parameters {
-  enum log_severity severity;
-  enum log_source source;
+struct oonf_log_parameters {
+  enum oonf_log_severity severity;
+  enum oonf_log_source source;
   bool no_header;
   const char *file;
   int line;
@@ -178,9 +178,9 @@ struct oonf_appdata {
 #define OONF_WARN(source, format, args...) _OONF_LOG(LOG_SEVERITY_WARN, source, false, format, ##args)
 #define OONF_WARN_NH(source, format, args...) _OONF_LOG(LOG_SEVERITY_WARN, source, true, format, ##args)
 
-typedef void log_handler_cb(struct log_handler_entry *, struct log_parameters *);
+typedef void log_handler_cb(struct oonf_log_handler_entry *, struct oonf_log_parameters *);
 
-struct log_handler_entry {
+struct oonf_log_handler_entry {
   struct list_entity node;
   log_handler_cb *handler;
 
@@ -200,7 +200,7 @@ EXPORT extern uint8_t log_global_mask[LOG_MAXIMUM_SOURCES];
 EXPORT extern const char *LOG_SOURCE_NAMES[LOG_MAXIMUM_SOURCES];
 EXPORT extern const char *LOG_SEVERITY_NAMES[LOG_SEVERITY_MAX+1];
 
-EXPORT int oonf_log_init(const struct oonf_appdata *, enum log_severity)
+EXPORT int oonf_log_init(const struct oonf_appdata *, enum oonf_log_severity)
   __attribute__((warn_unused_result));
 EXPORT void oonf_log_cleanup(void);
 
@@ -208,8 +208,8 @@ EXPORT size_t oonf_log_get_max_severitytextlen(void);
 EXPORT size_t oonf_log_get_max_sourcetextlen(void);
 EXPORT size_t oonf_log_get_sourcecount(void);
 
-EXPORT void oonf_log_addhandler(struct log_handler_entry *);
-EXPORT void oonf_log_removehandler(struct log_handler_entry *);
+EXPORT void oonf_log_addhandler(struct oonf_log_handler_entry *);
+EXPORT void oonf_log_removehandler(struct oonf_log_handler_entry *);
 EXPORT int oonf_log_register_source(const char *name);
 
 EXPORT void oonf_log_updatemask(void);
@@ -220,15 +220,15 @@ EXPORT void oonf_log_printversion(struct autobuf *abuf);
 
 EXPORT const char *oonf_log_get_walltime(void);
 
-EXPORT void oonf_log(enum log_severity, enum log_source, bool, const char *, int, const char *, ...)
+EXPORT void oonf_log(enum oonf_log_severity, enum oonf_log_source, bool, const char *, int, const char *, ...)
   __attribute__ ((format(printf, 6, 7)));
 
-EXPORT void oonf_log_stderr(struct log_handler_entry *,
-    struct log_parameters *);
-EXPORT void oonf_log_syslog(struct log_handler_entry *,
-    struct log_parameters *);
-EXPORT void oonf_log_file(struct log_handler_entry *,
-    struct log_parameters *);
+EXPORT void oonf_log_stderr(struct oonf_log_handler_entry *,
+    struct oonf_log_parameters *);
+EXPORT void oonf_log_syslog(struct oonf_log_handler_entry *,
+    struct oonf_log_parameters *);
+EXPORT void oonf_log_file(struct oonf_log_handler_entry *,
+    struct oonf_log_parameters *);
 
 /**
  * Clear a logging mask
@@ -256,7 +256,7 @@ oonf_log_mask_copy(uint8_t *dst, uint8_t *src) {
  * @param sev logging severity
  */
 static INLINE void
-oonf_log_mask_set(uint8_t *mask, enum log_source src, enum log_severity sev) {
+oonf_log_mask_set(uint8_t *mask, enum oonf_log_source src, enum oonf_log_severity sev) {
   mask[src] |= sev;
 }
 
@@ -267,7 +267,7 @@ oonf_log_mask_set(uint8_t *mask, enum log_source src, enum log_severity sev) {
  * @param sev logging severity
  */
 static INLINE void
-oonf_log_mask_reset(uint8_t *mask, enum log_source src, enum log_severity sev) {
+oonf_log_mask_reset(uint8_t *mask, enum oonf_log_source src, enum oonf_log_severity sev) {
   mask[src] &= ~sev;
 }
 
@@ -279,7 +279,7 @@ oonf_log_mask_reset(uint8_t *mask, enum log_source src, enum log_severity sev) {
  * @return true if the field was set, false otherwise
  */
 static INLINE bool
-oonf_log_mask_test(uint8_t *mask, enum log_source src, enum log_severity sev) {
+oonf_log_mask_test(uint8_t *mask, enum oonf_log_source src, enum oonf_log_severity sev) {
   return (mask[src] & sev) != 0;
 }
 
