@@ -76,6 +76,7 @@ struct oonf_linkconfig_link {
 
 #define CFG_VALIDATE_LINKSPEED(p_name, p_def, p_help, args...)         _CFG_VALIDATE(p_name, p_def, p_help, .cb_validate = oonf_linkconfig_validate_linkspeed, ##args )
 
+#define LOG_LINKCONFIG oonf_linkconfig_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_linkconfig_subsystem;
 EXPORT extern struct avl_tree oonf_linkconfig_network_tree;
 EXPORT extern const struct oonf_linkconfig_data oonf_linkconfig_default;

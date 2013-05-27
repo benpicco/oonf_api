@@ -45,6 +45,7 @@
 #include "common/common_types.h"
 #include "core/oonf_subsystem.h"
 
+#define LOG_REMOTECONTROL oonf_remotecontrol_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_remotecontrol_subsystem;
 
 #endif /* REMOTECONTROL_H_ */

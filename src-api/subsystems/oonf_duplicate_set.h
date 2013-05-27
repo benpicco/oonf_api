@@ -50,11 +50,14 @@
 enum { OONF_DUPSET_MAXIMUM_TOO_OLD = 8 };
 
 enum oonf_duplicate_result {
-  OONF_DUPSET_TOO_OLD   = -3,
-  OONF_DUPSET_DUPLICATE = -2,
-  OONF_DUPSET_CURRENT   = -1,
-  OONF_DUPSET_NEW       =  0,
-  OONF_DUPSET_NEWEST    =  1,
+  OONF_DUPSET_TOO_OLD,
+  OONF_DUPSET_DUPLICATE,
+  OONF_DUPSET_CURRENT,
+  OONF_DUPSET_NEW,
+  OONF_DUPSET_NEWEST,
+
+  /* this one must be the last entry */
+  OONF_DUPSET_MAX,
 };
 
 struct oonf_duplicate_set {
@@ -80,7 +83,9 @@ struct oonf_duplicate_entry {
   struct oonf_timer_entry _vtime;
 };
 
+#define LOG_DUPLICATE_SET oonf_duplicate_set_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_duplicate_set_subsystem;
+EXPORT extern const char *OONF_DUPSET_RESULT_STR[OONF_DUPSET_MAX];
 
 EXPORT void oonf_duplicate_set_add(struct oonf_duplicate_set *);
 EXPORT void oonf_duplicate_set_remove(struct oonf_duplicate_set *);

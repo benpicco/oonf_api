@@ -220,6 +220,7 @@ struct oonf_rfc5444_target {
   uint8_t _packet_buffer[RFC5444_MAX_PACKET_SIZE];
 };
 
+#define LOG_RFC5444 oonf_rfc5444_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_rfc5444_subsystem;
 
 EXPORT struct oonf_rfc5444_protocol *oonf_rfc5444_add_protocol(

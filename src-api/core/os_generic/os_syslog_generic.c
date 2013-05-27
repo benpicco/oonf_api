@@ -52,8 +52,10 @@ static void _cleanup(void);
 
 /* subsystem definition */
 struct oonf_subsystem oonf_os_syslog_subsystem = {
+  .name = "os_syslog",
   .init = _init,
   .cleanup = _cleanup,
+  .no_logging = true,
 };
 
 /**

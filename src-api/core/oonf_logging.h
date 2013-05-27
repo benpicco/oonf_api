@@ -75,25 +75,6 @@ enum oonf_log_source {
   LOG_CONFIG,
   LOG_PLUGINS,
 
-  /* logging sources for subsystems */
-  LOG_CLASS,
-  LOG_CLOCK,
-  LOG_DUPLICATE_SET,
-  LOG_HTTP,
-  LOG_INTERFACE,
-  LOG_LAYER2,
-  LOG_LINKCONFIG,
-  LOG_PACKET,
-  LOG_RFC5444,
-  LOG_SOCKET,
-  LOG_STREAM,
-  LOG_TELNET,
-  LOG_TIMER,
-
-  LOG_OS_NET,
-  LOG_OS_ROUTING,
-  LOG_OS_SYSTEM,
-
   /* this one must be the last ones of the normal enums ! */
   LOG_CORESOURCE_COUNT,
 

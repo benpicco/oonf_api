@@ -46,6 +46,7 @@
 #include "common/common_types.h"
 #include "core/oonf_subsystem.h"
 
+#define LOG_PLUGINCTRL oonf_plugin_controller_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_plugin_controller_subsystem;
 
 #endif /* PLUGIN_CONTROLLER_H_ */

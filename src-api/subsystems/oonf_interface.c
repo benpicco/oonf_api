@@ -72,6 +72,7 @@ struct avl_tree oonf_interface_tree;
 
 /* subsystem definition */
 struct oonf_subsystem oonf_interface_subsystem = {
+  .name = "interface",
   .init = _init,
   .cleanup = _cleanup,
 };

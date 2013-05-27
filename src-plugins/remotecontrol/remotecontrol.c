@@ -186,8 +186,6 @@ static struct oonf_telnet_command _telnet_cmds[] = {
 /* list of telnet sessions with logging mask data */
 static struct list_entity _remote_sessions;
 
-static enum oonf_log_source LOG_REMOTECONTROL;
-
 /**
  * Initialize remotecontrol plugin
  * @return always returns 0 (cannot fail)
@@ -196,8 +194,6 @@ static int
 _init(void)
 {
   size_t i;
-
-  LOG_REMOTECONTROL = oonf_log_register_source(OONF_PLUGIN_GET_NAME());
 
   netaddr_acl_add(&_remotecontrol_config.acl);
   list_init_head(&_remote_sessions);
@@ -255,9 +251,9 @@ _print_memory(struct autobuf *buf) {
  */
 static void
 _print_timer(struct autobuf *buf) {
-  struct oonf_timer_info *t, *iterator;
+  struct oonf_timer_info *t;
 
-  OONF_FOR_ALL_TIMERS(t, iterator) {
+  list_for_each_element(&oonf_timer_info_list, t, _node) {
     abuf_appendf(buf, "%-25s (TIMER) usage: %u changes: %u\n",
         t->name, t->usage, t->changes);
   }
@@ -728,7 +724,7 @@ static void
 _cb_config_changed(void) {
   if (cfg_schema_tobin(&_remotecontrol_config, _remotecontrol_section.post,
       _remotecontrol_entries, ARRAYSIZE(_remotecontrol_entries))) {
-    OONF_WARN(LOG_CONFIG, "Could not convert remotecontrol config to bin");
+    OONF_WARN(LOG_REMOTECONTROL, "Could not convert remotecontrol config to bin");
     return;
   }
 }

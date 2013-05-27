@@ -88,8 +88,9 @@ struct oonf_interface_listener {
   struct list_entity _node;
 };
 
-EXPORT extern struct avl_tree oonf_interface_tree;
+#define LOG_INTERFACE oonf_interface_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_interface_subsystem;
+EXPORT extern struct avl_tree oonf_interface_tree;
 
 EXPORT int oonf_interface_add_listener(struct oonf_interface_listener *);
 EXPORT void oonf_interface_remove_listener(struct oonf_interface_listener *);

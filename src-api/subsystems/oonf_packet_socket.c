@@ -72,6 +72,7 @@ static void _cb_interface_listener(struct oonf_interface_listener *l);
 
 /* subsystem definition */
 struct oonf_subsystem oonf_packet_socket_subsystem = {
+  .name = "packet",
   .init = _init,
   .cleanup = _cleanup,
 };
@@ -303,11 +304,11 @@ oonf_packet_send_managed(struct oonf_packet_managed *managed,
     return 0;
   }
 
-  if (list_is_node_added(&managed->socket_v4.scheduler_entry.node)
+  if (list_is_node_added(&managed->socket_v4.scheduler_entry._node)
       && netaddr_socket_get_addressfamily(remote) == AF_INET) {
     return oonf_packet_send(&managed->socket_v4, remote, data, length);
   }
-  if (list_is_node_added(&managed->socket_v6.scheduler_entry.node)
+  if (list_is_node_added(&managed->socket_v6.scheduler_entry._node)
       && netaddr_socket_get_addressfamily(remote) == AF_INET6) {
     return oonf_packet_send(&managed->socket_v6, remote, data, length);
   }

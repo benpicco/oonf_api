@@ -99,6 +99,7 @@ static struct cfg_schema_section _linkconfig_section = {
 };
 
 struct oonf_subsystem oonf_linkconfig_subsystem = {
+  .name = "linkconfig",
   .init = _init,
   .cleanup = _cleanup,
 
@@ -290,7 +291,7 @@ _parse_strarray(struct strarray *array, const char *ifname,
       /* add network wide data entry */
       set(&netentry->data, value);
 
-      OONF_INFO(LOG_MAIN, "if-wide %s for %s: %s",
+      OONF_INFO(LOG_LINKCONFIG, "if-wide %s for %s: %s",
           key, ifname, value);
       continue;
     }
@@ -309,7 +310,7 @@ _parse_strarray(struct strarray *array, const char *ifname,
       }
 
       set(&linkentry->data, value);
-      OONF_INFO(LOG_MAIN, "%s to neighbor %s on %s: %s",
+      OONF_INFO(LOG_LINKCONFIG, "%s to neighbor %s on %s: %s",
           key, nbuf.buf, ifname, value);
     }
   }

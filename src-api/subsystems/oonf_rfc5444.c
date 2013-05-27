@@ -233,6 +233,7 @@ static struct oonf_rfc5444_interface *_rfc5444_unicast = NULL;
 
 /* subsystem definition */
 struct oonf_subsystem oonf_rfc5444_subsystem = {
+  .name = "rfc5444",
   .init = _init,
   .cleanup = _cleanup,
   .cfg_section = &_interface_section,

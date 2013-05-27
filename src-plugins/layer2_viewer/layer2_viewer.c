@@ -56,6 +56,8 @@
 #include "subsystems/oonf_layer2.h"
 #include "subsystems/oonf_telnet.h"
 
+#include "layer2_viewer/layer2_viewer.h"
+
 /* keys for template engine */
 #define KEY_neighbor "neighbor"
 #define KEY_radio "radio"
@@ -104,7 +106,7 @@ static struct cfg_schema_section _layer2_section = {
 static struct _l2viewer_config _config;
 
 /* plugin declaration */
-struct oonf_subsystem dlep_layer2_viewer_subsystem = {
+struct oonf_subsystem oonf_layer2_viewer_subsystem = {
   .name = OONF_PLUGIN_GET_NAME(),
   .descr = "OONFD layer2 viewer plugin",
   .author = "Henning Rogge",
@@ -114,7 +116,7 @@ struct oonf_subsystem dlep_layer2_viewer_subsystem = {
   .init = _init,
   .cleanup = _cleanup,
 };
-DECLARE_OONF_PLUGIN(dlep_layer2_viewer_subsystem);
+DECLARE_OONF_PLUGIN(oonf_layer2_viewer_subsystem);
 
 /* telnet command */
 static struct oonf_telnet_command _telnet_cmd =
@@ -252,16 +254,12 @@ struct _command_params _neigh_params = {
   .headline_filtered_table = "If\tRadio            \tNeighbor\n",
 };
 
-static enum oonf_log_source LOG_LAYER2_VIEWER;
-
 /**
  * Constructor of plugin
  * @return 0 if initialization was successful, -1 otherwise
  */
 static int
 _init(void) {
-  LOG_LAYER2_VIEWER = oonf_log_register_source(OONF_PLUGIN_GET_NAME());
-
   oonf_telnet_add(&_telnet_cmd);
   return 0;
 }

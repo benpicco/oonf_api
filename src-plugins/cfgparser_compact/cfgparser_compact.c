@@ -78,6 +78,8 @@ struct oonf_subsystem oonf_compact_parser_subsystem = {
 
   .early_cfg_init = _early_cfg_init,
   .cleanup = _cleanup,
+
+  .no_logging = true,
 };
 DECLARE_OONF_PLUGIN(oonf_compact_parser_subsystem);
 
@@ -166,7 +168,6 @@ _cb_compact_parse(char *src, size_t len, struct autobuf *log) {
 
     line = eol+1;
   }
-
   return db;
 }
 

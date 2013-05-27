@@ -137,6 +137,7 @@ static struct oonf_stream_managed _http_managed_socket = {
 
 /* subsystem definition */
 struct oonf_subsystem oonf_http_subsystem = {
+  .name = "http",
   .init = _init,
   .cleanup = _cleanup,
   .cfg_section = &_http_section,

@@ -69,6 +69,7 @@ struct os_system_if_listener {
 #error "Unknown operation system"
 #endif
 
+#define LOG_OS_SYSTEM oonf_os_system_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_os_system_subsystem;
 
 /* prototypes for all os_system functions */

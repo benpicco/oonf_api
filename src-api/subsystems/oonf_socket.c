@@ -59,10 +59,11 @@ static int _init(void);
 static void _cleanup(void);
 
 /* List of all active sockets in scheduler */
-struct list_entity socket_head;
+struct list_entity oonf_socket_head;
 
 /* subsystem definition */
 struct oonf_subsystem oonf_socket_subsystem = {
+  .name = "socket",
   .init = _init,
   .cleanup = _cleanup,
 };
@@ -73,7 +74,7 @@ struct oonf_subsystem oonf_socket_subsystem = {
  */
 static int
 _init(void) {
-  list_init_head(&socket_head);
+  list_init_head(&oonf_socket_head);
   return 0;
 }
 
@@ -86,8 +87,8 @@ _cleanup(void)
 {
   struct oonf_socket_entry *entry, *iterator;
 
-  OONF_FOR_ALL_SOCKETS(entry, iterator) {
-    list_remove(&entry->node);
+  list_for_each_element_safe(&oonf_socket_head, entry, _node, iterator) {
+    list_remove(&entry->_node);
     os_close(entry->fd);
   }
 }
@@ -106,7 +107,7 @@ oonf_socket_add(struct oonf_socket_entry *entry)
 
   OONF_DEBUG(LOG_SOCKET, "Adding socket entry %d to scheduler\n", entry->fd);
 
-  list_add_before(&socket_head, &entry->node);
+  list_add_before(&oonf_socket_head, &entry->_node);
 }
 
 /**
@@ -118,7 +119,7 @@ oonf_socket_remove(struct oonf_socket_entry *entry)
 {
   OONF_DEBUG(LOG_SOCKET, "Removing socket entry %d\n", entry->fd);
 
-  list_remove(&entry->node);
+  list_remove(&entry->_node);
 }
 
 /**
@@ -170,7 +171,7 @@ oonf_socket_handle(bool (*stop_scheduler)(void), uint64_t stop_time)
     FD_ZERO(&obits);
 
     /* Adding file-descriptors to FD set */
-    OONF_FOR_ALL_SOCKETS(entry, iterator) {
+    list_for_each_element_safe(&oonf_socket_head, entry, _node, iterator) {
       if (entry->process == NULL) {
         continue;
       }
@@ -228,7 +229,7 @@ oonf_socket_handle(bool (*stop_scheduler)(void), uint64_t stop_time)
     if (oonf_clock_update()) {
       return -1;
     }
-    OONF_FOR_ALL_SOCKETS(entry, iterator) {
+    list_for_each_element_safe(&oonf_socket_head, entry, _node, iterator) {
       if (entry->process == NULL) {
         continue;
       }

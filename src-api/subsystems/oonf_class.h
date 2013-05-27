@@ -136,6 +136,7 @@ struct oonf_class_extension {
 /* percentage of blocks kept in the free list compared to allocated blocks */
 #define OONF_CLASS_FREE_THRESHOLD 10   /* Blocks / Percent  */
 
+#define LOG_CLASS (oonf_class_subsystem.logging)
 EXPORT extern struct oonf_subsystem oonf_class_subsystem;
 EXPORT extern struct avl_tree oonf_classes;
 EXPORT extern const char *OONF_CLASS_EVENT_NAME[];

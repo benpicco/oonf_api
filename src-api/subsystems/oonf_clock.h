@@ -63,6 +63,7 @@
 #define CFG_MAP_CLOCK_MAX(p_reference, p_field, p_name, p_def, p_help, p_max, args...)           CFG_VALIDATE_CLOCK_MAX(p_name, p_def, p_help, p_max, .cb_to_binary = oonf_clock_tobin, .bin_offset = offsetof(struct p_reference, p_field), ##args)
 #define CFG_MAP_CLOCK_MINMAX(p_reference, p_field, p_name, p_def, p_help, p_min, p_max, args...) CFG_VALIDATE_CLOCK_MINMAX(p_name, p_def, p_help, p_min, p_max, .cb_to_binary = oonf_clock_tobin, .bin_offset = offsetof(struct p_reference, p_field), ##args)
 
+#define LOG_CLOCK oonf_clock_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_clock_subsystem;
 
 EXPORT int oonf_clock_update(void) __attribute__((warn_unused_result));

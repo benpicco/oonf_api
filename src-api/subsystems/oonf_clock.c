@@ -63,6 +63,7 @@ static uint64_t now_times;
 static uint64_t start_time;
 
 struct oonf_subsystem oonf_clock_subsystem = {
+  .name = "clock",
   .init = _init,
 };
 

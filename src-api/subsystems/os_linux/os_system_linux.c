@@ -137,6 +137,7 @@ struct list_entity _ifchange_listener;
 
 /* subsystem definition */
 struct oonf_subsystem oonf_os_system_subsystem = {
+  .name = "os_system",
   .init = _init,
   .cleanup = _cleanup,
 };

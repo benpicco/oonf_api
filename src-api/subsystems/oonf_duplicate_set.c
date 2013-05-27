@@ -69,8 +69,18 @@ static struct oonf_class _dupset_class = {
   .size = sizeof(struct oonf_duplicate_entry),
 };
 
+/* dupset result names */
+const char *OONF_DUPSET_RESULT_STR[OONF_DUPSET_MAX] = {
+  [OONF_DUPSET_TOO_OLD]   = "too old",
+  [OONF_DUPSET_DUPLICATE] = "duplicate",
+  [OONF_DUPSET_CURRENT]   = "current",
+  [OONF_DUPSET_NEW]       = "new",
+  [OONF_DUPSET_NEWEST]    = "newest",
+};
+
 /* subsystem definition */
 struct oonf_subsystem oonf_duplicate_set_subsystem = {
+  .name = "duplicate_set",
   .init = _init,
   .cleanup = _cleanup,
 };
@@ -137,6 +147,10 @@ oonf_duplicate_entry_add(struct oonf_duplicate_set *set, uint8_t msg_type,
   struct oonf_duplicate_entry_key key;
   enum oonf_duplicate_result result;
 
+#ifdef OONF_LOG_DEBUG_INFO
+  struct netaddr_str nbuf;
+#endif
+
   /* generate combined key */
   memcpy(&key.addr, originator, sizeof(*originator));
   key.msg_type = msg_type;
@@ -170,6 +184,10 @@ oonf_duplicate_entry_add(struct oonf_duplicate_set *set, uint8_t msg_type,
   }
 
   result = _test(entry, seqno, true);
+  OONF_DEBUG(LOG_DUPLICATE_SET, "Test msgtype %u, originator %s, seqno %u: %s",
+      msg_type, netaddr_to_string(&nbuf, originator), seqno,
+      OONF_DUPSET_RESULT_STR[result]);
+
   if (result == OONF_DUPSET_NEW || result == OONF_DUPSET_NEWEST) {
     /* reset validity timer */
     oonf_timer_set(&entry->_vtime, vtime);
@@ -193,6 +211,11 @@ oonf_duplicate_test(struct oonf_duplicate_set *set, uint8_t msg_type,
     struct netaddr *originator, uint16_t seqno) {
   struct oonf_duplicate_entry *entry;
   struct oonf_duplicate_entry_key key;
+  enum oonf_duplicate_result result;
+
+#ifdef OONF_LOG_DEBUG_INFO
+  struct netaddr_str nbuf;
+#endif
 
   /* generate combined key */
   memcpy(&key.addr, originator, sizeof(*originator));
@@ -200,10 +223,17 @@ oonf_duplicate_test(struct oonf_duplicate_set *set, uint8_t msg_type,
 
   entry = avl_find_element(&set->_tree, &key, entry, _node);
   if (!entry) {
-    return OONF_DUPSET_NEWEST;
+    result = OONF_DUPSET_NEWEST;
+  }
+  else {
+    result = _test(entry, seqno, false);
   }
 
-  return _test(entry, seqno, false);
+  OONF_DEBUG(LOG_DUPLICATE_SET, "Test msgtype %u, originator %s, seqno %u: %s",
+      msg_type, netaddr_to_string(&nbuf, originator), seqno,
+      OONF_DUPSET_RESULT_STR[result]);
+
+  return result;
 }
 
 /**

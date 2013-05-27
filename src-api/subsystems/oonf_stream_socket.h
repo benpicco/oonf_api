@@ -193,6 +193,7 @@ struct oonf_stream_managed_config {
   uint16_t port;
 };
 
+#define LOG_STREAM oonf_stream_socket_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_stream_socket_subsystem;
 
 EXPORT int oonf_stream_add(struct oonf_stream_socket *,

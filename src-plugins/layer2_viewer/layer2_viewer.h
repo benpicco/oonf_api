@@ -45,6 +45,7 @@
 #include "common/common_types.h"
 #include "core/oonf_subsystem.h"
 
-EXPORT extern struct oonf_subsystem dlep_layer2_viewer_subsystem;
+#define LOG_LAYER2_VIEWER oonf_layer2_viewer_subsystem.logging
+EXPORT extern struct oonf_subsystem oonf_layer2_viewer_subsystem;
 
 #endif /* LAYER2_VIEWER_H_ */

@@ -157,17 +157,12 @@ struct oonf_timer_entry _transmission_timer = {
   .info = &_transmission_timer_info
 };
 
-/* logging source */
-enum oonf_log_source LOG_NL80211;
-
 /**
  * Constructor of plugin
  * @return 0 if initialization was successful, -1 otherwise
  */
 static int
 _init(void) {
-  LOG_NL80211 = oonf_log_register_source(OONF_PLUGIN_GET_NAME());
-
   _msgbuf = calloc(1, UIO_MAXIOV);
   if (_msgbuf == NULL) {
     OONF_WARN(LOG_NL80211, "Not enough memory for nl80211 memory buffer");

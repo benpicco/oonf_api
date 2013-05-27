@@ -113,6 +113,7 @@ struct oonf_http_handler {
       struct autobuf *out, struct oonf_http_session *);
 };
 
+#define LOG_HTTP oonf_http_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_http_subsystem;
 
 EXPORT extern const char *HTTP_CONTENTTYPE_HTML;

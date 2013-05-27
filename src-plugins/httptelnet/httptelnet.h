@@ -45,6 +45,7 @@
 #include "common/common_types.h"
 #include "core/oonf_subsystem.h"
 
+#define LOG_HTTPTELNET oonf_httptelnet_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_httptelnet_subsystem;
 
 #endif /* HTTPTELNET_H_ */

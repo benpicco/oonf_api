@@ -116,6 +116,7 @@ struct os_route {
   void (*cb_get)(struct os_route *filter, struct os_route *route);
 };
 
+#define LOG_OS_ROUTING oonf_os_routing_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_os_routing_subsystem;
 EXPORT extern const struct os_route OS_ROUTE_WILDCARD;
 

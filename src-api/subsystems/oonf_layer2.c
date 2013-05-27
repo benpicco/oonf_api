@@ -93,7 +93,9 @@ static struct oonf_timer_info _neighbor_vtime_info = {
   .callback = _cb_neighbor_timeout,
   .periodic = true,
 };
+
 struct oonf_subsystem oonf_layer2_subsystem = {
+  .name = "layer2",
   .init = _init,
   .cleanup = _cleanup,
 };
@@ -173,7 +175,7 @@ oonf_layer2_add_network(struct netaddr *radio_id, uint32_t if_index,
     oonf_class_event(&_network_cookie, net, OONF_OBJECT_ADDED);
   }
 
-  OONF_DEBUG(LOG_MAIN, "Reset validity of network timer: %"PRIu64,
+  OONF_DEBUG(LOG_LAYER2, "Reset validity of network timer: %"PRIu64,
       vtime);
   net->active = true;
   oonf_timer_set(&net->_valitity_timer, vtime);
@@ -354,7 +356,7 @@ _cb_neighbor_timeout(void *ptr) {
 #ifdef OONF_LOG_DEBUG_INFO
   struct oonf_layer2_neighbor *neigh = ptr;
 #endif
-  OONF_DEBUG(LOG_MAIN, "Layer-2 neighbor timeout (was %sactive)", neigh->active ? "" : "in");
+  OONF_DEBUG(LOG_LAYER2, "Layer-2 neighbor timeout (was %sactive)", neigh->active ? "" : "in");
   _remove_neighbor(ptr);
 }
 
@@ -367,7 +369,7 @@ _cb_network_timeout(void *ptr) {
 #ifdef OONF_LOG_DEBUG_INFO
   struct oonf_layer2_network *net = ptr;
 #endif
-  OONF_DEBUG(LOG_MAIN, "Layer-2 network timeout (was %sactive)", net->active ? "" : "in");
+  OONF_DEBUG(LOG_LAYER2, "Layer-2 network timeout (was %sactive)", net->active ? "" : "in");
   _remove_network(ptr);
 }
 

@@ -128,6 +128,7 @@ struct oonf_layer2_network_config {
   uint64_t tx_bitrate;
 };
 
+#define LOG_LAYER2 oonf_layer2_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_layer2_subsystem;
 
 EXPORT extern struct avl_tree oonf_layer2_network_id_tree;

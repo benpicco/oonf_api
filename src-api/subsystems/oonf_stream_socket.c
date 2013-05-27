@@ -87,6 +87,7 @@ static struct oonf_timer_info connection_timeout = {
 
 /* subsystem definition */
 struct oonf_subsystem oonf_stream_socket_subsystem = {
+  .name = "stream",
   .init = _init,
   .cleanup = _cleanup,
 };
@@ -403,7 +404,7 @@ _apply_managed_socket(struct oonf_stream_managed *managed,
     return -1;
   }
 
-  if (list_is_node_added(&stream->scheduler_entry.node)) {
+  if (list_is_node_added(&stream->scheduler_entry._node)) {
     if (memcmp(&sock, &stream->local_socket, sizeof(sock)) == 0) {
       /* nothing changed */
       return 0;

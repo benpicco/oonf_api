@@ -39,16 +39,22 @@
  *
  */
 
+#include <assert.h>
+
 #include "common/common_types.h"
 #include "config/cfg_schema.h"
 
 #include "core/oonf_subsystem.h"
+#include "core/oonf_logging.h"
 
 void
 oonf_subsystem_configure(struct cfg_schema *schema,
     struct oonf_subsystem *subsystem) {
   struct cfg_schema_section *schema_section;
 
+  assert(subsystem->name);
+
+  /* add schema sections to global schema */
   schema_section = subsystem->cfg_section;
   while (schema_section) {
     cfg_schema_add_section(schema, schema_section);
@@ -57,6 +63,14 @@ oonf_subsystem_configure(struct cfg_schema *schema,
 
   if (subsystem->early_cfg_init) {
     subsystem->early_cfg_init();
+  }
+
+  /* add logging source */
+  if (!subsystem->no_logging) {
+    subsystem->logging = oonf_log_register_source(subsystem->name);
+  }
+  else {
+    subsystem->logging = LOG_MAIN;
   }
 }
 

@@ -69,6 +69,7 @@ const char *OONF_CLASS_EVENT_NAME[] = {
 
 /* subsystem definition */
 struct oonf_subsystem oonf_class_subsystem = {
+  .name = "class",
   .init = _init,
   .cleanup = _cleanup,
 };

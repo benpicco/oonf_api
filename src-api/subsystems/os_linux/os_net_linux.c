@@ -78,6 +78,7 @@ static int _ioctl_v4, _ioctl_v6;
 
 /* subsystem definition */
 struct oonf_subsystem oonf_os_net_subsystem = {
+  .name = "os_net",
   .init = _init,
   .cleanup = _cleanup,
 };
@@ -285,7 +286,7 @@ os_net_init_mesh_if(struct oonf_interface *interf) {
   snprintf(procfile, sizeof(procfile), PROC_IF_REDIRECT, interf->data.name);
 
   if (_os_linux_writeToProc(procfile, &old_redirect, '0')) {
-    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable ICMP redirects! "
+    OONF_WARN(LOG_OS_NET, "WARNING! Could not disable ICMP redirects! "
         "You should manually ensure that ICMP redirects are disabled!");
   }
 
@@ -293,7 +294,7 @@ os_net_init_mesh_if(struct oonf_interface *interf) {
   snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, interf->data.name);
 
   if (_os_linux_writeToProc(procfile, &old_spoof, '0')) {
-    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable the IP spoof filter! "
+    OONF_WARN(LOG_OS_NET, "WARNING! Could not disable the IP spoof filter! "
         "You should mannually ensure that IP spoof filtering is disabled!");
   }
 
@@ -317,7 +318,7 @@ os_net_cleanup_mesh_if(struct oonf_interface *interf) {
   snprintf(procfile, sizeof(procfile), PROC_IF_REDIRECT, interf->data.name);
 
   if (_os_linux_writeToProc(procfile, NULL, restore_redirect) != 0) {
-    OONF_WARN(LOG_OS_SYSTEM, "Could not restore ICMP redirect flag %s to %c",
+    OONF_WARN(LOG_OS_NET, "Could not restore ICMP redirect flag %s to %c",
         procfile, restore_redirect);
   }
 
@@ -325,7 +326,7 @@ os_net_cleanup_mesh_if(struct oonf_interface *interf) {
   snprintf(procfile, sizeof(procfile), PROC_IF_SPOOF, interf->data.name);
 
   if (_os_linux_writeToProc(procfile, NULL, restore_spoof) != 0) {
-    OONF_WARN(LOG_OS_SYSTEM, "Could not restore IP spoof flag %s to %c",
+    OONF_WARN(LOG_OS_NET, "Could not restore IP spoof flag %s to %c",
         procfile, restore_spoof);
   }
 
@@ -342,23 +343,23 @@ os_net_cleanup_mesh_if(struct oonf_interface *interf) {
 static void
 _activate_if_routing(void) {
   if (_os_linux_writeToProc(PROC_IPFORWARD_V4, &_original_ipv4_forward, '1')) {
-    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not activate ip_forward for ipv4! "
+    OONF_WARN(LOG_OS_NET, "WARNING! Could not activate ip_forward for ipv4! "
         "You should manually ensure that ip_forward for ipv4 is activated!");
   }
   if (_os_linux_writeToProc(PROC_IPFORWARD_V6, &_original_ipv6_forward, '1')) {
-    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not activate ip_forward for ipv6! "
+    OONF_WARN(LOG_OS_NET, "WARNING! Could not activate ip_forward for ipv6! "
         "You should manually ensure that ip_forward for ipv6 is activated!");
   }
 
   if (_os_linux_writeToProc(PROC_ALL_REDIRECT, &_original_icmp_redirect, '0')) {
-    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable ICMP redirects! "
+    OONF_WARN(LOG_OS_NET, "WARNING! Could not disable ICMP redirects! "
         "You should manually ensure that ICMP redirects are disabled!");
   }
 
   /* check kernel version and disable global rp_filter */
   if (_is_at_least_linuxkernel_2_6_31()) {
     if (_os_linux_writeToProc(PROC_ALL_SPOOF, &_original_rp_filter, '0')) {
-      OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not disable global rp_filter "
+      OONF_WARN(LOG_OS_NET, "WARNING! Could not disable global rp_filter "
           "(necessary for kernel 2.6.31 and newer)! You should manually "
           "ensure that rp_filter is disabled!");
     }
@@ -368,23 +369,23 @@ _activate_if_routing(void) {
 static void
 _deactivate_if_routing(void) {
   if (_os_linux_writeToProc(PROC_ALL_REDIRECT, NULL, _original_icmp_redirect) != 0) {
-    OONF_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_NET,
         "WARNING! Could not restore ICMP redirect flag %s to %c!",
         PROC_ALL_REDIRECT, _original_icmp_redirect);
   }
 
   if (_os_linux_writeToProc(PROC_ALL_SPOOF, NULL, _original_rp_filter)) {
-    OONF_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_NET,
         "WARNING! Could not restore global rp_filter flag %s to %c!",
         PROC_ALL_SPOOF, _original_rp_filter);
   }
 
   if (_os_linux_writeToProc(PROC_IPFORWARD_V4, NULL, _original_ipv4_forward)) {
-    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore %s to %c!",
+    OONF_WARN(LOG_OS_NET, "WARNING! Could not restore %s to %c!",
         PROC_IPFORWARD_V4, _original_ipv4_forward);
   }
   if (_os_linux_writeToProc(PROC_IPFORWARD_V6, NULL, _original_ipv6_forward)) {
-    OONF_WARN(LOG_OS_SYSTEM, "WARNING! Could not restore %s to %c",
+    OONF_WARN(LOG_OS_NET, "WARNING! Could not restore %s to %c",
         PROC_IPFORWARD_V6, _original_ipv6_forward);
   }
 }
@@ -409,14 +410,14 @@ _os_linux_writeToProc(const char *file, char *old, char value) {
   }
 
   if ((fd = open(file, O_RDWR)) < 0) {
-    OONF_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_NET,
       "Error, cannot open proc entry %s: %s (%d)\n",
       file, strerror(errno), errno);
     return -1;
   }
 
   if (read(fd, &rv, 1) != 1) {
-    OONF_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_NET,
       "Error, cannot read proc entry %s: %s (%d)\n",
       file, strerror(errno), errno);
     return -1;
@@ -424,19 +425,19 @@ _os_linux_writeToProc(const char *file, char *old, char value) {
 
   if (rv != value) {
     if (lseek(fd, SEEK_SET, 0) == -1) {
-      OONF_WARN(LOG_OS_SYSTEM,
+      OONF_WARN(LOG_OS_NET,
         "Error, cannot rewind to start on proc entry %s: %s (%d)\n",
         file, strerror(errno), errno);
       return -1;
     }
 
     if (write(fd, &value, 1) != 1) {
-      OONF_WARN(LOG_OS_SYSTEM,
+      OONF_WARN(LOG_OS_NET,
         "Error, cannot write '%c' to proc entry %s: %s (%d)\n",
         value, file, strerror(errno), errno);
     }
 
-    OONF_DEBUG(LOG_OS_SYSTEM, "Writing '%c' (was %c) to %s", value, rv, file);
+    OONF_DEBUG(LOG_OS_NET, "Writing '%c' (was %c) to %s", value, rv, file);
   }
 
   close(fd);
@@ -459,7 +460,7 @@ _is_at_least_linuxkernel_2_6_31(void) {
 
   memset(&uts, 0, sizeof(uts));
   if (uname(&uts)) {
-    OONF_WARN(LOG_OS_SYSTEM,
+    OONF_WARN(LOG_OS_NET,
         "Error, could not read kernel version: %s (%d)\n",
         strerror(errno), errno);
     return false;
@@ -486,7 +487,7 @@ _is_at_least_linuxkernel_2_6_31(void) {
   return first == 2 && second == 6 && third >= 31;
 
 kernel_parse_error:
-  OONF_WARN(LOG_OS_SYSTEM,
+  OONF_WARN(LOG_OS_NET,
       "Error, cannot parse kernel version: %s\n", uts.release);
   return false;
 }

@@ -52,9 +52,6 @@ typedef void (*socket_handler_func) (int fd, void *data,
 
 /* This struct represents a single registered socket handler */
 struct oonf_socket_entry {
-  /* list of socket handlers */
-  struct list_entity node;
-
   /* file descriptor of the socket */
   int fd;
 
@@ -66,13 +63,14 @@ struct oonf_socket_entry {
 
   /* event mask for socket handler */
   bool event_read, event_write;
+
+  /* list of socket handlers */
+  struct list_entity _node;
 };
 
+#define LOG_SOCKET oonf_socket_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_socket_subsystem;
-EXPORT extern struct list_entity socket_head;
-
-/* deletion safe macro for socket list traversal */
-#define OONF_FOR_ALL_SOCKETS(socket, iterator) list_for_each_element_safe(&socket_head, socket, node, iterator)
+EXPORT extern struct list_entity oonf_socket_head;
 
 EXPORT int oonf_socket_handle(bool (*stop_scheduler)(void), uint64_t) __attribute__((warn_unused_result));
 

@@ -118,6 +118,7 @@ static struct oonf_telnet_command _builtin[] = {
 
 /* subsystem definition */
 struct oonf_subsystem oonf_telnet_subsystem = {
+  .name = "telnet",
   .init = _init,
   .cleanup = _cleanup,
   .cfg_section = &telnet_section,

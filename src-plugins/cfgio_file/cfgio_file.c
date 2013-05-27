@@ -71,6 +71,8 @@ struct oonf_subsystem oonf_io_file_subsystem = {
 
   .cleanup = _cleanup,
   .early_cfg_init = _early_cfg_init,
+
+  .no_logging = true,
 };
 DECLARE_OONF_PLUGIN(oonf_io_file_subsystem);
 

@@ -68,10 +68,11 @@ static struct avl_tree _timer_tree;
 static bool _scheduling_now;
 
 /* List of timer classes */
-struct list_entity timerinfo_list;
+struct list_entity oonf_timer_info_list;
 
 /* subsystem definition */
 struct oonf_subsystem oonf_timer_subsystem = {
+  .name = "timer",
   .init = _init,
   .cleanup = _cleanup,
 };
@@ -88,7 +89,7 @@ _init(void)
   avl_init(&_timer_tree, _avlcomp_timer, true);
   _scheduling_now = false;
 
-  list_init_head(&timerinfo_list);
+  list_init_head(&oonf_timer_info_list);
   return 0;
 }
 
@@ -101,7 +102,7 @@ _cleanup(void)
   struct oonf_timer_info *ti, *iterator;
 
   /* free all timerinfos */
-  OONF_FOR_ALL_TIMERS(ti, iterator) {
+  list_for_each_element_safe(&oonf_timer_info_list, ti, _node, iterator) {
     oonf_timer_remove(ti);
   }
 }
@@ -114,7 +115,7 @@ void
 oonf_timer_add(struct oonf_timer_info *ti) {
   assert (ti->callback);
   assert (ti->name);
-  list_add_tail(&timerinfo_list, &ti->_node);
+  list_add_tail(&oonf_timer_info_list, &ti->_node);
 }
 
 /**

@@ -55,7 +55,9 @@ static int _clock_source = 0;
 
 /* subsystem definition */
 struct oonf_subsystem oonf_os_clock_subsystem = {
+  .name = "os_clock",
   .init = _init,
+  .no_logging = true,
 };
 
 /**

@@ -127,6 +127,7 @@ static INLINE const char *on_net_get_loopback_name(void);
 #error "Unknown operation system"
 #endif
 
+#define LOG_OS_NET oonf_os_net_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_os_net_subsystem;
 
 /* prototypes for all os_net functions */

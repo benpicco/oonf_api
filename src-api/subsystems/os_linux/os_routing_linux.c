@@ -75,6 +75,7 @@ struct list_entity _rtnetlink_feedback;
 
 /* subsystem definition */
 struct oonf_subsystem oonf_os_routing_subsystem = {
+  .name = "os_routing",
   .init = _init,
   .cleanup = _cleanup,
 };

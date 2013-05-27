@@ -49,9 +49,11 @@
 #include "common/common_types.h"
 #include "config/cfg_schema.h"
 
+#include "core/oonf_logging.h"
+
 /*
  * description of a subsystem of the OONF-API.
- * In theory, ALL fields are optional.
+ * In theory, ALL fields except for name are optional.
  */
 struct oonf_subsystem {
   /* name of the subsystem */
@@ -103,6 +105,12 @@ struct oonf_subsystem {
 
   /* true if the subsystem can be (de)activated during runtime */
   bool can_cleanup;
+
+  /* true if this subsystem does not need a logging source */
+  bool no_logging;
+
+  /* logging source for subsystem */
+  enum oonf_log_source logging;
 
   /* true if the subsystem is initialized */
   bool _initialized;

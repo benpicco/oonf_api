@@ -51,6 +51,8 @@
 #include "subsystems/oonf_http.h"
 #include "subsystems/oonf_telnet.h"
 
+#include "httptelnet/httptelnet.h"
+
 /* prototypes */
 static int _init(void);
 static void _cleanup(void);
@@ -92,16 +94,12 @@ struct oonf_subsystem oonf_httptelnet_subsystem = {
 };
 DECLARE_OONF_PLUGIN(oonf_httptelnet_subsystem);
 
-static enum oonf_log_source LOG_HTTPTELNET;
-
 /**
  * Constructor of plugin
  * @return 0 if initialization was successful, -1 otherwise
  */
 static int
 _init(void) {
-  LOG_HTTPTELNET = oonf_log_register_source(OONF_PLUGIN_GET_NAME());
-
   netaddr_acl_add(&_http_site_handler.acl);
   strarray_init(&_http_site_handler.auth);
 
