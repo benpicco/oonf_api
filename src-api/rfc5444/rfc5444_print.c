@@ -44,6 +44,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#include "common/netaddr.h"
 #include "rfc5444/rfc5444_reader.h"
 #include "rfc5444/rfc5444_print.h"
 
@@ -272,6 +273,7 @@ _cb_print_pkt_end(struct rfc5444_reader_tlvblock_context *context,
 enum rfc5444_result
 _cb_print_msg_start(struct rfc5444_reader_tlvblock_context *context) {
   struct rfc5444_print_session *session;
+  struct netaddr_str buf;
 
   assert (context->type == RFC5444_CONTEXT_MESSAGE);
 
@@ -285,9 +287,8 @@ _cb_print_msg_start(struct rfc5444_reader_tlvblock_context *context) {
   abuf_appendf(session->output, "\t|    | * Address length:     %u\n", context->addr_len);
 
   if (context->has_origaddr) {
-    abuf_puts(session->output, "\t|    | * Originator address: ");
-    netaddr_to_autobuf(session->output, &context->orig_addr);
-    abuf_puts(session->output, "\n");
+    abuf_appendf(session->output, "\t|    | * Originator address: %s\n",
+        netaddr_to_string(&buf, &context->orig_addr));
   }
   if (context->has_hoplimit) {
     abuf_appendf(session->output, "\t|    | * Hop limit:          %u\n", context->hoplimit);
@@ -361,15 +362,15 @@ _cb_print_msg_end(struct rfc5444_reader_tlvblock_context *context,
 enum rfc5444_result
 _cb_print_addr_start(struct rfc5444_reader_tlvblock_context *context) {
   struct rfc5444_print_session *session;
+  struct netaddr_str buf;
 
   assert (context->type == RFC5444_CONTEXT_ADDRESS);
 
   session = container_of(context->consumer, struct rfc5444_print_session, _addr);
 
   abuf_puts(session->output, "\t|    |    ,-------------------\n");
-  abuf_puts(session->output, "\t|    |    |  Address: ");
-  netaddr_to_autobuf(session->output, &context->addr);
-  abuf_puts(session->output, "\n");
+  abuf_appendf(session->output, "\t|    |    |  Address: %s\n",
+      netaddr_to_string(&buf, &context->addr));
   return RFC5444_OKAY;
 }
 
