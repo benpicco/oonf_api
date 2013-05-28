@@ -50,6 +50,7 @@
 #include "rfc5444/rfc5444_writer.h"
 #include "core/oonf_logging.h"
 #include "core/oonf_subsystem.h"
+#include "core/os_core.h"
 #include "subsystems/oonf_class.h"
 #include "subsystems/oonf_packet_socket.h"
 #include "subsystems/oonf_timer.h"
@@ -525,7 +526,7 @@ oonf_rfc5444_add_interface(struct oonf_rfc5444_protocol *protocol,
     oonf_packet_add_managed(&interf->_socket);
 
     /* initialize message sequence number */
-    protocol->_msg_seqno = random() & 0xffff;
+    protocol->_msg_seqno = os_core_random() & 0xffff;
 
     /* initialize listener list */
     list_init_head(&interf->_listener);
@@ -798,7 +799,7 @@ _create_target(struct oonf_rfc5444_interface *interf,
   target->_refcount = 1;
 
   /* initialize pktseqno */
-  target->_pktseqno = rand() & 0xffff;
+  target->_pktseqno = os_core_random() & 0xffff;
 
   return target;
 }

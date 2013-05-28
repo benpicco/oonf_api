@@ -39,6 +39,8 @@
  *
  */
 
+#include <sys/times.h>
+#include <stdlib.h>
 #include <syslog.h>
 
 #include "core/oonf_libdata.h"
@@ -59,11 +61,15 @@ struct oonf_subsystem oonf_os_core_subsystem = {
 };
 
 /**
- * Initialize syslog system
+ * Initialize core system
  * @return always returns 0
  */
 static int
 _init(void) {
+  /* seed random number generator */
+  srandom(times(NULL));
+
+  /* open logfile */
   openlog(oonf_log_get_appdata()->app_name, LOG_PID | LOG_ODELAY, LOG_DAEMON);
   setlogmask(LOG_UPTO(LOG_DEBUG));
 

@@ -48,6 +48,7 @@
 #include "common/common_types.h"
 #include "core/oonf_logging.h"
 #include "core/oonf_subsystem.h"
+#include "core/os_core.h"
 #include "subsystems/oonf_clock.h"
 #include "subsystems/oonf_timer.h"
 
@@ -164,7 +165,7 @@ oonf_timer_start(struct oonf_timer_entry *timer, uint64_t rel_time)
    * Compute random numbers only once.
    */
   if (!timer->_random) {
-    timer->_random = random();
+    timer->_random = os_core_random();
   }
 
   /* Fill entry */
@@ -282,7 +283,7 @@ oonf_timer_walk(void)
        * Timer has been not been stopped, so its periodic.
        * rehash the random number and restart.
        */
-      timer->_random = random();
+      timer->_random = os_core_random();
       oonf_timer_start(timer, timer->_period);
     }
   }

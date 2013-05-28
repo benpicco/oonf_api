@@ -58,6 +58,7 @@
 
 /* pre-decleare inlines */
 static INLINE int os_core_gettimeofday(struct timeval *tv);
+static INLINE unsigned int os_core_random(void);
 
 EXPORT extern struct oonf_subsystem oonf_os_core_subsystem;
 
