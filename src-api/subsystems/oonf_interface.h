@@ -73,8 +73,7 @@ struct oonf_interface_listener {
   void (*process)(struct oonf_interface_listener *);
 
   /*
-   * pointer to the interface this listener is registered to, will be
-   * set by the core while process() is called
+   * pointer to the interface this listener is registered to
    */
   struct oonf_interface *interface;
 

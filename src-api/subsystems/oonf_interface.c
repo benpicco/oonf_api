@@ -322,6 +322,8 @@ _cb_change_handler(void *ptr) {
   memset(&new_data, 0, sizeof(new_data));
   if (os_net_update_interface(&new_data, interf->data.name)) {
     /* an error happened, try again */
+    OONF_INFO(LOG_INTERFACE, "Could not query os network interface %s, trying again soon",
+        interf->data.name);
     _trigger_change_timer(interf);
     return;
   }
@@ -340,10 +342,8 @@ _cb_change_handler(void *ptr) {
     if (listener->process != NULL
         && (listener->name == NULL
             || strcasecmp(listener->name, interf->data.name) == 0)) {
-      listener->interface = interf;
       listener->old = &old_data;
       listener->process(listener);
-      listener->interface = NULL;
       listener->old = NULL;
     }
   }
