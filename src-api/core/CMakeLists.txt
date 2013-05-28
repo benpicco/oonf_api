@@ -34,19 +34,17 @@ SET(OONF_CORE_INCLUDES oonf_cfg.h
                        oonf_plugins.h
                        oonf_subsystem.h
                        oonf_libdata.h
-                       os_clock.h
-                       os_syslog.h
+                       os_core.h
                        )
 
 # add os_specific source(include files
 # TODO: add BSD and WIN32
 IF(LINUX)
     SET(OONF_CORE_SRCS ${OONF_CORE_SRCS}
-                       os_linux/os_clock_linux.c
-                       os_generic/os_syslog_generic.c
+                       os_generic/os_core_generic.c
                        )
     SET(OONF_CORE_INCLUDES ${OONF_CORE_INCLUDES}
-                       os_linux/os_clock_linux.h
+                       os_generic/os_core_generic.h
                        )
 ENDIF(LINUX)
 

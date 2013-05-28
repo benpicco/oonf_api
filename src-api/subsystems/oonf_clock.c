@@ -50,7 +50,7 @@
 
 #include "core/oonf_logging.h"
 #include "core/oonf_subsystem.h"
-#include "core/os_clock.h"
+#include "subsystems/os_clock.h"
 #include "subsystems/oonf_clock.h"
 
 /* prototypes */

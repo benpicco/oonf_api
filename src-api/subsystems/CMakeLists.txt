@@ -41,11 +41,13 @@ IF(LINUX)
                              os_generic/os_net_generic_sendto.c
                              os_generic/os_net_generic_set_nonblocking.c
                              os_generic/os_routing_generic_rt_to_string.c
+                             os_linux/os_clock_linux.c
                              os_linux/os_net_linux.c
                              os_linux/os_system_linux.c
                              os_linux/os_routing_linux.c
                              )
     SET(OONF_SUBSYSTEMS_INCLUDES ${OONF_SUBSYSTEMS_INCLUDES}
+                             os_linux/os_clock_linux.h
                              os_linux/os_net_linux.h
                              os_linux/os_system_linux.h
                              os_linux/os_routing_linux.h

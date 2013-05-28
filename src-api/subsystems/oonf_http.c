@@ -51,7 +51,7 @@
 #include "core/oonf_libdata.h"
 #include "core/oonf_logging.h"
 #include "core/oonf_subsystem.h"
-#include "core/os_clock.h"
+#include "core/os_core.h"
 #include "subsystems/oonf_http.h"
 #include "subsystems/oonf_stream_socket.h"
 
@@ -519,7 +519,7 @@ _create_http_header(struct oonf_stream_session *session,
   abuf_appendf(&buf, "%s %d %s\r\n", HTTP_VERSION_1_0, code, _get_headertype_string(code));
 
   /* Date */
-  os_clock_gettimeofday(&currtime);
+  os_core_gettimeofday(&currtime);
   abuf_strftime(&buf, "Date: %a, %d %b %Y %H:%M:%S GMT\r\n", localtime(&currtime.tv_sec));
 
   /* Server version */

@@ -43,16 +43,16 @@
 
 #include "core/oonf_libdata.h"
 #include "core/oonf_logging.h"
-#include "core/os_syslog.h"
 #include "core/oonf_subsystem.h"
+#include "core/os_core.h"
 
 /* prototypes */
 static int _init(void);
 static void _cleanup(void);
 
 /* subsystem definition */
-struct oonf_subsystem oonf_os_syslog_subsystem = {
-  .name = "os_syslog",
+struct oonf_subsystem oonf_os_core_subsystem = {
+  .name = "os_core",
   .init = _init,
   .cleanup = _cleanup,
   .no_logging = true,

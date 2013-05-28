@@ -39,19 +39,31 @@
  *
  */
 
-#ifndef OS_CLOCK_LINUX_H_
-#define OS_CLOCK_LINUX_H_
+#ifndef OS_CLOCK_H_
+#define OS_CLOCK_H_
 
-#include "core/os_clock.h"
+#include <stdio.h>
+#include <sys/time.h>
 
-/**
- * Inline wrapper around gettimeofday
- * @param tv pointer to target timeval object
- * @return -1 if an error happened, 0 otherwise
- */
-static INLINE int
-os_clock_gettimeofday(struct timeval *tv) {
-  return gettimeofday(tv, NULL);
-}
+#include "common/common_types.h"
+#include "core/oonf_subsystem.h"
 
-#endif /* OS_CLOCK_LINUX_H_ */
+#define MSEC_PER_SEC 1000
+#define USEC_PER_MSEC 1000
+
+#if defined(__linux__)
+#include "subsystems/os_linux/os_clock_linux.h"
+#elif defined (BSD)
+#include "subsystems/os_bsd/os_clock_bsd.h"
+#elif defined (_WIN32)
+#include "subsystems/os_win32/os_clock_win32.h"
+#else
+#error "Unknown operation system"
+#endif
+
+EXPORT extern struct oonf_subsystem oonf_os_clock_subsystem;
+
+/* prototypes for all os_system functions */
+EXPORT int os_clock_gettime64(uint64_t *t64);
+
+#endif /* OS_CLOCK_H_ */

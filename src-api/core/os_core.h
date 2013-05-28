@@ -39,34 +39,28 @@
  *
  */
 
-#ifndef OS_CLOCK_H_
-#define OS_CLOCK_H_
-
-#include <stdio.h>
-#include <sys/time.h>
+#ifndef OS_CORE_H_
+#define OS_CORE_H_
 
 #include "common/common_types.h"
+#include "core/oonf_logging.h"
 #include "core/oonf_subsystem.h"
 
-#define MSEC_PER_SEC 1000
-#define USEC_PER_MSEC 1000
-
-/* pre-decleare inlines */
-static INLINE int os_clock_gettimeofday(struct timeval *tv);
-
 #if defined(__linux__)
-#include "core/os_linux/os_clock_linux.h"
+#include "core/os_generic/os_core_generic.h"
 #elif defined (BSD)
-#include "core/os_bsd/os_clock_bsd.h"
+#include "core/os_generic/os_core_generic.h"
 #elif defined (_WIN32)
-#include "core/os_win32/os_clock_win32.h"
+#include "core/os_win32/os_core_win32.h"
 #else
 #error "Unknown operation system"
 #endif
 
-EXPORT extern struct oonf_subsystem oonf_os_clock_subsystem;
+/* pre-decleare inlines */
+static INLINE int os_core_gettimeofday(struct timeval *tv);
 
-/* prototypes for all os_system functions */
-EXPORT int os_clock_gettime64(uint64_t *t64);
+EXPORT extern struct oonf_subsystem oonf_os_core_subsystem;
 
-#endif /* OS_CLOCK_H_ */
+EXPORT void os_syslog_log(enum oonf_log_severity, const char *);
+
+#endif /* OS_CORE_H_ */

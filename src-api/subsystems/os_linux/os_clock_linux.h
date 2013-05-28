@@ -39,15 +39,7 @@
  *
  */
 
-#ifndef OS_SYSLOG_H_
-#define OS_SYSLOG_H_
+#ifndef OS_CLOCK_LINUX_H_
+#define OS_CLOCK_LINUX_H_
 
-#include "common/common_types.h"
-#include "core/oonf_logging.h"
-#include "core/oonf_subsystem.h"
-
-EXPORT extern struct oonf_subsystem oonf_os_syslog_subsystem;
-
-EXPORT void os_syslog_log(enum oonf_log_severity, const char *);
-
-#endif /* OS_SYSLOG_H_ */
+#endif /* OS_CLOCK_LINUX_H_ */

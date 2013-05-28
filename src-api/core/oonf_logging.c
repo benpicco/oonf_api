@@ -51,8 +51,7 @@
 #include "common/string.h"
 #include "core/oonf_libdata.h"
 #include "core/oonf_logging.h"
-#include "core/os_clock.h"
-#include "core/os_syslog.h"
+#include "core/os_core.h"
 
 #define FOR_ALL_LOGHANDLERS(handler, iterator) list_for_each_element_safe(&_handler_list, handler, node, iterator)
 
@@ -329,7 +328,7 @@ oonf_log_get_walltime(void) {
   struct timeval now;
   struct tm *tm;
 
-  if (os_clock_gettimeofday(&now)) {
+  if (os_core_gettimeofday(&now)) {
     return NULL;
   }
 

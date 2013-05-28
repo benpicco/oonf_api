@@ -39,85 +39,21 @@
  *
  */
 
-#include <time.h>
+#ifndef OS_CORE_GENERIC_H_
+#define OS_CORE_GENERIC_H_
 
-#include "common/common_types.h"
-#include "core/oonf_subsystem.h"
-#include "core/os_clock.h"
+#include <sys/time.h>
 
-/* prototypes */
-static int _init(void);
-
-/* type of clock source to be used */
-#if defined(CLOCK_MONOTONIC_RAW) || defined (CLOCK_MONOTONIC)
-static int _clock_source = 0;
-#endif
-
-/* subsystem definition */
-struct oonf_subsystem oonf_os_clock_subsystem = {
-  .name = "os_clock",
-  .init = _init,
-  .no_logging = true,
-};
+#include "core/os_core.h"
 
 /**
- * Initialize os-specific subsystem
- * @return always return 0
+ * Inline wrapper around gettimeofday
+ * @param tv pointer to target timeval object
+ * @return -1 if an error happened, 0 otherwise
  */
-static int
-_init(void) {
-  struct timespec ts;
-
-#ifdef CLOCK_MONOTONIC_RAW
-  if (clock_gettime(CLOCK_MONOTONIC_RAW, &ts) == 0) {
-    _clock_source = CLOCK_MONOTONIC_RAW;
-  }
-#endif
-#ifdef CLOCK_MONOTONIC
-  if (_clock_source == 0 && clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
-    _clock_source = CLOCK_MONOTONIC;
-  }
-#endif
-  return 0;
+static INLINE int
+os_core_gettimeofday(struct timeval *tv) {
+  return gettimeofday(tv, NULL);
 }
 
-/**
- * Reads the current time as a monotonic timestamp
- * @param t64 pointer to timestamp
- * @return 0 if valid timestamp was read, negative otherwise
- */
-int
-os_clock_gettime64(uint64_t *t64) {
-  static time_t offset = 0, last_sec = 0;
-  struct timeval tv;
-  int error;
-
-#if defined(CLOCK_MONOTONIC_RAW) || defined (CLOCK_MONOTONIC)
-  if (_clock_source) {
-    struct timespec ts;
-
-    if ((error = clock_gettime(_clock_source, &ts)) != 0) {
-      return error;
-    }
-
-    *t64 = 1000ull * ts.tv_sec + ts.tv_nsec / 1000000;
-    return 0;
-  }
-#endif
-  if ((error = gettimeofday(&tv, NULL)) != 0) {
-    return error;
-  }
-
-  tv.tv_sec += offset;
-  if (last_sec == 0) {
-    last_sec = tv.tv_sec;
-  }
-  if (tv.tv_sec < last_sec || tv.tv_sec > last_sec + 60) {
-    offset += last_sec - tv.tv_sec;
-    tv.tv_sec = last_sec;
-  }
-  last_sec = tv.tv_sec;
-
-  *t64 = 1000ull * tv.tv_sec + tv.tv_usec/ 1000;
-  return 0;
-}
+#endif /* OS_CORE_GENERIC_H_ */
