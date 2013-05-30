@@ -273,9 +273,6 @@ struct rfc5444_reader_tlvblock_consumer {
   enum rfc5444_result (*block_callback)(struct rfc5444_reader_tlvblock_context *context);
   enum rfc5444_result (*block_callback_failed_constraints)(
       struct rfc5444_reader_tlvblock_context *context);
-
-  /* private data pointer for API user */
-  void *private;
 };
 
 /* representation of the internal state of a rfc5444 parser */
