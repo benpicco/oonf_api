@@ -5,11 +5,10 @@ Crosscompilation with CMake is not really difficult.
 mkdir build-android
 cd build-android
 
-2) then run cmake with the right crosscompile template (see /files for examples)
+2) then run cmake with the right crosscompile template (see /cross for examples)
 
-cmake -D CMAKE_TOOLCHAIN_FILE=../cmake/files/android_on_linux.cmake ..
+cmake -D CMAKE_TOOLCHAIN_FILE=../cmake/cross/android_on_linux.cmake ..
 
 3) start building
 
 make
-

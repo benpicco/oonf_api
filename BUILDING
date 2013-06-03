@@ -10,3 +10,7 @@ be already reasonable.
 
 > cd build
 > ccmake ..
+
+If you want to crosscompile the routing agent, you will find a few
+examples in the cmake/cross. To compile the code with OpenWRT, you
+can use the repository (or a local copy) as an OpenWRT feed.
