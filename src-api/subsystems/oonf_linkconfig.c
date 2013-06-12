@@ -51,10 +51,10 @@
 #include "subsystems/oonf_timer.h"
 
 /* definitions and constants */
-#define CFG_LINKSPEED_KEY          "linkspeed"
+#define CFG_RX_LINKSPEED_KEY          "rx_linkspeed"
 
 enum {
-  CFG_LINKSPEED_DEFAULT = 0,
+  CFG_RX_LINKSPEED_DEFAULT = 0,
 };
 
 /* Prototypes */
@@ -63,7 +63,7 @@ static void _cleanup(void);
 static void _parse_strarray(struct strarray *array, const char *ifname,
     void (*set)(struct oonf_linkconfig_data *, const char *),
     const char *key, const char *def_value);
-static void _set_tx_speed(struct oonf_linkconfig_data *data, const char *value);
+static void _set_rx_speed(struct oonf_linkconfig_data *data, const char *value);
 static void _cleanup_database(void);
 static void _cb_config_changed(void);
 
@@ -80,12 +80,12 @@ static struct oonf_class _link_class = {
 
 /* subsystem definition */
 const struct oonf_linkconfig_data oonf_linkconfig_default = {
-  .tx_bitrate = CFG_LINKSPEED_DEFAULT,
+  .rx_bitrate = CFG_RX_LINKSPEED_DEFAULT,
 };
 
 static struct cfg_schema_entry _linkconfig_if_entries[] = {
-  CFG_VALIDATE_LINKSPEED(CFG_LINKSPEED_KEY, "",
-      "Sets the link speed on the interface. Consists of a speed in"
+  CFG_VALIDATE_LINKSPEED(CFG_RX_LINKSPEED_KEY, "",
+      "Sets the incoming link speed on the interface. Consists of a speed in"
       " bits/s (with iso-suffix) and an optional list of addresses (both IP and MAC)",
       .list = true),
 };
@@ -322,13 +322,13 @@ _parse_strarray(struct strarray *array, const char *ifname,
  * @param value string value of tx_speed
  */
 static void
-_set_tx_speed(struct oonf_linkconfig_data *data, const char *value) {
+_set_rx_speed(struct oonf_linkconfig_data *data, const char *value) {
   uint64_t speed;
 
   if (str_parse_human_readable_number(&speed, value, true)) {
     return;
   }
-  data->tx_bitrate = speed;
+  data->rx_bitrate = speed;
 }
 
 /**
@@ -362,17 +362,17 @@ _cb_config_changed(void) {
   struct cfg_entry *entry;
 
   if (_linkconfig_section.pre) {
-    entry = cfg_db_get_entry(_linkconfig_section.pre, CFG_LINKSPEED_KEY);
+    entry = cfg_db_get_entry(_linkconfig_section.pre, CFG_RX_LINKSPEED_KEY);
     if (entry) {
       _parse_strarray(&entry->val, _linkconfig_section.section_name,
-          _set_tx_speed, CFG_LINKSPEED_KEY, STRINGIFY(CFG_LINKSPEED_DEFAULT));
+          _set_rx_speed, CFG_RX_LINKSPEED_KEY, STRINGIFY(CFG_RX_LINKSPEED_DEFAULT));
     }
   }
   if (_linkconfig_section.post) {
-    entry = cfg_db_get_entry(_linkconfig_section.post, CFG_LINKSPEED_KEY);
+    entry = cfg_db_get_entry(_linkconfig_section.post, CFG_RX_LINKSPEED_KEY);
     if (entry) {
       _parse_strarray(&entry->val, _linkconfig_section.section_name,
-          _set_tx_speed, CFG_LINKSPEED_KEY, NULL);
+          _set_rx_speed, CFG_RX_LINKSPEED_KEY, NULL);
     }
   }
 

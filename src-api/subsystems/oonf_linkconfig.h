@@ -52,7 +52,7 @@
 #define LAYER2_CONFIG_CLASS_NETWORK            "linkconfig_neighbor"
 
 struct oonf_linkconfig_data {
-  uint64_t tx_bitrate;
+  uint64_t rx_bitrate;
 };
 struct oonf_linkconfig_network {
   char name[IF_NAMESIZE];
