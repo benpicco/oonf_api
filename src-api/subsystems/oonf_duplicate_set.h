@@ -55,6 +55,7 @@ enum oonf_duplicate_result {
   OONF_DUPSET_CURRENT,
   OONF_DUPSET_NEW,
   OONF_DUPSET_NEWEST,
+  OONF_DUPSET_FIRST,
 
   /* this one must be the last entry */
   OONF_DUPSET_MAX,
@@ -100,7 +101,7 @@ EXPORT enum oonf_duplicate_result oonf_duplicate_test(
 
 static INLINE bool
 oonf_duplicate_is_new(enum oonf_duplicate_result result) {
-  return result == OONF_DUPSET_NEW || result == OONF_DUPSET_NEWEST;
+  return result == OONF_DUPSET_NEW || result == OONF_DUPSET_NEWEST || result == OONF_DUPSET_FIRST;
 }
 
 #endif /* OONF_DUPLICATE_SET_H_ */

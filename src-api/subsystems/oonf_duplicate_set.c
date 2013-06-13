@@ -76,6 +76,7 @@ const char *OONF_DUPSET_RESULT_STR[OONF_DUPSET_MAX] = {
   [OONF_DUPSET_CURRENT]   = "current",
   [OONF_DUPSET_NEW]       = "new",
   [OONF_DUPSET_NEWEST]    = "newest",
+  [OONF_DUPSET_FIRST]     = "first",
 };
 
 /* subsystem definition */
@@ -180,15 +181,16 @@ oonf_duplicate_entry_add(struct oonf_duplicate_set *set, uint8_t msg_type,
     entry->_node.key = &entry->key;
     avl_insert(&set->_tree, &entry->_node);
 
-    return OONF_DUPSET_NEWEST;
+    result = OONF_DUPSET_FIRST;
   }
-
-  result = _test(entry, seqno, true);
-  OONF_DEBUG(LOG_DUPLICATE_SET, "Test msgtype %u, originator %s, seqno %u: %s",
+  else {
+    result = _test(entry, seqno, true);
+  }
+  OONF_DEBUG(LOG_DUPLICATE_SET, "Test/Add msgtype %u, originator %s, seqno %u: %s",
       msg_type, netaddr_to_string(&nbuf, originator), seqno,
       OONF_DUPSET_RESULT_STR[result]);
 
-  if (result == OONF_DUPSET_NEW || result == OONF_DUPSET_NEWEST) {
+  if (oonf_duplicate_is_new(result)) {
     /* reset validity timer */
     oonf_timer_set(&entry->_vtime, vtime);
   }
@@ -223,7 +225,7 @@ oonf_duplicate_test(struct oonf_duplicate_set *set, uint8_t msg_type,
 
   entry = avl_find_element(&set->_tree, &key, entry, _node);
   if (!entry) {
-    result = OONF_DUPSET_NEWEST;
+    result = OONF_DUPSET_FIRST;
   }
   else {
     result = _test(entry, seqno, false);
@@ -259,7 +261,6 @@ _test(struct oonf_duplicate_entry *entry,
 
   /* eliminate rollover */
   diff = rfc5444_seqno_difference(seqno, entry->current);
-
   if (diff < -31) {
     entry->too_old_count++;
     if (entry->too_old_count > OONF_DUPSET_MAXIMUM_TOO_OLD) {
@@ -284,6 +285,10 @@ _test(struct oonf_duplicate_entry *entry,
 
     if ((entry->history & bitmask) != 0) {
       return OONF_DUPSET_DUPLICATE;
+    }
+
+    if (set) {
+      entry->history |= bitmask;
     }
     return OONF_DUPSET_NEW;
   }
@@ -330,7 +335,10 @@ _avl_cmp_dupkey(const void *p1, const void *p2) {
 static void
 _cb_vtime(void *ptr) {
   struct oonf_duplicate_entry *entry = ptr;
+  struct netaddr_str nbuf;
 
+  OONF_DEBUG(LOG_DUPLICATE_SET, "Duplicate entry timed out: %s/%u",
+      netaddr_to_string(&nbuf, &entry->key.addr), entry->key.msg_type);
   oonf_timer_stop(&entry->_vtime);
   avl_remove(&entry->set->_tree, &entry->_node);
 
