@@ -399,7 +399,7 @@ bool rfc5444_writer_alltargets_selector(struct rfc5444_writer *writer __attribut
  */
 enum rfc5444_result
 rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t len) {
-  struct rfc5444_writer_target *interf;
+  struct rfc5444_writer_target *target;
   struct rfc5444_writer_message *rfc5444_msg;
   int cnt, hopcount = -1, hoplimit = -1;
   uint16_t size;
@@ -423,24 +423,28 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
   }
 
   /* check if message is small enough to be forwarded */
-  max_msg_size = writer->_msg.max;
-  list_for_each_element(&writer->_targets, interf, _target_node) {
+  max_msg_size = 0;
+  list_for_each_element(&writer->_targets, target, _target_node) {
     size_t max;
 
-    if (!rfc5444_msg->forward_target_selector(interf)) {
+    if (!rfc5444_msg->forward_target_selector(target)) {
       continue;
     }
 
-    if (interf->_is_flushed) {
+    if (target->_is_flushed) {
       /* begin a new packet */
-      _rfc5444_writer_begin_packet(writer,interf);
+      _rfc5444_writer_begin_packet(writer,target);
     }
 
-    max = interf->_pkt.max - (interf->_pkt.header + interf->_pkt.added + interf->_pkt.allocated);
-
-    if (max < max_msg_size) {
+    max = target->_pkt.max - (target->_pkt.header + target->_pkt.added + target->_pkt.allocated);
+    if (max_msg_size == 0 || max < max_msg_size) {
       max_msg_size = max;
     }
+  }
+
+  if (max_msg_size == 0) {
+    /* no interface selected */
+    return RFC5444_OKAY;
   }
 
   if (len > max_msg_size) {
@@ -477,25 +481,25 @@ rfc5444_writer_forward_msg(struct rfc5444_writer *writer, uint8_t *msg, size_t l
   }
 
   /* forward message */
-  list_for_each_element(&writer->_targets, interf, _target_node) {
-    if (!rfc5444_msg->forward_target_selector(interf)) {
+  list_for_each_element(&writer->_targets, target, _target_node) {
+    if (!rfc5444_msg->forward_target_selector(target)) {
       continue;
     }
 
     /* check if we have to flush the message buffer */
-    if (interf->_pkt.header + interf->_pkt.added + interf->_pkt.set + interf->_bin_msgs_size + len
-        > interf->_pkt.max) {
+    if (target->_pkt.header + target->_pkt.added + target->_pkt.set + target->_bin_msgs_size + len
+        > target->_pkt.max) {
       /* flush the old packet */
-      rfc5444_writer_flush(writer, interf, false);
+      rfc5444_writer_flush(writer, target, false);
 
       /* begin a new one */
-      _rfc5444_writer_begin_packet(writer,interf);
+      _rfc5444_writer_begin_packet(writer,target);
     }
 
-    ptr = &interf->_pkt.buffer[interf->_pkt.header + interf->_pkt.added
-                            + interf->_pkt.allocated + interf->_bin_msgs_size];
+    ptr = &target->_pkt.buffer[target->_pkt.header + target->_pkt.added
+                            + target->_pkt.allocated + target->_bin_msgs_size];
     memcpy(ptr, msg, len);
-    interf->_bin_msgs_size += len;
+    target->_bin_msgs_size += len;
 
     /* correct hoplimit if necesssary */
     if (hoplimit != -1) {
