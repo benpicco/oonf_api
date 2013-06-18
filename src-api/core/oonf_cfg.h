@@ -47,6 +47,7 @@
 #include "common/list.h"
 #include "common/netaddr.h"
 #include "config/cfg_schema.h"
+#include "core/oonf_subsystem.h"
 
 struct oonf_config_global {
   struct strarray plugin;
@@ -67,6 +68,7 @@ EXPORT extern struct oonf_config_global config_global;
 EXPORT int oonf_cfg_init(int argc, char **argv) __attribute__((warn_unused_result));
 EXPORT void oonf_cfg_cleanup(void);
 EXPORT int oonf_cfg_loadplugins(void) __attribute__((warn_unused_result));
+EXPORT struct oonf_subsystem *oonf_cfg_load_plugin(const char *name);
 EXPORT void oonf_cfg_unconfigure_plugins(void);
 EXPORT void oonf_cfg_initplugins(void);
 EXPORT int oonf_cfg_apply(void) __attribute__((warn_unused_result));

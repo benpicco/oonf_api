@@ -54,19 +54,25 @@ oonf_subsystem_configure(struct cfg_schema *schema,
 
   assert(subsystem->name);
 
+  OONF_INFO(LOG_SUBSYSTEMS, "Configure subsystem %s", subsystem->name);
+
   /* add schema sections to global schema */
   schema_section = subsystem->cfg_section;
   while (schema_section) {
+    OONF_DEBUG(LOG_SUBSYSTEMS, "Add configuration section %s", schema_section->type);
+
     cfg_schema_add_section(schema, schema_section);
     schema_section = schema_section->next_section;
   }
 
   if (subsystem->early_cfg_init) {
+    OONF_DEBUG(LOG_SUBSYSTEMS, "Call 'early_cfg_init() callback");
     subsystem->early_cfg_init();
   }
 
   /* add logging source */
   if (!subsystem->no_logging) {
+    OONF_DEBUG(LOG_SUBSYSTEMS, "Register logging source %s", subsystem->name);
     subsystem->logging = oonf_log_register_source(subsystem->name);
   }
   else {
@@ -79,8 +85,11 @@ oonf_subsystem_unconfigure(struct cfg_schema *schema,
     struct oonf_subsystem *subsystem) {
   struct cfg_schema_section *schema_section;
 
+  OONF_INFO(LOG_SUBSYSTEMS, "Unregister subsystem %s", subsystem->name);
+
   schema_section = subsystem->cfg_section;
   while (schema_section) {
+    OONF_DEBUG(LOG_SUBSYSTEMS, "Unregister configuration section %s", schema_section->type);
     cfg_schema_remove_section(schema, schema_section);
     schema_section = schema_section->next_section;
   }

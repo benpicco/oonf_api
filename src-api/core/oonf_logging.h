@@ -74,6 +74,7 @@ enum oonf_log_source {
   LOG_LOGGING,
   LOG_CONFIG,
   LOG_PLUGINS,
+  LOG_SUBSYSTEMS,
 
   /* this one must be the last ones of the normal enums ! */
   LOG_CORESOURCE_COUNT,

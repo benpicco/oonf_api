@@ -76,6 +76,7 @@ const char *LOG_SOURCE_NAMES[LOG_MAXIMUM_SOURCES] = {
   [LOG_LOGGING]       = "logging",
   [LOG_CONFIG]        = "config",
   [LOG_PLUGINS]       = "plugins",
+  [LOG_SUBSYSTEMS]    = "subsystems",
 };
 
 const char *LOG_SEVERITY_NAMES[LOG_SEVERITY_MAX+1] = {

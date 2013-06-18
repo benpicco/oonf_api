@@ -215,18 +215,9 @@ oonf_cfg_loadplugins(void) {
     if (*ptr == 0) {
       continue;
     }
-
-    if (oonf_plugins_get(ptr)) {
-      /* already loaded */
-      continue;
-    }
-
-    plugin = oonf_plugins_load(ptr);
-    if (plugin == NULL && config_global.failfast) {
+    if (oonf_cfg_load_plugin(ptr) == NULL&& config_global.failfast) {
       return -1;
     }
-
-    oonf_subsystem_configure(&_oonf_schema, plugin);
   }
 
   /* unload all plugins that are not in use anymore */
@@ -253,6 +244,23 @@ oonf_cfg_loadplugins(void) {
   }
 
   return 0;
+}
+
+struct oonf_subsystem *
+oonf_cfg_load_plugin(const char *name) {
+  struct oonf_subsystem *plugin;
+
+  plugin = oonf_plugins_get(name);
+  if (plugin) {
+    /* already loaded */
+    return plugin;
+  }
+
+  plugin = oonf_plugins_load(name);
+  if (plugin) {
+    oonf_subsystem_configure(&_oonf_schema, plugin);
+  }
+  return plugin;
 }
 
 void
