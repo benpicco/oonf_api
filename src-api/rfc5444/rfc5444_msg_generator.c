@@ -201,12 +201,8 @@ rfc5444_writer_create_message(struct rfc5444_writer *writer, uint8_t msgid,
     }
   }
 
-  /* make sure all address index values are initialized */
-  list_for_each_element(&msg->_addr_head, addr, _addr_node) {
- //   addr->index = -1;
-  }
-
   not_fragmented = true;
+
   /* no addresses ? */
   if (list_is_empty(&msg->_addr_head)) {
     _finalize_message_fragment(writer, msg, NULL, NULL, true, useIf, param);
@@ -823,20 +819,24 @@ _compress_address(struct _rfc5444_internal_addr_compress_session *acs,
   struct rfc5444_writer_address *last_addr = NULL;
   struct rfc5444_writer_addrtlv *tlv;
   int i, common_head;
+  const uint8_t *addrptr, *last_addrptr;
   uint8_t addrlen;
   bool special_prefixlen;
 
   addrlen = msg->addr_len;
   common_head = 0;
-  special_prefixlen = addr->prefixlen != addrlen * 8;
+  special_prefixlen = netaddr_get_prefix_length(&addr->address) != addrlen * 8;
+
+  addrptr = netaddr_get_binptr(&addr->address);
 
   /* add size for address part (and header if necessary) */
   if (!first) {
     /* get previous address */
     last_addr = list_prev_element(addr, _addr_node);
 
-    /* remember how meny entries with the same prefixlength we had */
-    if (last_addr->prefixlen == addr->prefixlen) {
+    /* remember how many entries with the same prefixlength we had */
+    if (netaddr_get_prefix_length(&last_addr->address)
+        == netaddr_get_prefix_length(&addr->address)) {
       same_prefixlen++;
     } else {
       same_prefixlen = 1;
@@ -844,8 +844,9 @@ _compress_address(struct _rfc5444_internal_addr_compress_session *acs,
 
     /* add bytes to continue encodings with same prefix */
 #if DO_ADDR_COMPRESSION == true
+    last_addrptr = netaddr_get_binptr(&last_addr->address);
     for (common_head = 0; common_head < addrlen; common_head++) {
-      if (last_addr->addr[common_head] != addr->addr[common_head]) {
+      if (last_addrptr[common_head] != addrptr[common_head]) {
         break;
       }
     }
@@ -884,6 +885,7 @@ _compress_address(struct _rfc5444_internal_addr_compress_session *acs,
       else if (same_prefixlen == 1) {
         /* will become multi_prefixlen */
         continue_cost += (acs[i].ptr->index - addr->index + 1);
+        acs[i].multiplen = true;
       }
     }
 
@@ -1058,7 +1060,7 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
     struct rfc5444_writer_address *first_addr, struct rfc5444_writer_address *last_addr) {
   struct rfc5444_writer_address *addr_start, *addr_end, *addr;
   struct rfc5444_writer_tlvtype *tlvtype;
-
+  const uint8_t *addr_start_ptr, *addr_ptr;
   uint8_t *start, *ptr, *flag, *tlvblock_length;
 
   assert(first_addr->_block_end);
@@ -1076,6 +1078,7 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
     bool zero_tail = false;
 #endif
 
+    addr_start_ptr = netaddr_get_binptr(&addr_start->address);
     addr_end = addr_start->_block_end;
 
 #if DO_ADDR_COMPRESSION == true
@@ -1087,13 +1090,15 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
 
       /* calculate tail length and netmask length */
       list_for_element_range(addr_start, addr_end, addr, _addr_node) {
+        addr_ptr = netaddr_get_binptr(&addr->address);
+
         /* stop if no tail is left */
         if (tail_len == 0) {
           break;
         }
 
         for (tail = 1; tail <= tail_len; tail++) {
-          if (addr_start->addr[msg->addr_len - tail] != addr->addr[msg->addr_len - tail]) {
+          if (addr_start_ptr[msg->addr_len - tail] != addr_ptr[msg->addr_len - tail]) {
             tail_len = tail - 1;
             break;
           }
@@ -1102,7 +1107,7 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
 
       zero_tail = tail_len > 0;
       for (tail = 0; zero_tail && tail < tail_len; tail++) {
-        if (addr_start->addr[msg->addr_len - tail - 1] != 0) {
+        if (addr_start_ptr[msg->addr_len - tail - 1] != 0) {
           zero_tail = false;
         }
       }
@@ -1122,7 +1127,7 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
     if (head_len) {
       *flag |= RFC5444_ADDR_FLAG_HEAD;
       *ptr++ = head_len;
-      memcpy(ptr, &addr_start->addr[0], head_len);
+      memcpy(ptr, addr_start_ptr, head_len);
       ptr += head_len;
     }
 
@@ -1133,14 +1138,15 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
         *flag |= RFC5444_ADDR_FLAG_ZEROTAIL;
       } else {
         *flag |= RFC5444_ADDR_FLAG_FULLTAIL;
-        memcpy(ptr, &addr_start->addr[msg->addr_len - tail_len], tail_len);
+        memcpy(ptr, &addr_start_ptr[msg->addr_len - tail_len], tail_len);
         ptr += tail_len;
       }
     }
 #endif
     /* loop through addresses in block for MID part */
     list_for_element_range(addr_start, addr_end, addr, _addr_node) {
-      memcpy(ptr, &addr->addr[head_len], mid_len);
+      addr_ptr = netaddr_get_binptr(&addr->address);
+      memcpy(ptr, &addr_ptr[head_len], mid_len);
       ptr += mid_len;
     }
 
@@ -1149,12 +1155,12 @@ _write_addresses(struct rfc5444_writer *writer, struct rfc5444_writer_message *m
       /* multiple prefixlen */
       *flag |= RFC5444_ADDR_FLAG_MULTIPLEN;
       list_for_element_range(addr_start, addr_end, addr, _addr_node) {
-        *ptr++ = addr->prefixlen;
+        *ptr++ = netaddr_get_prefix_length(&addr->address);
       }
-    } else if (addr_start->prefixlen != msg->addr_len * 8) {
+    } else if (netaddr_get_prefix_length(&addr_start->address)!= msg->addr_len * 8) {
       /* single prefixlen */
       *flag |= RFC5444_ADDR_FLAG_SINGLEPLEN;
-      *ptr++ = addr_start->prefixlen;
+      *ptr++ = netaddr_get_prefix_length(&addr_start->address);
     }
 
     /* remember pointer for tlvblock length */

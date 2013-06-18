@@ -161,7 +161,8 @@ EXPORT const char *netaddr_socket_to_string(struct netaddr_str *, const union ne
 EXPORT int netaddr_cmp_to_socket(const struct netaddr *, const union netaddr_socket *);
 EXPORT bool netaddr_isequal_binary(const struct netaddr *addr,
     const void *bin, size_t len, uint16_t af, uint8_t prefix_len);
-EXPORT bool netaddr_is_in_subnet(const struct netaddr *subnet, const struct netaddr *addr);
+EXPORT bool netaddr_is_in_subnet(const struct netaddr *subnet,
+    const struct netaddr *addr);
 EXPORT bool netaddr_binary_is_in_subnet(const struct netaddr *subnet,
     const void *bin, size_t len, uint8_t af_family);
 

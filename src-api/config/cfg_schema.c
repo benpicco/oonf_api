@@ -61,6 +61,7 @@ static bool _validate_cfg_entry(
 static bool _check_missing_entries(struct cfg_schema_section *schema_section,
     struct cfg_db *db, struct cfg_named_section *named,
     const char *section_name, struct autobuf *out);
+static bool _section_needs_default_named_one(struct cfg_section_type *type);
 static void _handle_named_section_change(struct cfg_schema_section *s_section,
     struct cfg_db *pre_change, struct cfg_db *post_change,
     const char *name, bool startup,
@@ -220,13 +221,15 @@ cfg_schema_validate(struct cfg_db *db,
         warning = false;
         hasName = cfg_db_is_named_section(named);
 
-        if (!(schema_section->mode == CFG_SSMODE_NAMED
-            || schema_section->mode == CFG_SSMODE_NAMED_MANDATORY) && hasName) {
-          cfg_append_printable_line(out, "The section type '%s'"
-              " has to be used without a name"
-              " ('%s' was given as a name)", section->type, named->name);
+        if (hasName) {
+          if (schema_section->mode == CFG_SSMODE_UNNAMED
+              || schema_section->mode == CFG_SSMODE_UNNAMED_OPTIONAL_STARTUP_TRIGGER) {
+            cfg_append_printable_line(out, "The section type '%s'"
+                " has to be used without a name"
+                " ('%s' was given as a name)", section->type, named->name);
 
-          warning = true;
+            warning = true;
+          }
         }
 
         if (hasName && !cfg_is_allowed_key(named->name, true)) {
@@ -1057,6 +1060,32 @@ cfg_schema_tobin_stringlist(const struct cfg_schema_entry *s_entry __attribute__
 }
 
 /**
+ * Check if a section_type contains no named section
+ * @param type pointer to section_type
+ * @return true if section type contains no named section
+ */
+static bool
+_section_needs_default_named_one(struct cfg_section_type *type) {
+  struct cfg_named_section *named;
+
+  if (type == NULL || type->names.count == 0) {
+    /* no named sections there, so we need the default one */
+    return true;
+  }
+
+  if (type->names.count > 1) {
+    /* more than one section, that means at least one named one */
+    return false;
+  }
+
+  /* we have exactly one section inside */
+  named = avl_first_element(&type->names, named, node);
+
+  /* we need the default if the existing section has no name */
+  return !cfg_db_is_named_section(named);
+}
+
+/**
  * Compare two sets of databases and trigger delta listeners according to connected
  * schema.
  * @param pre_change pre-change database
@@ -1101,9 +1130,8 @@ _handle_db_changes(struct cfg_db *pre_change, struct cfg_db *post_change, bool s
     post_defnamed = NULL;
 
     if (s_section->mode == CFG_SSMODE_NAMED_WITH_DEFAULT) {
-      /* check if pre_change db has a named section with the default name */
-      if (pre_type == NULL || !avl_find_element(
-            &pre_type->names, s_section->def_name, pre_named, node)) {
+      /* check if we need a default section for pre_change db */
+      if (!startup && _section_needs_default_named_one(pre_type)) {
         /* initialize dummy section type for pre-change db */
         default_section_type[0].type = s_section->type;
 
@@ -1114,9 +1142,8 @@ _handle_db_changes(struct cfg_db *pre_change, struct cfg_db *post_change, bool s
         pre_defnamed = &default_named_section[0];
       }
 
-      /* check if post_change db has a named section with the default name */
-      if (post_type == NULL || !avl_find_element(
-            &post_type->names, s_section->def_name, post_named, node)) {
+      /* check if we need a default section for post_change db */
+      if (_section_needs_default_named_one(post_type)) {
         /* initialize dummy section type for post-change db */
         default_section_type[1].type = s_section->type;
 
@@ -1156,11 +1183,10 @@ _handle_db_changes(struct cfg_db *pre_change, struct cfg_db *post_change, bool s
       _handle_named_section_change(s_section, pre_change, post_change, NULL, true,
           pre_defnamed, post_defnamed);
     }
-    if (startup && s_section->mode == CFG_SSMODE_NAMED_WITH_DEFAULT
-        && pre_defnamed != NULL && post_defnamed != NULL) {
-      /* send change signal on startup for default named section */
+    if ((pre_defnamed != NULL) != (post_defnamed != NULL)) {
+      /* status of default named section changed */
       _handle_named_section_change(s_section, pre_change, post_change,
-          s_section->def_name, true, NULL, post_defnamed);
+          s_section->def_name, true, pre_defnamed, post_defnamed);
     }
   }
   return 0;

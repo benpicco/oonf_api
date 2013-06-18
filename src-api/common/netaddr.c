@@ -687,8 +687,8 @@ netaddr_binary_is_in_subnet(const struct netaddr *subnet,
 }
 
 /**
- * Checks if a netaddr object is part of another netaddr
- * prefix.
+ * Checks if a netaddr object is part of another netaddr prefix.
+ * The prefix length of addr is ignored for this comparison.
  * @param subnet netaddr prefix
  * @param addr netaddr object that might be inside the prefix
  * @return true if addr is part of subnet, false otherwise
@@ -696,11 +696,6 @@ netaddr_binary_is_in_subnet(const struct netaddr *subnet,
 bool
 netaddr_is_in_subnet(const struct netaddr *subnet,
     const struct netaddr *addr) {
-  if (subnet->_type != addr->_type
-      || subnet->_prefix_len > addr->_prefix_len) {
-    return false;
-  }
-
   return _binary_is_in_subnet(subnet, addr->_addr);
 }
 

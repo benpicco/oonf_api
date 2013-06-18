@@ -146,24 +146,28 @@ static void addMessageHeader(struct rfc5444_writer *wr, struct rfc5444_writer_me
 }
 
 static void addAddresses(struct rfc5444_writer *wr) {
-  uint8_t ip[4] = { 10,1, 0, 101 };
+  struct netaddr ip; // = { { 10,1,0,101}, AF_INET, 32 };
   struct rfc5444_writer_address *addr;
   char value0 =  0, value1 = 1;
 
-  ip[0] = 10; ip[1] = 1; ip[2] = 0; ip[3] = 101;
-  addr = rfc5444_writer_add_address(wr, cpr.creator, ip, 32, false);
+  CHECK_TRUE(0 == netaddr_from_string(&ip, "10.1.0.101"), "failed to initialize ip");
+  //ip._addr[0] = 10; ip._addr[1] = 1; ip._addr[2] = 0; ip._addr[3] = 101;
+  addr = rfc5444_writer_add_address(wr, cpr.creator, &ip, false);
   rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[1], &value1, 1, false);
 
-  ip[0] = 10; ip[1] = 1; ip[2] = 0; ip[3] = 102;
-  addr = rfc5444_writer_add_address(wr, cpr.creator, ip, 32, false);
+  CHECK_TRUE(0 == netaddr_from_string(&ip, "10.1.0.102"), "failed to initialize ip");
+  //ip._addr[0] = 10; ip._addr[1] = 1; ip._addr[2] = 0; ip._addr[3] = 102;
+  addr = rfc5444_writer_add_address(wr, cpr.creator, &ip, false);
   rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[0], &value0, 1, false);
 
-  ip[0] = 10; ip[1] = 1; ip[2] = 0; ip[3] = 103;
-  addr = rfc5444_writer_add_address(wr, cpr.creator, ip, 32, false);
+  CHECK_TRUE(0 == netaddr_from_string(&ip, "10.1.0.103"), "failed to initialize ip");
+  //ip._addr[0] = 10; ip._addr[1] = 1; ip._addr[2] = 0; ip._addr[3] = 103;
+  addr = rfc5444_writer_add_address(wr, cpr.creator, &ip, false);
   rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[1], &value1, 1, false);
 
-  ip[0] = 10; ip[1] = 11; ip[2] = 11; ip[3] = 11;
-  addr = rfc5444_writer_add_address(wr, cpr.creator, ip, 32, false);
+  CHECK_TRUE(0 == netaddr_from_string(&ip, "10.11.11.11"), "failed to initialize ip");
+  //ip._addr[0] = 10; ip._addr[1] = 11; ip._addr[2] = 11; ip._addr[3] = 11;
+  addr = rfc5444_writer_add_address(wr, cpr.creator, &ip, false);
   rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[1], &value1, 1, false);
 }
 

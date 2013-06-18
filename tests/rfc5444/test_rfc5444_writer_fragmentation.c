@@ -104,18 +104,18 @@ static void finishMessageHeader(struct rfc5444_writer *wr  __attribute__ ((unuse
 }
 
 static void addAddresses(struct rfc5444_writer *wr) {
-  uint8_t ip[4] = { 10, 0, 0, 0 };
+  struct netaddr ip = { { 10,0,0,0}, AF_INET, 32 };
   struct rfc5444_writer_address *addr;
   int i;
 
   for (i=0; i<tlvcount; i++) {
-    ip[3] = i+1;
+    ip._addr[3] = i+1;
 
     if (tlv_value) {
       tlv_value[tlv_value_size-1] = (uint8_t)(i & 255);
     }
 
-    addr = rfc5444_writer_add_address(wr, cpr.creator, ip, 32, false);
+    addr = rfc5444_writer_add_address(wr, cpr.creator, &ip, false);
     rfc5444_writer_add_addrtlv(wr, addr, &addrtlvs[0], tlv_value, tlv_value_size, false);
 
     if (tlv_value) {

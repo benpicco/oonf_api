@@ -42,6 +42,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "common/avl.h"
 #include "common/avl_comp.h"
@@ -54,7 +55,6 @@
 static void _register_addrtlvtype(struct rfc5444_writer *writer,
     struct rfc5444_writer_message *msg,
     struct rfc5444_writer_tlvtype *type);
-static int _msgaddr_avl_comp(const void *k1, const void *k2);
 static void *_copy_addrtlv_value(struct rfc5444_writer *writer, const void *value, size_t length);
 static void _free_tlvtype_tlvs(struct rfc5444_writer *writer, struct rfc5444_writer_tlvtype *tlvtype);
 static void _lazy_free_message(struct rfc5444_writer *writer, struct rfc5444_writer_message *msg);
@@ -222,58 +222,26 @@ rfc5444_writer_add_addrtlv(struct rfc5444_writer *writer, struct rfc5444_writer_
  *
  * @param writer pointer to writer context
  * @param msg pointer to message object
- * @param addr_ptr pointer to binary address in network byte order
- * @param prefix prefix length
+ * @param address pointer network address
  * @param mandatory true if address is mandatory for all fragments of message
  * @return pointer to address object, NULL if an error happened
  */
 struct rfc5444_writer_address *
 rfc5444_writer_add_address(struct rfc5444_writer *writer __attribute__ ((unused)),
-    struct rfc5444_writer_message *msg, const void *addr_ptr, uint8_t prefix, bool mandatory) {
+    struct rfc5444_writer_message *msg, const struct netaddr *naddr, bool mandatory) {
   struct rfc5444_writer_address *address;
-  const uint8_t *addr;
-#if CLEAR_ADDRESS_POSTFIX == true
-  int i, p;
-  uint8_t cleaned_addr[RFC5444_MAX_ADDRLEN];
-#endif
 
 #if WRITER_STATE_MACHINE == true
   assert(writer->_state == RFC5444_WRITER_ADD_ADDRESSES);
 #endif
 
-  addr = addr_ptr;
-#if CLEAR_ADDRESS_POSTFIX == true
-  /* only copy prefix part of address */
-  for (p = prefix, i=0; i < _msg->addr_len; i++, p -= 8) {
-    if (p > 7) {
-      cleaned_addr[i] = addr[i];
-    }
-    else if (p <= 0) {
-      cleaned_addr[i] = 0;
-    }
-    else {
-      uint8_t mask = 255 << (8-p);
-      cleaned_addr[i] = addr[i] & mask;
-    }
-  }
-
-  address = avl_find_element(&_msg->_addr_tree, cleaned_addr, address, _addr_tree_node);
-#else
-  address = avl_find_element(&msg->_addr_tree, addr, address, _addr_tree_node);
-#endif
-
-
+  address = avl_find_element(&msg->_addr_tree, naddr, address, _addr_tree_node);
   if (address == NULL) {
     if ((address = writer->malloc_address_entry()) == NULL) {
       return NULL;
     }
 
-#if CLEAR_ADDRESS_POSTFIX == true
-    memcpy(address->addr, cleaned_addr, _msg->addr_len);
-#else
-    memcpy(address->addr, addr, msg->addr_len);
-#endif
-    address->prefixlen = prefix;
+    memcpy(&address->address, naddr, sizeof(*naddr));
 
     /* calculate original index of address */
     address->_orig_index = msg->_addr_tree.count;
@@ -282,7 +250,7 @@ rfc5444_writer_add_address(struct rfc5444_writer *writer __attribute__ ((unused)
     list_add_tail(&msg->_addr_head, &address->_addr_node);
 
     /* add address into message address tree */
-    address->_addr_tree_node.key = address->addr;
+    address->_addr_tree_node.key = &address->address;
     avl_insert(&msg->_addr_tree, &address->_addr_tree_node);
 
     avl_init(&address->_addrtlv_tree, avl_comp_uint32, true);
@@ -591,7 +559,7 @@ _get_message(struct rfc5444_writer *writer, uint8_t msgid) {
 
   list_init_head(&msg->_msgspecific_tlvtype_head);
 
-  avl_init(&msg->_addr_tree, _msgaddr_avl_comp, false);
+  avl_init(&msg->_addr_tree, avl_comp_netaddr, false);
   list_init_head(&msg->_addr_head);
   return msg;
 }
@@ -624,15 +592,6 @@ _register_addrtlvtype(struct rfc5444_writer *writer,
     /* add to generic address tlvtype list */
     list_add_tail(&writer->_addr_tlvtype_head, &tlvtype->_tlvtype_node);
   }
-}
-
-/**
- * AVL tree comparator for comparing addresses.
- * Custom pointer points to corresponding rfc5444_writer_message.
- */
-static int
-_msgaddr_avl_comp(const void *k1, const void *k2) {
-  return memcmp(k1, k2, 16);
 }
 
 /**

@@ -136,6 +136,7 @@ os_routing_set(struct os_route *route, bool set, bool del_similar) {
   unsigned char scope;
   struct os_route os_rt;
   int seq;
+  struct os_route_str rbuf;
 
   memset(buffer, 0, sizeof(buffer));
 
@@ -176,6 +177,9 @@ os_routing_set(struct os_route *route, bool set, bool del_similar) {
     /* use destination as gateway, to 'force' linux kernel to do proper source address selection */
     os_rt.gw = os_rt.dst;
   }
+
+  OONF_DEBUG(LOG_OS_ROUTING, "%sset route: %s", set ? "" : "re",
+      os_routing_to_string(&rbuf, &os_rt));
 
   if (_routing_set(msg, &os_rt, RTN_UNICAST, scope)) {
     return -1;

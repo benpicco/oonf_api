@@ -48,6 +48,7 @@ struct rfc5444_writer_message;
 #include "common/avl.h"
 #include "common/common_types.h"
 #include "common/list.h"
+#include "common/netaddr.h"
 #include "rfc5444/rfc5444_context.h"
 #include "rfc5444/rfc5444_reader.h"
 #include "rfc5444/rfc5444_tlv_writer.h"
@@ -124,8 +125,7 @@ struct rfc5444_writer_address {
   int index;
 
   /* address/prefix */
-  uint8_t addr[RFC5444_MAX_ADDRLEN];
-  uint8_t prefixlen;
+  struct netaddr address;
 
   /* node of address list in writer_message */
   struct list_entity _addr_node;
@@ -365,7 +365,7 @@ struct rfc5444_writer {
 
 /* functions that can be called from addAddress callback */
 EXPORT struct rfc5444_writer_address *rfc5444_writer_add_address(struct rfc5444_writer *writer,
-    struct rfc5444_writer_message *msg, const void *addr, uint8_t prefix, bool mandatory);
+    struct rfc5444_writer_message *msg, const struct netaddr *, bool mandatory);
 EXPORT enum rfc5444_result rfc5444_writer_add_addrtlv(struct rfc5444_writer *writer,
     struct rfc5444_writer_address *addr, struct rfc5444_writer_tlvtype *tlvtype,
     const void *value, size_t length, bool allow_dup);
