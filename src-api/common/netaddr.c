@@ -696,6 +696,9 @@ netaddr_binary_is_in_subnet(const struct netaddr *subnet,
 bool
 netaddr_is_in_subnet(const struct netaddr *subnet,
     const struct netaddr *addr) {
+  if (subnet->_type != addr->_type) {
+    return false;
+  }
   return _binary_is_in_subnet(subnet, addr->_addr);
 }
 

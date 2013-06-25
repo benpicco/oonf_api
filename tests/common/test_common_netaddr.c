@@ -122,28 +122,32 @@ const struct netaddr in_subnet_subnets[]= {
     { { 10,0,0,0 }, AF_INET, 8 },
     { { 10,0,0,0 }, AF_INET, 31 },
     { { 10,0,0,0 }, AF_INET, 32 },
+    { {  0,0,0,0 }, AF_INET, 0 },
 };
 
 
-const struct netaddr in_subnet_addrs[5] = {
+const struct netaddr in_subnet_addrs[] = {
     { { 10,0,0,0 }, AF_INET, 32 },
     { { 10,0,0,1 }, AF_INET, 32 },
     { { 10,1,0,0 }, AF_INET, 32 },
     { { 11,0,0,0 }, AF_INET, 32 },
     { { 12,0,0,0 }, AF_INET, 32 },
+    { { 0xfc,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1 }, AF_INET6, 128 },
 };
 
-const bool in_subnet_results[5][4] = {
-    /* address 10.0.0.0 in 10.0.0.0/7, 10.0.0.0/8, 10.0.0.0/31, 10.0.0.0/32 */
-    { true, true, true, true },
-    /* address 10.0.0.1 in 10.0.0.0/7, 10.0.0.0/8, 10.0.0.0/31, 10.0.0.0/32 */
-    { true, true, true, false },
-    /* address 10.1.0.1 in 10.0.0.0/7, 10.0.0.0/8, 10.0.0.0/31, 10.0.0.0/32 */
-    { true, true, false, false },
-    /* address 11.0.0.0 in 10.0.0.0/7, 10.0.0.0/8, 10.0.0.0/31, 10.0.0.0/32 */
-    { true, false, false, false },
-    /* address 12.0.0.0 in 10.0.0.0/7, 10.0.0.0/8, 10.0.0.0/31, 10.0.0.0/32 */
-    { false, false, false, false },
+const bool in_subnet_results[6][5] = {
+    /* address 10.0.0.0 in 10.0.0.0/7, 10.0.0.0/8, 10.0.0.0/31, 10.0.0.0/32, 0.0.0.0/0 */
+    { true, true, true, true, true },
+    /* address 10.0.0.1 in 10.0.0.0/7, 10.0.0.0/8, 10.0.0.0/31, 10.0.0.0/32, 0.0.0.0/0 */
+    { true, true, true, false, true },
+    /* address 10.1.0.1 in 10.0.0.0/7, 10.0.0.0/8, 10.0.0.0/31, 10.0.0.0/32, 0.0.0.0/0 */
+    { true, true, false, false, true },
+    /* address 11.0.0.0 in 10.0.0.0/7, 10.0.0.0/8, 10.0.0.0/31, 10.0.0.0/32, 0.0.0.0/0 */
+    { true, false, false, false, true },
+    /* address 12.0.0.0 in 10.0.0.0/7, 10.0.0.0/8, 10.0.0.0/31, 10.0.0.0/32, 0.0.0.0/0 */
+    { false, false, false, false, true },
+    /* address fc00::1 in 10.0.0.0/7, 10.0.0.0/8, 10.0.0.0/31, 10.0.0.0/32, 0.0.0.0/0 */
+    { false, false, false, false, false },
 };
 
 /* create host tests */
@@ -335,15 +339,18 @@ test_netaddr_is_in_subnet(void) {
   for (s = 0; s < sizeof(in_subnet_subnets) / sizeof(*in_subnet_subnets); s++) {
     for (a = 0; a < sizeof(in_subnet_addrs) / sizeof(*in_subnet_addrs); a++) {
       CHECK_TRUE(
-          in_subnet_results[a][s] == netaddr_binary_is_in_subnet(&in_subnet_subnets[s], &in_subnet_addrs[a], 4, AF_INET),
-          "%s is not in %s",
+          in_subnet_results[a][s] == netaddr_binary_is_in_subnet(&in_subnet_subnets[s], &in_subnet_addrs[a],
+              netaddr_get_maxprefix(&in_subnet_addrs[a])/8, in_subnet_addrs[a]._type),
+          "%s should %sbe in %s",
           netaddr_to_string(&str1, &in_subnet_addrs[a]),
+          in_subnet_results[a][s] ? "" : "not ",
           netaddr_to_string(&str2, &in_subnet_subnets[s]));
 
       CHECK_TRUE(
           in_subnet_results[a][s] == netaddr_is_in_subnet(&in_subnet_subnets[s], &in_subnet_addrs[a]),
-          "%s is not in %s",
+          "%s should %sbe in %s",
           netaddr_to_string(&str1, &in_subnet_addrs[a]),
+          in_subnet_results[a][s] ? "" : "not ",
           netaddr_to_string(&str2, &in_subnet_subnets[s]));
     }
   }
