@@ -42,8 +42,6 @@
 #ifndef INTERFACE_H_
 #define INTERFACE_H_
 
-#include <ifaddrs.h>
-
 #include "common/common_types.h"
 #include "common/avl.h"
 #include "common/list.h"

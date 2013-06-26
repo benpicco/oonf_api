@@ -39,12 +39,8 @@
  *
  */
 
-#include <ctype.h>
-#include <fcntl.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <errno.h>
 
 #include "common/autobuf.h"
@@ -139,7 +135,7 @@ oonf_stream_flush(struct oonf_stream_session *con) {
  */
 int
 oonf_stream_add(struct oonf_stream_socket *stream_socket,
-    union netaddr_socket *local) {
+    const union netaddr_socket *local) {
   int s = -1;
   struct netaddr_str buf;
 
@@ -154,7 +150,7 @@ oonf_stream_add(struct oonf_stream_socket *stream_socket,
     }
 
     /* show that we are willing to listen */
-    if (listen(s, 1) == -1) {
+    if (os_net_listen(s, 1) == -1) {
       OONF_WARN(LOG_STREAM, "tcp socket listen failed for %s: %s (%d)\n",
           netaddr_socket_to_string(&buf, local), strerror(errno), errno);
       goto add_stream_error;
@@ -189,7 +185,7 @@ add_stream_error:
     oonf_socket_remove(&stream_socket->scheduler_entry);
   }
   if (s != -1) {
-    os_close(s);
+    os_net_close(s);
   }
   return -1;
 }
@@ -228,7 +224,7 @@ oonf_stream_remove(struct oonf_stream_socket *stream_socket, bool force) {
 
   if (stream_socket->scheduler_entry.fd) {
     /* only for server sockets */
-    os_close(stream_socket->scheduler_entry.fd);
+    os_net_close(stream_socket->scheduler_entry.fd);
     oonf_socket_remove(&stream_socket->scheduler_entry);
   }
 }
@@ -241,7 +237,7 @@ oonf_stream_remove(struct oonf_stream_socket *stream_socket, bool force) {
  */
 struct oonf_stream_session *
 oonf_stream_connect_to(struct oonf_stream_socket *stream_socket,
-    union netaddr_socket *remote) {
+    const union netaddr_socket *remote) {
   struct oonf_stream_session *session;
   struct netaddr remote_addr;
   bool wait_for_connect = false;
@@ -254,7 +250,7 @@ oonf_stream_connect_to(struct oonf_stream_socket *stream_socket,
     return NULL;
   }
 
-  if (connect(s, &remote->std, sizeof(*remote))) {
+  if (os_net_connect(s, remote)) {
     if (errno != EINPROGRESS) {
       OONF_WARN(LOG_STREAM, "Cannot connect outgoing tcp connection to %s: %s (%d)",
           netaddr_socket_to_string(&buf, remote), strerror(errno), errno);
@@ -273,7 +269,7 @@ oonf_stream_connect_to(struct oonf_stream_socket *stream_socket,
   /* fall through */
 connect_to_error:
   if (s) {
-    os_close(s);
+    os_net_close(s);
   }
   return NULL;
 }
@@ -315,7 +311,7 @@ oonf_stream_close(struct oonf_stream_session *session, bool force) {
   session->comport->config.allowed_sessions++;
   list_remove(&session->node);
 
-  os_close(session->scheduler_entry.fd);
+  os_net_close(session->scheduler_entry.fd);
   oonf_socket_remove(&session->scheduler_entry);
 
   abuf_free(&session->in);
@@ -592,11 +588,8 @@ _cb_parse_connection(int fd, void *data, bool event_read, bool event_write) {
   if (session->wait_for_connect) {
     if (event_write) {
       int value;
-      socklen_t value_len;
 
-      value_len = sizeof(value);
-
-      if(getsockopt(fd, SOL_SOCKET, SO_ERROR, &value, &value_len)) {
+      if(os_net_get_socket_error(fd, &value)) {
         OONF_WARN(LOG_STREAM, "getsockopt failed: %s (%d)",
             strerror(errno), errno);
         session->state = STREAM_SESSION_CLEANUP;
@@ -620,7 +613,7 @@ _cb_parse_connection(int fd, void *data, bool event_read, bool event_write) {
 
   /* read data if necessary */
   if (session->state == STREAM_SESSION_ACTIVE && event_read) {
-    len = os_recvfrom(fd, buffer, sizeof(buffer), NULL, 0);
+    len = os_net_recvfrom(fd, buffer, sizeof(buffer), NULL, 0);
     if (len > 0) {
       OONF_DEBUG(LOG_STREAM, "  recv returned %d\n", len);
       if (abuf_memcpy(&session->in, buffer, len)) {
@@ -658,7 +651,7 @@ _cb_parse_connection(int fd, void *data, bool event_read, bool event_write) {
   /* send data if necessary */
   if (session->state != STREAM_SESSION_CLEANUP && abuf_getlen(&session->out) > 0) {
     if (event_write) {
-      len = os_sendto(fd, abuf_getptr(&session->out), abuf_getlen(&session->out), NULL);
+      len = os_net_sendto(fd, abuf_getptr(&session->out), abuf_getlen(&session->out), NULL);
 
       if (len > 0) {
         OONF_DEBUG(LOG_STREAM, "  send returned %d\n", len);

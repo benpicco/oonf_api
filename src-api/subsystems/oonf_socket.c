@@ -89,7 +89,7 @@ _cleanup(void)
 
   list_for_each_element_safe(&oonf_socket_head, entry, _node, iterator) {
     list_remove(&entry->_node);
-    os_close(entry->fd);
+    os_net_close(entry->fd);
   }
 }
 
@@ -211,7 +211,7 @@ oonf_socket_handle(bool (*stop_scheduler)(void), uint64_t stop_time)
       if (stop_scheduler != NULL && stop_scheduler()) {
         return 0;
       }
-      n = os_select(hfd,
+      n = os_net_select(hfd,
           fd_read ? &ibits : NULL,
           fd_write ? &obits : NULL,
           NULL, tv_ptr);

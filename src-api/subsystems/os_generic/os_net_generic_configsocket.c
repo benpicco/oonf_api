@@ -60,8 +60,8 @@
  * @return -1 if an error happened, 0 otherwise
  */
 int
-os_net_configsocket(int sock, union netaddr_socket *bind_to, int recvbuf,
-    struct oonf_interface_data *interf __attribute__((unused)),
+os_net_configsocket(int sock, const union netaddr_socket *bind_to, int recvbuf,
+    const struct oonf_interface_data *interf __attribute__((unused)),
     enum oonf_log_source log_src __attribute__((unused))) {
   int yes;
   socklen_t addrlen;

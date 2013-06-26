@@ -38,7 +38,6 @@ IF(LINUX)
                              os_generic/os_net_generic_configsocket.c
                              os_generic/os_net_generic_getsocket.c
                              os_generic/os_net_generic_join_mcast.c
-                             os_generic/os_net_generic_sendto.c
                              os_generic/os_net_generic_set_nonblocking.c
                              os_generic/os_routing_generic_rt_to_string.c
                              os_linux/os_clock_linux.c

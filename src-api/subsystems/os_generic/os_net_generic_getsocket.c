@@ -58,8 +58,8 @@
  * @return socket filedescriptor, -1 if an error happened
  */
 int
-os_net_getsocket(union netaddr_socket *bind_to,
-    bool tcp, int recvbuf, struct oonf_interface_data *interf,
+os_net_getsocket(const union netaddr_socket *bind_to,
+    bool tcp, int recvbuf, const struct oonf_interface_data *interf,
     enum oonf_log_source log_src __attribute__((unused))) {
 
   int sock;
@@ -72,7 +72,7 @@ os_net_getsocket(union netaddr_socket *bind_to,
   }
 
   if (os_net_configsocket(sock, bind_to, recvbuf, interf, log_src)) {
-    os_close(sock);
+    os_net_close(sock);
     return -1;
   }
   return sock;

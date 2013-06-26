@@ -45,6 +45,8 @@
 #include <sys/select.h>
 #include <unistd.h>
 #include <ifaddrs.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 #include "subsystems/os_net.h"
 
@@ -54,10 +56,22 @@
 /**
  * Close a file descriptor
  * @param fd filedescriptor
+ * @return -1 if an error happened, 0 otherwise
  */
 static INLINE int
-os_close(int fd) {
+os_net_close(int fd) {
   return close(fd);
+}
+
+/**
+ * Listen to a TCP socket
+ * @param fd filedescriptor
+ * @param n backlog
+ * @return -1 if an error happened, 0 otherwise
+ */
+static INLINE int
+os_net_listen(int fd, int n) {
+  return listen(fd, n);
 }
 
 /**
@@ -72,10 +86,62 @@ os_close(int fd) {
  * @return
  */
 static INLINE int
-os_select(int num, fd_set *r,fd_set *w,fd_set *e, struct timeval *timeout) {
+os_net_select(int num, fd_set *r,fd_set *w,fd_set *e, struct timeval *timeout) {
   return select(num, r, w, e, timeout);
 }
 
+/**
+ * Connect TCP socket to remote server
+ * @param sockfd filedescriptor
+ * @param remote remote socket
+ * @return -1 if an error happened, 0 otherwise
+ */
+static INLINE int
+os_net_connect(int sockfd, const union netaddr_socket *remote) {
+  return connect(sockfd, &remote->std, sizeof(*remote));
+}
+
+static INLINE int
+os_net_accept(int sockfd, union netaddr_socket *incoming) {
+  socklen_t len = sizeof(*incoming);
+  return accept(sockfd, &incoming->std, &len);
+}
+
+static INLINE int
+os_net_get_socket_error(int fd, int *value) {
+  socklen_t len = sizeof(*value);
+  return getsockopt(fd, SOL_SOCKET, SO_ERROR, value, &len);
+}
+
+/**
+ * Sends data to an UDP socket.
+ * @param fd filedescriptor
+ * @param buf buffer for target data
+ * @param length length of buffer
+ * @param dst pointer to netaddr socket to send packet to
+ * @return same as sendto()
+ */
+static INLINE int
+os_net_sendto(int fd, const void *buf, size_t length, const union netaddr_socket *dst) {
+  return sendto(fd, buf, length, 0, &dst->std, sizeof(*dst));
+}
+
+/**
+ * Receive data from a socket.
+ * @param fd filedescriptor
+ * @param buf buffer for incoming data
+ * @param length length of buffer
+ * @param source pointer to netaddr socket object to store source of packet
+ * @param interf limit received data to certain interface
+ *   (only used if socket cannot be bound to interface)
+ * @return same as recvfrom()
+ */
+static INLINE int
+os_net_recvfrom(int fd, void *buf, size_t length, union netaddr_socket *source,
+    const struct oonf_interface_data *interf __attribute__((unused))) {
+  socklen_t len = sizeof(*source);
+  return recvfrom(fd, buf, length, 0, &source->std, &len);
+}
 
 /**
  * Binds a socket to a certain interface
@@ -91,7 +157,7 @@ os_net_bindto_interface(int sock, struct oonf_interface_data *data) {
 /**
  * @return name of loopback interface
  */
-static inline const char *
+static INLINE const char *
 on_net_get_loopback_name(void) {
   return "lo";
 }

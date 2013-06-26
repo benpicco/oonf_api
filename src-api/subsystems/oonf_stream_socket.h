@@ -197,10 +197,10 @@ struct oonf_stream_managed_config {
 EXPORT extern struct oonf_subsystem oonf_stream_socket_subsystem;
 
 EXPORT int oonf_stream_add(struct oonf_stream_socket *,
-    union netaddr_socket *local);
+    const union netaddr_socket *local);
 EXPORT void oonf_stream_remove(struct oonf_stream_socket *, bool force);
 EXPORT struct oonf_stream_session *oonf_stream_connect_to(
-    struct oonf_stream_socket *, union netaddr_socket *remote);
+    struct oonf_stream_socket *, const union netaddr_socket *remote);
 EXPORT void oonf_stream_flush(struct oonf_stream_session *con);
 
 EXPORT void oonf_stream_set_timeout(

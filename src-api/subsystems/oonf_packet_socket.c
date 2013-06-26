@@ -40,7 +40,6 @@
  */
 
 #include <errno.h>
-#include <fcntl.h>
 
 #include "common/common_types.h"
 #include "common/list.h"
@@ -160,7 +159,7 @@ oonf_packet_remove(struct oonf_packet_socket *pktsocket,
   // TODO: implement non-force behavior for UDP sockets
   if (list_is_node_added(&pktsocket->node)) {
     oonf_socket_remove(&pktsocket->scheduler_entry);
-    os_close(pktsocket->scheduler_entry.fd);
+    os_net_close(pktsocket->scheduler_entry.fd);
     abuf_free(&pktsocket->out);
 
     list_remove(&pktsocket->node);
@@ -186,7 +185,7 @@ oonf_packet_send(struct oonf_packet_socket *pktsocket, union netaddr_socket *rem
 
   if (abuf_getlen(&pktsocket->out) == 0) {
     /* no backlog of outgoing packets, try to send directly */
-    result = os_sendto(pktsocket->scheduler_entry.fd, data, length, remote);
+    result = os_net_sendto(pktsocket->scheduler_entry.fd, data, length, remote);
     if (result > 0) {
       /* successful */
       OONF_DEBUG(LOG_PACKET, "Sent %d bytes to %s %s",
@@ -673,7 +672,7 @@ _cb_packet_event(int fd, void *data, bool event_read, bool event_write,
     /* handle incoming data */
     buf = pktsocket->config.input_buffer;
 
-    result = os_recvfrom(fd, buf, pktsocket->config.input_buffer_length-1, &sock,
+    result = os_net_recvfrom(fd, buf, pktsocket->config.input_buffer_length-1, &sock,
         pktsocket->interface);
     if (result > 0 && pktsocket->config.receive_data != NULL) {
       /* null terminate it */
@@ -705,7 +704,7 @@ _cb_packet_event(int fd, void *data, bool event_read, bool event_write,
     pkt += 2;
 
     /* try to send packet */
-    result = os_sendto(fd, data, length, skt);
+    result = os_net_sendto(fd, data, length, skt);
     if (result < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) {
       /* try again later */
       OONF_DEBUG(LOG_PACKET, "Sending to %s %s could block, try again later",
