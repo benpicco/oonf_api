@@ -444,5 +444,5 @@ void
 oonf_log_syslog(struct oonf_log_handler_entry *entry __attribute__ ((unused)),
     struct oonf_log_parameters *param)
 {
-  os_syslog_log(param->severity, param->buffer + param->timeLength);
+  os_core_syslog(param->severity, param->buffer + param->timeLength);
 }

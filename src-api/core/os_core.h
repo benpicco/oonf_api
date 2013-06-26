@@ -62,6 +62,6 @@ static INLINE unsigned int os_core_random(void);
 
 EXPORT extern struct oonf_subsystem oonf_os_core_subsystem;
 
-EXPORT void os_syslog_log(enum oonf_log_severity, const char *);
+EXPORT void os_core_syslog(enum oonf_log_severity, const char *);
 
 #endif /* OS_CORE_H_ */
