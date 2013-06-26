@@ -923,7 +923,7 @@ _cb_send_multicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
   t = container_of(target, struct oonf_rfc5444_target, rfc5444_target);
 
   netaddr_socket_init(&sock, &t->dst, t->interface->protocol->port,
-      if_nametoindex(t->interface->name));
+      t->interface->_socket._if_listener.interface->data.index);
 
   _print_packet_to_buffer(&sock, t->interface, ptr, len,
       "Outgoing RFC5444 packet to",
@@ -949,7 +949,7 @@ _cb_send_unicast_packet(struct rfc5444_writer *writer __attribute__((unused)),
   t = container_of(target, struct oonf_rfc5444_target, rfc5444_target);
 
   netaddr_socket_init(&sock, &t->dst, t->interface->protocol->port,
-      if_nametoindex(t->interface->name));
+      t->interface->_socket._if_listener.interface->data.index);
 
   _print_packet_to_buffer(&sock, t->interface, ptr, len,
       "Outgoing RFC5444 packet to",
