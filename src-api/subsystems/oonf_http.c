@@ -108,7 +108,7 @@ static struct cfg_schema_entry _http_entries[] = {
       bindto_v4, "bindto_v4", "127.0.0.1", "Bind http ipv4 socket to this address", false, true),
   CFG_MAP_NETADDR_V6(oonf_stream_managed_config,
       bindto_v6, "bindto_v6", "::1", "Bind http ipv6 socket to this address", false, true),
-  CFG_MAP_INT_MINMAX(oonf_stream_managed_config,
+  CFG_MAP_INT32_MINMAX(oonf_stream_managed_config,
       port, "port", "1978", "Network port for http interface", 1, 65535),
 };
 

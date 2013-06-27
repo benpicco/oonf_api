@@ -190,7 +190,7 @@ struct oonf_stream_managed_config {
   struct netaddr_acl acl;
   struct netaddr bindto_v4;
   struct netaddr bindto_v6;
-  uint16_t port;
+  int32_t port;
 };
 
 #define LOG_STREAM oonf_stream_socket_subsystem.logging

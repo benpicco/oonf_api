@@ -61,7 +61,7 @@
 #define _LOG_RFC5444_NAME "rfc5444"
 
 struct _rfc5444_config {
-  uint16_t port;
+  int32_t port;
   uint64_t aggregation_interval;
 };
 
@@ -150,7 +150,7 @@ static struct oonf_timer_info _aggregation_timer = {
 
 /* configuration settings for handler */
 static struct cfg_schema_entry _rfc5444_entries[] = {
-  CFG_MAP_INT_MINMAX(_rfc5444_config, port, "port", RFC5444_MANET_UDP_PORT_TXT,
+  CFG_MAP_INT32_MINMAX(_rfc5444_config, port, "port", RFC5444_MANET_UDP_PORT_TXT,
     "UDP port for RFC5444 interface", 1, 65535),
   CFG_MAP_CLOCK(_rfc5444_config, aggregation_interval, "agregation_interval", "0.100",
     "Interval in seconds for message aggregation"),

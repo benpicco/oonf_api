@@ -54,6 +54,8 @@
 #include "config/cfg_db.h"
 #include "config/cfg_schema.h"
 
+static void _help_int(const struct cfg_schema_entry *entry,
+    struct autobuf *out, int64_t min, int64_t max);
 static bool _validate_cfg_entry(
     struct cfg_db *db, struct cfg_section_type *section,
     struct cfg_named_section *named, struct cfg_entry *entry,
@@ -487,7 +489,7 @@ cfg_schema_validate_choice(const struct cfg_schema_entry *entry,
 }
 
 /**
- * Schema entry validator for integers.
+ * Schema entry validator for integers (both 32 and 64 bit).
  * See CFG_VALIDATE_INT() and CFG_VALIDATE_INT_MINMAX() macro in cfg_schema.h
  * @param entry pointer to schema entry
  * @param section_name name of section type and name
@@ -498,21 +500,21 @@ cfg_schema_validate_choice(const struct cfg_schema_entry *entry,
 int
 cfg_schema_validate_int(const struct cfg_schema_entry *entry,
     const char *section_name, const char *value, struct autobuf *out) {
-  int32_t i;
+  int64_t i;
   char *endptr = NULL;
 
-  i = strtol(value, &endptr, 10);
+  i = strtoll(value, &endptr, 10);
   if (endptr == NULL || *endptr != 0) {
     cfg_append_printable_line(out, "Value '%s' for entry '%s'"
         " in section %s is not an integer",
         value, entry->key.entry, section_name);
     return 1;
   }
-  if (i < entry->validate_param[0].i32[0] || i > entry->validate_param[0].i32[1]) {
+  if (i < entry->validate_param[0].i64 || i > entry->validate_param[1].i64) {
     cfg_append_printable_line(out, "Value '%s' for entry '%s' in section %s is "
-        "not between %d and %d",
+        "not between %"PRId64" and %"PRId64,
         value, entry->key.entry, section_name,
-        entry->validate_param[0].i32[0], entry->validate_param[0].i32[1]);
+        entry->validate_param[0].i64, entry->validate_param[1].i64);
     return 1;
   }
   return 0;
@@ -688,38 +690,30 @@ cfg_schema_help_choice(
 }
 
 /**
- * Help generator for integer validator.
- * See CFG_VALIDATE_INT() and CFG_VALIDATE_INT_MINMAX() macro in cfg_schema.h
+ * Help generator for 32 bit integer validator.
+ * See CFG_VALIDATE_INT32() and CFG_VALIDATE_INT32_MINMAX() macro in cfg_schema.h
  * @param entry pointer to schema entry
  * @param out pointer to autobuffer for validator output
  */
 void
-cfg_schema_help_int(
-    const struct cfg_schema_entry *entry, struct autobuf *out) {
-  if (entry->validate_param[0].i32[0] > INT32_MIN) {
-    if (entry->validate_param[0].i32[1] < INT32_MAX) {
-      cfg_append_printable_line(out, "    Parameter must be an integer between %d and %d",
-          entry->validate_param[0].i32[0], entry->validate_param[0].i32[1]);
-    }
-    else {
-      cfg_append_printable_line(out, "    Parameter must be an integer larger or equal than %d",
-          entry->validate_param[0].i32[0]);
-    }
-  }
-  else {
-    if (entry->validate_param[0].i32[1] < INT32_MAX) {
-      cfg_append_printable_line(out, "    Parameter must be an integer less or equal than %d",
-          entry->validate_param[0].i32[1]);
-    }
-    else {
-      cfg_append_printable_line(out, "    Parameter must be a 32 bit signed integer");
-    }
-  }
+cfg_schema_help_int32(const struct cfg_schema_entry *entry, struct autobuf *out) {
+  _help_int(entry, out, INT32_MIN, INT32_MAX);
 }
 
 /**
- * Help generator for integer validator.
- * See CFG_VALIDATE_INT() and CFG_VALIDATE_INT_MINMAX() macro in cfg_schema.h
+ * Help generator for 64 bit integer validator.
+ * See CFG_VALIDATE_INT64() and CFG_VALIDATE_INT64_MINMAX() macro in cfg_schema.h
+ * @param entry pointer to schema entry
+ * @param out pointer to autobuffer for validator output
+ */
+void
+cfg_schema_help_int64(const struct cfg_schema_entry *entry, struct autobuf *out) {
+  _help_int(entry, out, INT64_MIN, INT64_MAX);
+}
+
+/**
+ * Help generator for fractional integer validator.
+ * See CFG_FRACTIONAL_INT() and CFG_FRACTIONAL_INT_MINMAX() macro in cfg_schema.h
  * @param entry pointer to schema entry
  * @param out pointer to autobuffer for validator output
  */
@@ -937,21 +931,40 @@ cfg_schema_tobin_choice(const struct cfg_schema_entry *s_entry,
 }
 
 /**
- * Binary converter for integers.
- * See CFG_MAP_INT() macro in cfg_schema.h
+ * Binary converter for 32 bit integers.
+ * See CFG_MAP_INT32() macro in cfg_schema.h
  * @param s_entry pointer to configuration entry schema.
  * @param value pointer to value of configuration entry.
  * @param reference pointer to binary output buffer.
  * @return 0 if conversion succeeded, -1 otherwise.
  */
 int
-cfg_schema_tobin_int(const struct cfg_schema_entry *s_entry __attribute__((unused)),
+cfg_schema_tobin_int32(const struct cfg_schema_entry *s_entry __attribute__((unused)),
     const struct const_strarray *value, void *reference) {
-  int *ptr;
+  int32_t *ptr;
 
-  ptr = (int *)reference;
+  ptr = (int32_t *)reference;
 
   *ptr = strtol(strarray_get_first_c(value), NULL, 10);
+  return 0;
+}
+
+/**
+ * Binary converter for 64 bit integers.
+ * See CFG_MAP_INT64() macro in cfg_schema.h
+ * @param s_entry pointer to configuration entry schema.
+ * @param value pointer to value of configuration entry.
+ * @param reference pointer to binary output buffer.
+ * @return 0 if conversion succeeded, -1 otherwise.
+ */
+int
+cfg_schema_tobin_int64(const struct cfg_schema_entry *s_entry __attribute__((unused)),
+    const struct const_strarray *value, void *reference) {
+  int64_t *ptr;
+
+  ptr = (int64_t *)reference;
+
+  *ptr = strtoll(strarray_get_first_c(value), NULL, 10);
   return 0;
 }
 
@@ -1057,6 +1070,38 @@ cfg_schema_tobin_stringlist(const struct cfg_schema_entry *s_entry __attribute__
     return 0;
   }
   return strarray_copy_c(array, value);
+}
+
+/**
+ * Help generator for integer validator.
+ * @param entry pointer to schema entry
+ * @param out pointer to autobuffer for validator output
+ * @param min lower limit for this datatype
+ * @param max upper limit for this datatype
+ */
+static void
+_help_int(const struct cfg_schema_entry *entry,
+    struct autobuf *out, int64_t min, int64_t max) {
+  if (entry->validate_param[0].i64 > min) {
+    if (entry->validate_param[1].i64 < max) {
+      cfg_append_printable_line(out, "    Parameter must be an integer between %"PRId64" and %"PRId64,
+          entry->validate_param[0].i64, entry->validate_param[1].i64);
+    }
+    else {
+      cfg_append_printable_line(out, "    Parameter must be an integer larger or equal than %"PRId64,
+          entry->validate_param[0].i64);
+    }
+  }
+  else {
+    if (entry->validate_param[1].i32[1] < max) {
+      cfg_append_printable_line(out, "    Parameter must be an integer less or equal than %"PRId64,
+          entry->validate_param[1].i64);
+    }
+    else {
+      cfg_append_printable_line(out, "    Parameter must be a %d bit signed integer",
+          min == INT64_MIN ? 64 : 32);
+    }
+  }
 }
 
 /**
