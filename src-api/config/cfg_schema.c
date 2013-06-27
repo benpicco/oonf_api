@@ -414,7 +414,7 @@ cfg_avlcmp_schemaentries(const void *p1, const void *p2) {
 
 /**
  * Schema entry validator for string maximum length.
- * See CFG_VALIDATE_STRING_LEN macro in cfg_schema.h
+ * See CFG_VALIDATE_STRING_LEN() macro in cfg_schema.h
  * @param entry pointer to schema entry
  * @param section_name name of section type and name
  * @param value value of schema entry, NULL for help text generation
@@ -436,8 +436,7 @@ cfg_schema_validate_strlen(const struct cfg_schema_entry *entry,
 /**
  * Schema entry validator for strings printable characters
  * and a maximum length.
- * See CFG_VALIDATE_PRINTABLE() and CFG_VALIDATE_PRINTABLE_LEN()
- * macro in cfg_schema.h
+ * See CFG_VALIDATE_PRINTABLE*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param section_name name of section type and name
  * @param value value of schema entry
@@ -490,7 +489,7 @@ cfg_schema_validate_choice(const struct cfg_schema_entry *entry,
 
 /**
  * Schema entry validator for integers (both 32 and 64 bit).
- * See CFG_VALIDATE_INT() and CFG_VALIDATE_INT_MINMAX() macro in cfg_schema.h
+ * See CFG_VALIDATE_INT*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param section_name name of section type and name
  * @param value value of schema entry
@@ -522,7 +521,7 @@ cfg_schema_validate_int(const struct cfg_schema_entry *entry,
 
 /**
  * Schema entry validator for fractional integers.
- * See CFG_VALIDATE_FRACTIONAL() and CFG_VALIDATE_FRACTIONAL_MINMAX() macro in cfg_schema.h
+ * See CFG_VALIDATE_FRACTIONAL*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param section_name name of section type and name
  * @param value value of schema entry
@@ -553,7 +552,7 @@ cfg_schema_validate_fractional(const struct cfg_schema_entry *entry,
 
 /**
  * Schema entry validator for network addresses and prefixes.
- * See CFG_VALIDATE_NETADDR_*() macros in cfg_schema.h
+ * See CFG_VALIDATE_NETADDR*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param section_name name of section type and name
  * @param value value of schema entry
@@ -608,7 +607,7 @@ cfg_schema_validate_netaddr(const struct cfg_schema_entry *entry,
 
 /**
  * Schema entry validator for access control lists.
- * See CFG_VALIDATE_ACL_*() macros.
+ * See CFG_VALIDATE_ACL*() macros.
  * @param entry pointer to schema entry
  * @param section_name name of section type and name
  * @param value value of schema entry
@@ -639,7 +638,7 @@ cfg_schema_validate_acl(const struct cfg_schema_entry *entry,
 
 /**
  * Help generator for string maximum length validator.
- * See CFG_VALIDATE_STRING_LEN macro in cfg_schema.h
+ * See CFG_VALIDATE_STRING_LEN() macro in cfg_schema.h
  * @param entry pointer to schema entry
  * @param out pointer to autobuffer for help output
  */
@@ -654,8 +653,7 @@ cfg_schema_help_strlen(
 /**
  * Help generator for strings printable characters
  * and a maximum length validator.
- * See CFG_VALIDATE_PRINTABLE() and CFG_VALIDATE_PRINTABLE_LEN()
- * macro in cfg_schema.h
+ * See CFG_VALIDATE_PRINTABLE*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param out pointer to autobuffer for validator output
  */
@@ -691,7 +689,7 @@ cfg_schema_help_choice(
 
 /**
  * Help generator for 32 bit integer validator.
- * See CFG_VALIDATE_INT32() and CFG_VALIDATE_INT32_MINMAX() macro in cfg_schema.h
+ * See CFG_VALIDATE_INT32*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param out pointer to autobuffer for validator output
  */
@@ -702,7 +700,7 @@ cfg_schema_help_int32(const struct cfg_schema_entry *entry, struct autobuf *out)
 
 /**
  * Help generator for 64 bit integer validator.
- * See CFG_VALIDATE_INT64() and CFG_VALIDATE_INT64_MINMAX() macro in cfg_schema.h
+ * See CFG_VALIDATE_INT64*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param out pointer to autobuffer for validator output
  */
@@ -713,7 +711,7 @@ cfg_schema_help_int64(const struct cfg_schema_entry *entry, struct autobuf *out)
 
 /**
  * Help generator for fractional integer validator.
- * See CFG_FRACTIONAL_INT() and CFG_FRACTIONAL_INT_MINMAX() macro in cfg_schema.h
+ * See CFG_FRACTIONAL_INT*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param out pointer to autobuffer for validator output
  */
@@ -750,7 +748,7 @@ cfg_schema_help_fractional(
 
 /**
  * Help generator for network addresses and prefixes validator.
- * See CFG_VALIDATE_NETADDR_*() macros in cfg_schema.h
+ * See CFG_VALIDATE_NETADDR*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param out pointer to autobuffer for validator output
  */
@@ -805,7 +803,7 @@ cfg_schema_help_netaddr(
 
 /**
  * Help generator for network addresses and prefixes validator.
- * See CFG_VALIDATE_NETADDR_*() macros in cfg_schema.h
+ * See CFG_VALIDATE_ACL*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param out pointer to autobuffer for validator output
  */
@@ -932,7 +930,7 @@ cfg_schema_tobin_choice(const struct cfg_schema_entry *s_entry,
 
 /**
  * Binary converter for 32 bit integers.
- * See CFG_MAP_INT32() macro in cfg_schema.h
+ * See CFG_MAP_INT32*() macro in cfg_schema.h
  * @param s_entry pointer to configuration entry schema.
  * @param value pointer to value of configuration entry.
  * @param reference pointer to binary output buffer.
@@ -951,7 +949,7 @@ cfg_schema_tobin_int32(const struct cfg_schema_entry *s_entry __attribute__((unu
 
 /**
  * Binary converter for 64 bit integers.
- * See CFG_MAP_INT64() macro in cfg_schema.h
+ * See CFG_MAP_INT64*() macro in cfg_schema.h
  * @param s_entry pointer to configuration entry schema.
  * @param value pointer to value of configuration entry.
  * @param reference pointer to binary output buffer.
@@ -970,7 +968,7 @@ cfg_schema_tobin_int64(const struct cfg_schema_entry *s_entry __attribute__((unu
 
 /**
  * Binary converter for integers.
- * See CFG_MAP_INT() macro in cfg_schema.h
+ * See CFG_VALIDATE_FRACTIONAL*() macro in cfg_schema.h
  * @param s_entry pointer to configuration entry schema.
  * @param value pointer to value of configuration entry.
  * @param reference pointer to binary output buffer.
@@ -994,7 +992,7 @@ cfg_schema_tobin_fractional(const struct cfg_schema_entry *s_entry,
 
 /**
  * Binary converter for netaddr objects.
- * See CFG_MAP_NETADDR_*() macros in cfg_schema.h
+ * See CFG_MAP_NETADDR*() macros in cfg_schema.h
  * @param s_entry pointer to configuration entry schema.
  * @param value pointer to value of configuration entry.
  * @param reference pointer to binary output buffer.
