@@ -86,7 +86,7 @@ struct oonf_packet_managed_config {
   struct netaddr_acl bindto;
   struct netaddr multicast_v4;
   struct netaddr multicast_v6;
-  int port, multicast_port;
+  int32_t port, multicast_port;
   bool loop_multicast;
   bool mesh;
 };
