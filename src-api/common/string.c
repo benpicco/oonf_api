@@ -48,6 +48,10 @@
 
 #include "common/string.h"
 
+static const char *_get_human_readable_u64(char *out,
+    uint64_t number, const char *unit, int fraction,
+    bool binary, bool raw);
+
 /**
  * @param size minimum size of block
  * @return rounded up block size of STRARRAY_BLOCKSIZE
@@ -450,68 +454,80 @@ strarray_cmp(const struct strarray *a1, const struct strarray *a2) {
  * @return pointer to converted string
  */
 const char *
-str_get_human_readable_number(struct human_readable_str *out,
-    uint64_t number, const char *unit, int maxfraction,
+str_get_human_readable_u64(struct human_readable_str *out,
+    uint64_t number, const char *unit, int fraction,
     bool binary, bool raw) {
-  static const char symbol[] = " kMGTPE";
-  uint64_t step, multiplier, print, n;
-  const char *unit_modifier;
-  size_t idx, len;
+  return _get_human_readable_u64(
+      out->buf, number, unit, fraction, binary, raw);
+}
 
-  if (raw) {
-    snprintf(out->buf, sizeof(*out), "%"PRIu64, number);
-    return out->buf;
+/**
+ * Converts a signed 64 bit integer into a human readable number
+ * in string representation.
+ *
+ * '-120000' will become '-120 k' for example.
+ *
+ * @param out pointer to output buffer
+ * @param number number to convert.
+ * @param unit unit to be appended at the end, can be NULL
+ * @param fraction number of fractional digits of fractional digits
+ * @param binary true if conversion should use 1024 as factor,
+ *   false for default 1000 conversion factor
+ * @param raw true if the whole text conversion should be bypassed
+ *   and only the raw number shall be written, false otherwise
+ * @return pointer to converted string
+ */
+const char *
+str_get_human_readable_s64(struct human_readable_str *out,
+    int64_t number, const char *unit, int fraction,
+    bool binary, bool raw) {
+  char *outbuf = out->buf;
+  uint64_t num;
+
+  if (number == INT64_MIN) {
+    *outbuf++ = '-';
+    num = 1ull<<63;
+  }
+  else if (number < 0) {
+    num = (uint64_t)(-number);
+  }
+  else {
+    num = (uint64_t)number;
   }
 
-  step = binary ? 1024 : 1000;
-  multiplier = 1;
-  unit_modifier = symbol;
-
-  while (*unit_modifier != 0 && number >= multiplier * step) {
-    multiplier *= step;
-    unit_modifier++;
-  }
-
-  /* print whole */
-  idx = snprintf(out->buf, sizeof(*out), "%"PRIu64, number / multiplier);
-  len = idx;
-
-  out->buf[len++] = '.';
-  n = number;
-
-  while (true) {
-    n = n % multiplier;
-    if (n == 0 || maxfraction == 0) {
-      break;
-    }
-    maxfraction--;
-    multiplier /= 10;
-
-    print = n / multiplier;
-
-    assert (print < 10);
-    out->buf[len++] = (char)'0' + (char)(print);
-    if (print) {
-      idx = len;
-    }
-  }
-
-  out->buf[idx++] = ' ';
-  out->buf[idx++] = *unit_modifier;
-  out->buf[idx++] = 0;
-
-  if (unit) {
-    strscat(out->buf, unit, sizeof(*out));
-  }
-
-  return out->buf;
+  return _get_human_readable_u64(
+      outbuf, num, unit, fraction, binary, raw);
 }
 
 int
-str_parse_human_readable_number(uint64_t *dst, const char *hrn, bool binary) {
+str_parse_human_readable_s64(int64_t *dst, const char *hrn, int fractions, bool binary) {
+  const char *ptr;
+  int result;
+  uint64_t u64;
+
+  ptr = hrn;
+  if (*hrn == '-') {
+    ptr++;
+  }
+
+  result = str_parse_human_readable_u64(&u64, ptr, fractions, binary);
+  if (!result) {
+    if (*hrn == '-') {
+      *dst = -((int64_t)u64);
+    }
+    else {
+      *dst = (int64_t)u64;
+    }
+  }
+  return result;
+}
+
+int
+str_parse_human_readable_u64(uint64_t *dst, const char *hrn, int fraction, bool binary) {
   uint64_t num;
   uint64_t factor;
   uint64_t multiplicator;
+  int frac;
   char *next = NULL;
 
   errno = 0;
@@ -525,36 +541,59 @@ str_parse_human_readable_number(uint64_t *dst, const char *hrn, bool binary) {
     return 0;
   }
 
-  if (next[1] != 0) {
-    return -1;
+  /* Handle fractional part */
+  frac = 0;
+  if (*next == '.') {
+    next++;
+    while (*next >='0' && *next <='9' && frac < fraction) {
+      num *= 10;
+      num += (*next - '0');
+      frac++;
+      next++;
+    }
+  }
+  while (frac++ < fraction) {
+    num *= 10;
+  }
+
+  /* handle spaces */
+  while (*next == ' ') {
+    next++;
   }
 
   factor = 1;
-  multiplicator = binary ? 1024 : 1000;
-
-  switch (next[0]) {
-    case 'E':
-      factor *= multiplicator;
-      /* no break */
-    case 'P':
-      factor *= multiplicator;
-      /* no break */
-    case 'T':
-      factor *= multiplicator;
-      /* no break */
-    case 'G':
-      factor *= multiplicator;
-      /* no break */
-    case 'M':
-      factor *= multiplicator;
-      /* no break */
-    case 'k':
-      factor *= multiplicator;
-      /* no break */
-    case ' ':
-      break;
-    default:
+  if (*next) {
+    /* handle iso-prefix */
+    if (next[1] != 0) {
       return -1;
+    }
+
+    multiplicator = binary ? 1024 : 1000;
+
+    switch (next[0]) {
+      case 'E':
+        factor *= multiplicator;
+        /* no break */
+      case 'P':
+        factor *= multiplicator;
+        /* no break */
+      case 'T':
+        factor *= multiplicator;
+        /* no break */
+      case 'G':
+        factor *= multiplicator;
+        /* no break */
+      case 'M':
+        factor *= multiplicator;
+        /* no break */
+      case 'k':
+        factor *= multiplicator;
+        /* no break */
+      case ' ':
+        break;
+      default:
+        return -1;
+    }
   }
 
   if (num > UINT64_MAX / factor) {
@@ -564,4 +603,65 @@ str_parse_human_readable_number(uint64_t *dst, const char *hrn, bool binary) {
 
   *dst = num * factor;
   return 0;
+}
+
+static const char *
+_get_human_readable_u64(char *out,
+    uint64_t number, const char *unit, int fraction,
+    bool binary, bool raw) {
+  static const char symbol[] = " kMGTPE";
+  uint64_t step, multiplier, print, n;
+  const char *unit_modifier;
+  size_t idx, len;
+
+  step = binary ? 1024 : 1000;
+  multiplier = 1;
+  unit_modifier = symbol;
+
+  while (fraction-- > 0) {
+    multiplier *= 10;
+  }
+
+  while (!raw && *unit_modifier != 0 && number >= multiplier * step) {
+    multiplier *= step;
+    unit_modifier++;
+  }
+
+  /* print whole */
+  idx = snprintf(out, sizeof(*out), "%"PRIu64, number / multiplier);
+  len = idx;
+
+  out[len++] = '.';
+  n = number;
+
+  if (*unit_modifier != ' ') {
+    fraction = 3;
+  }
+
+  while (true) {
+    n = n % multiplier;
+    if (n == 0 || fraction == 0) {
+      break;
+    }
+    fraction--;
+    multiplier /= 10;
+
+    print = n / multiplier;
+
+    assert (print < 10);
+    out[len++] = (char)'0' + (char)(print);
+    if (print) {
+      idx = len;
+    }
+  }
+
+  out[idx++] = ' ';
+  out[idx++] = *unit_modifier;
+  out[idx++] = 0;
+
+  if (unit) {
+    strscat(out, unit, sizeof(*out));
+  }
+
+  return out;
 }

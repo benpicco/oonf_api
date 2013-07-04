@@ -54,8 +54,6 @@
 #include "config/cfg_db.h"
 #include "config/cfg_schema.h"
 
-static void _help_int(const struct cfg_schema_entry *entry,
-    struct autobuf *out, int64_t min, int64_t max);
 static bool _validate_cfg_entry(
     struct cfg_db *db, struct cfg_section_type *section,
     struct cfg_named_section *named, struct cfg_entry *entry,
@@ -488,8 +486,8 @@ cfg_schema_validate_choice(const struct cfg_schema_entry *entry,
 }
 
 /**
- * Schema entry validator for integers (both 32 and 64 bit).
- * See CFG_VALIDATE_INT*() macros in cfg_schema.h
+ * Schema entry validator for integers.
+ * See CFG_VALIDATE_INT*() and CFG_VALIDATE_FRACTIONAL*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param section_name name of section type and name
  * @param value value of schema entry
@@ -500,51 +498,39 @@ int
 cfg_schema_validate_int(const struct cfg_schema_entry *entry,
     const char *section_name, const char *value, struct autobuf *out) {
   int64_t i;
-  char *endptr = NULL;
-
-  i = strtoll(value, &endptr, 10);
-  if (endptr == NULL || *endptr != 0) {
+  int64_t min, max;
+  if (str_parse_human_readable_s64(&i, value, entry->validate_param[2].i16[1],
+      entry->validate_param[2].i16[2] == 2)) {
     cfg_append_printable_line(out, "Value '%s' for entry '%s'"
-        " in section %s is not an integer",
-        value, entry->key.entry, section_name);
-    return 1;
-  }
-  if (i < entry->validate_param[0].i64 || i > entry->validate_param[1].i64) {
-    cfg_append_printable_line(out, "Value '%s' for entry '%s' in section %s is "
-        "not between %"PRId64" and %"PRId64,
-        value, entry->key.entry, section_name,
-        entry->validate_param[0].i64, entry->validate_param[1].i64);
-    return 1;
-  }
-  return 0;
-}
-
-/**
- * Schema entry validator for fractional integers.
- * See CFG_VALIDATE_FRACTIONAL*() macros in cfg_schema.h
- * @param entry pointer to schema entry
- * @param section_name name of section type and name
- * @param value value of schema entry
- * @param out pointer to autobuffer for validator output
- * @return 0 if validation found no problems, -1 otherwise
- */
-int
-cfg_schema_validate_fractional(const struct cfg_schema_entry *entry,
-    const char *section_name, const char *value, struct autobuf *out) {
-  int64_t i;
-
-  if (cfg_fraction_from_string(&i, value, entry->validate_param[1].i32[0])) {
-    cfg_append_printable_line(out, "Value '%s' for entry '%s'"
-        " in section %s is not a fractional integer"
+        " in section %s is not a fractional %d-byte integer"
         " with a maximum of %d fractional digits",
-        value, entry->key.entry, section_name, entry->validate_param[1].i32[0]);
+        value, entry->key.entry, section_name,
+        entry->validate_param[2].i16[0],
+        entry->validate_param[2].i16[1]);
     return 1;
   }
-  if (i < entry->validate_param[0].i32[0] || i > entry->validate_param[0].i32[1]) {
+
+  min = INT64_MIN >> (8 * (8 - entry->validate_param[2].i16[0]));
+  max = INT64_MAX >> (8 * (8 - entry->validate_param[2].i16[0]));
+
+  if (i < min || i > max) {
     cfg_append_printable_line(out, "Value '%s' for entry '%s' in section %s is "
-        "not between %d and %d",
+        "too %s for a %d-hyte integer",
         value, entry->key.entry, section_name,
-        entry->validate_param[0].i32[0], entry->validate_param[0].i32[1]);
+        i < min ? "small" : "large",
+        entry->validate_param[2].i16[0]);
+  }
+
+  if (i < entry->validate_param[0].i64) {
+    cfg_append_printable_line(out, "Value '%s' for entry '%s' in section %s is "
+        "smaller than %"PRId64,
+        value, entry->key.entry, section_name, entry->validate_param[0].i64);
+    return 1;
+  }
+  if (i > entry->validate_param[1].i64) {
+    cfg_append_printable_line(out, "Value '%s' for entry '%s' in section %s is "
+        "larger than %"PRId64,
+        value, entry->key.entry, section_name, entry->validate_param[0].i64);
     return 1;
   }
   return 0;
@@ -688,62 +674,50 @@ cfg_schema_help_choice(
 }
 
 /**
- * Help generator for 32 bit integer validator.
- * See CFG_VALIDATE_INT32*() macros in cfg_schema.h
+ * Help generator for a fractional integer.
+ * See CFG_VALIDATE_INT*() macros in cfg_schema.h
  * @param entry pointer to schema entry
  * @param out pointer to autobuffer for validator output
  */
 void
-cfg_schema_help_int32(const struct cfg_schema_entry *entry, struct autobuf *out) {
-  _help_int(entry, out, INT32_MIN, INT32_MAX);
-}
+cfg_schema_help_int(const struct cfg_schema_entry *entry, struct autobuf *out) {
+  struct human_readable_str hbuf1, hbuf2;
+  int64_t min, max;
 
-/**
- * Help generator for 64 bit integer validator.
- * See CFG_VALIDATE_INT64*() macros in cfg_schema.h
- * @param entry pointer to schema entry
- * @param out pointer to autobuffer for validator output
- */
-void
-cfg_schema_help_int64(const struct cfg_schema_entry *entry, struct autobuf *out) {
-  _help_int(entry, out, INT64_MIN, INT64_MAX);
-}
+  min = INT64_MIN >> (8 * (8 - entry->validate_param[2].i16[0]));
+  max = INT64_MAX >> (8 * (8 - entry->validate_param[2].i16[0]));
 
-/**
- * Help generator for fractional integer validator.
- * See CFG_FRACTIONAL_INT*() macros in cfg_schema.h
- * @param entry pointer to schema entry
- * @param out pointer to autobuffer for validator output
- */
-void
-cfg_schema_help_fractional(
-    const struct cfg_schema_entry *entry, struct autobuf *out) {
-  struct fraction_str buf1, buf2;
+  /* get string representation of min/max */
+  str_get_human_readable_s64(&hbuf1, entry->validate_param[0].i64, "",
+      entry->validate_param[2].i16[0], entry->validate_param[2].i16[2] == 2, true);
+  str_get_human_readable_s64(&hbuf2, entry->validate_param[1].i64, "",
+      entry->validate_param[2].i16[0], entry->validate_param[2].i16[2] == 2, true);
 
-  if (entry->validate_param[0].i32[0] > INT32_MIN) {
-    if (entry->validate_param[0].i32[1] < INT32_MAX) {
-      cfg_append_printable_line(out, "    Parameter must be an number between %s and %s",
-          cfg_fraction_to_string(&buf1,
-              entry->validate_param[0].i32[0], entry->validate_param[1].i32[0]),
-          cfg_fraction_to_string(&buf2,
-              entry->validate_param[0].i32[1], entry->validate_param[1].i32[0]));
+  if (entry->validate_param[0].i64 > min) {
+    if (entry->validate_param[1].i64 < max) {
+      cfg_append_printable_line(out, "    Parameter must be a %d-byte fractional integer"
+          " between %s and %s with a maximum of %d digits",
+          entry->validate_param[2].i16[0], hbuf1.buf, hbuf2.buf, entry->validate_param[2].i16[1]);
     }
     else {
-      cfg_append_printable_line(out, "    Parameter must be an number larger or equal than %s",
-          cfg_fraction_to_string(&buf1,
-              entry->validate_param[0].i32[0], entry->validate_param[1].i32[0]));
+      cfg_append_printable_line(out, "    Parameter must be a %d-byte fractional integer"
+          " larger or equal than %s with a maximum of %d digits",
+          entry->validate_param[2].i16[0], hbuf1.buf, entry->validate_param[2].i16[1]);
     }
   }
   else {
-    if (entry->validate_param[0].i32[1] < INT32_MAX) {
-      cfg_append_printable_line(out, "    Parameter must be an number less or equal than %s",
-          cfg_fraction_to_string(&buf2,
-              entry->validate_param[0].i32[1], entry->validate_param[1].i32[0]));
+    if (entry->validate_param[1].i64 < max) {
+      cfg_append_printable_line(out, "    Parameter must be a %d-byte fractional integer"
+          " smaller or equal than %s with a maximum of %d digits",
+          entry->validate_param[2].i16[0], hbuf2.buf, entry->validate_param[2].i16[1]);
     }
     else {
-      cfg_append_printable_line(out, "    Parameter must be a signed integer");
+      cfg_append_printable_line(out, "    Parameter must be a %d-byte signed integer"
+          " with a maximum of %d digits",
+          entry->validate_param[2].i16[0], entry->validate_param[2].i16[1]);
     }
   }
+
 }
 
 /**
@@ -929,44 +903,6 @@ cfg_schema_tobin_choice(const struct cfg_schema_entry *s_entry,
 }
 
 /**
- * Binary converter for 32 bit integers.
- * See CFG_MAP_INT32*() macro in cfg_schema.h
- * @param s_entry pointer to configuration entry schema.
- * @param value pointer to value of configuration entry.
- * @param reference pointer to binary output buffer.
- * @return 0 if conversion succeeded, -1 otherwise.
- */
-int
-cfg_schema_tobin_int32(const struct cfg_schema_entry *s_entry __attribute__((unused)),
-    const struct const_strarray *value, void *reference) {
-  int32_t *ptr;
-
-  ptr = (int32_t *)reference;
-
-  *ptr = strtol(strarray_get_first_c(value), NULL, 10);
-  return 0;
-}
-
-/**
- * Binary converter for 64 bit integers.
- * See CFG_MAP_INT64*() macro in cfg_schema.h
- * @param s_entry pointer to configuration entry schema.
- * @param value pointer to value of configuration entry.
- * @param reference pointer to binary output buffer.
- * @return 0 if conversion succeeded, -1 otherwise.
- */
-int
-cfg_schema_tobin_int64(const struct cfg_schema_entry *s_entry __attribute__((unused)),
-    const struct const_strarray *value, void *reference) {
-  int64_t *ptr;
-
-  ptr = (int64_t *)reference;
-
-  *ptr = strtoll(strarray_get_first_c(value), NULL, 10);
-  return 0;
-}
-
-/**
  * Binary converter for integers.
  * See CFG_VALIDATE_FRACTIONAL*() macro in cfg_schema.h
  * @param s_entry pointer to configuration entry schema.
@@ -975,17 +911,24 @@ cfg_schema_tobin_int64(const struct cfg_schema_entry *s_entry __attribute__((unu
  * @return 0 if conversion succeeded, -1 otherwise.
  */
 int
-cfg_schema_tobin_fractional(const struct cfg_schema_entry *s_entry,
+cfg_schema_tobin_int(const struct cfg_schema_entry *s_entry,
     const struct const_strarray *value, void *reference) {
-  int *ptr;
-  int64_t i, result;
+  int64_t i;
+  int result;
 
-  ptr = (int *)reference;
-
-  result = cfg_fraction_from_string(&i, strarray_get_first_c(value),
-      s_entry->validate_param[1].i32[0]);
+  result = str_parse_human_readable_s64(&i, strarray_get_first_c(value),
+      s_entry->validate_param[2].i16[1], s_entry->validate_param[2].i16[2] == 2);
   if (result == 0) {
-    *ptr = i;
+    switch (s_entry->validate_param[2].i16[0]) {
+      case 4:
+        *((int32_t *)reference) = i;
+        break;
+      case 8:
+        *((int64_t *)reference) = i;
+        break;
+      default:
+        return -1;
+    }
   }
   return result;
 }
@@ -1068,38 +1011,6 @@ cfg_schema_tobin_stringlist(const struct cfg_schema_entry *s_entry __attribute__
     return 0;
   }
   return strarray_copy_c(array, value);
-}
-
-/**
- * Help generator for integer validator.
- * @param entry pointer to schema entry
- * @param out pointer to autobuffer for validator output
- * @param min lower limit for this datatype
- * @param max upper limit for this datatype
- */
-static void
-_help_int(const struct cfg_schema_entry *entry,
-    struct autobuf *out, int64_t min, int64_t max) {
-  if (entry->validate_param[0].i64 > min) {
-    if (entry->validate_param[1].i64 < max) {
-      cfg_append_printable_line(out, "    Parameter must be an integer between %"PRId64" and %"PRId64,
-          entry->validate_param[0].i64, entry->validate_param[1].i64);
-    }
-    else {
-      cfg_append_printable_line(out, "    Parameter must be an integer larger or equal than %"PRId64,
-          entry->validate_param[0].i64);
-    }
-  }
-  else {
-    if (entry->validate_param[1].i32[1] < max) {
-      cfg_append_printable_line(out, "    Parameter must be an integer less or equal than %"PRId64,
-          entry->validate_param[1].i64);
-    }
-    else {
-      cfg_append_printable_line(out, "    Parameter must be a %d bit signed integer",
-          min == INT64_MIN ? 64 : 32);
-    }
-  }
 }
 
 /**

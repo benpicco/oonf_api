@@ -85,10 +85,14 @@ EXPORT char *str_trim (char *ptr);
 EXPORT const char *str_hasnextword (const char *buffer, const char *word);
 EXPORT const char *str_cpynextword (char *dst, const char *buffer, size_t len);
 
-EXPORT const char *str_get_human_readable_number(struct human_readable_str *out,
-    uint64_t number, const char *unit, int maxfraction, bool binary, bool raw);
-EXPORT int str_parse_human_readable_number(
-    uint64_t *dst, const char *hrn, bool binary);
+EXPORT const char *str_get_human_readable_u64(struct human_readable_str *out,
+    uint64_t number, const char *unit, int fraction, bool binary, bool raw);
+EXPORT const char *str_get_human_readable_s64(struct human_readable_str *out,
+    int64_t number, const char *unit, int fraction, bool binary, bool raw);
+EXPORT int str_parse_human_readable_u64(
+    uint64_t *dst, const char *hrn, int fractions, bool binary);
+EXPORT int str_parse_human_readable_s64(
+    int64_t *dst, const char *hrn, int fractions, bool binary);
 
 EXPORT bool str_is_printable(const char *value);
 

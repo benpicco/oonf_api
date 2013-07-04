@@ -237,7 +237,7 @@ oonf_linkconfig_validate_linkspeed(const struct cfg_schema_entry *entry,
   uint64_t speed;
 
   ptr = str_cpynextword(sbuf.buf, value, sizeof(sbuf));
-  if (str_parse_human_readable_number(&speed, sbuf.buf, true)) {
+  if (str_parse_human_readable_u64(&speed, sbuf.buf, 0, true)) {
     cfg_append_printable_line(out, "Value '%s' for entry '%s'"
         " in section %s is no valid human readable number",
         value, entry->key.entry, section_name);
@@ -325,7 +325,7 @@ static void
 _set_rx_speed(struct oonf_linkconfig_data *data, const char *value) {
   uint64_t speed;
 
-  if (str_parse_human_readable_number(&speed, value, true)) {
+  if (str_parse_human_readable_u64(&speed, value, 0, true)) {
     return;
   }
   data->rx_bitrate = speed;

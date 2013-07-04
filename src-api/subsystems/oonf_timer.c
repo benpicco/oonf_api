@@ -146,7 +146,7 @@ void
 oonf_timer_start(struct oonf_timer_entry *timer, uint64_t rel_time)
 {
 #ifdef OONF_LOG_DEBUG_INFO
-  struct fraction_str timebuf1;
+  struct human_readable_str timebuf1;
 #endif
 
   assert(timer->info);

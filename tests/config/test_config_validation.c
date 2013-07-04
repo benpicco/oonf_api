@@ -64,10 +64,10 @@ static struct cfg_schema_entry entries[] = {
   CFG_VALIDATE_PRINTABLE("printable", "", "help"),
   CFG_VALIDATE_PRINTABLE_LEN("printable_array", "", "help", 5),
   CFG_VALIDATE_CHOICE("choice", "choice1", "help", choices),
-  CFG_VALIDATE_INT32("int", "1", "help"),
-  CFG_VALIDATE_INT32_MINMAX("int_minmax", "1", "help", -10, 10),
-  CFG_VALIDATE_FRACTIONAL("fractional", "1", "help", 4),
-  CFG_VALIDATE_FRACTIONAL_MINMAX("fractional_minmax", "1", "help", 4, -100000, 100000),
+  CFG_VALIDATE_INT32("int", "1", "help", 0, false),
+  CFG_VALIDATE_INT32_MINMAX("int_minmax", "1", "help", 0, false, -10, 10),
+  CFG_VALIDATE_INT32("fractional", "1", "help", 4, false),
+  CFG_VALIDATE_INT32_MINMAX("fractional_minmax", "1", "help", 4, false, -100000, 100000),
   CFG_VALIDATE_NETADDR("netaddr", "10.0.0.1", "help", false, false),
   CFG_VALIDATE_NETADDR_HWADDR("mac", "10:aa:00:bb:00:cc", "help", false, false),
   CFG_VALIDATE_NETADDR_MAC48("mac48", "11:bb:cc:dd:ee:ff", "help", false, false),
@@ -91,7 +91,7 @@ static struct cfg_schema_section section = {
 };
 
 static struct cfg_schema_entry entries2[] = {
-  CFG_VALIDATE_INT32_MINMAX("stringarray", "", "help", 1, 1000000000),
+  CFG_VALIDATE_INT32_MINMAX("stringarray", "", "help", 0, false, 1, 1000000000),
 };
 
 static struct cfg_schema_section section2 = {

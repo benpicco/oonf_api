@@ -74,11 +74,6 @@ struct cfg_instance {
   char *cmd_section_name;
 };
 
-/* buffer for displaying fractional numbers */
-struct fraction_str {
-  char buf[24];
-};
-
 EXPORT void cfg_add(struct cfg_instance *);
 EXPORT void cfg_remove(struct cfg_instance *);
 
@@ -88,9 +83,6 @@ EXPORT bool cfg_is_allowed_key(const char *key, bool section_name);
 EXPORT int cfg_get_choice_index(const char *value, const char **array, size_t array_size);
 
 EXPORT int cfg_avlcmp_keys(const void *p1, const void *p2);
-
-EXPORT int cfg_fraction_from_string(int64_t *result, const char *string, int fractions);
-EXPORT const char *cfg_fraction_to_string(struct fraction_str *buf, int64_t num, int fractions);
 
 /**
  * Compares to keys/names of two section types/names or entry names.

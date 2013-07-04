@@ -89,7 +89,7 @@ static struct cfg_schema_entry telnet_entries[] = {
   CFG_MAP_NETADDR_V6(oonf_stream_managed_config,
       bindto_v6, "bindto_v6", "::1", "Bind telnet ipv6 socket to this address", false, true),
   CFG_MAP_INT32_MINMAX(oonf_stream_managed_config,
-      port, "port", "2006", "Network port for telnet interface", 1, 65535),
+      port, "port", "2006", "Network port for telnet interface", 0, false, 1, 65535),
 };
 
 static struct cfg_schema_section telnet_section = {

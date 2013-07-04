@@ -141,7 +141,7 @@ static struct {
   char interface[IF_NAMESIZE];
   char active[JSON_BOOL_LENGTH];
   char shortactive[2];
-  struct fraction_str lastseen;
+  struct human_readable_str lastseen;
   char ssid[33];
   struct human_readable_str frequency;
   char signal[7];
@@ -306,7 +306,7 @@ _init_network_template(struct oonf_layer2_network *net, bool raw) {
     }
   }
   if (oonf_layer2_network_has_frequency(net)) {
-    if (NULL == str_get_human_readable_number(
+    if (NULL == str_get_human_readable_u64(
         &_template_buf.frequency, net->frequency, "Hz", 3, false, raw)) {
       return -1;
     }
@@ -349,49 +349,49 @@ _init_neighbor_template(struct oonf_layer2_neighbor *neigh, bool raw) {
     sprintf(_template_buf.signal, "%d", neigh->signal_dbm);
   }
   if (oonf_layer2_neighbor_has_rx_bitrate(neigh)) {
-    if (NULL == str_get_human_readable_number(
+    if (NULL == str_get_human_readable_u64(
         &_template_buf.rxbitrate, neigh->rx_bitrate, "bit/s", 1, true, raw)) {
       return -1;
     }
   }
   if (oonf_layer2_neighbor_has_rx_bytes(neigh)) {
-    if (NULL == str_get_human_readable_number(
+    if (NULL == str_get_human_readable_u64(
         &_template_buf.rxbytes, neigh->rx_bytes, "Byte", 1, true, raw)) {
       return -1;
     }
   }
   if (oonf_layer2_neighbor_has_rx_packets(neigh)) {
-    if (NULL == str_get_human_readable_number(
+    if (NULL == str_get_human_readable_u64(
         &_template_buf.rxpackets, neigh->rx_packets, "", 0, true, raw)) {
       return -1;
     }
   }
   if (oonf_layer2_neighbor_has_tx_bitrate(neigh)) {
-    if (NULL == str_get_human_readable_number(
+    if (NULL == str_get_human_readable_u64(
         &_template_buf.txbitrate, neigh->tx_bitrate, "bit/s", 1, true, raw)) {
       return -1;
     }
   }
   if (oonf_layer2_neighbor_has_tx_bytes(neigh)) {
-    if (NULL == str_get_human_readable_number(
+    if (NULL == str_get_human_readable_u64(
         &_template_buf.txbytes, neigh->tx_bytes, "Byte", 1, true, raw)) {
       return -1;
     }
   }
   if (oonf_layer2_neighbor_has_tx_packets(neigh)) {
-    if (NULL == str_get_human_readable_number(
+    if (NULL == str_get_human_readable_u64(
         &_template_buf.txpackets, neigh->tx_packets, "", 0, true, raw)) {
       return -1;
     }
   }
   if (oonf_layer2_neighbor_has_tx_retries(neigh)) {
-    if (NULL == str_get_human_readable_number(
+    if (NULL == str_get_human_readable_u64(
         &_template_buf.txretries, neigh->tx_retries, "", 3, true, raw)) {
       return -1;
     }
   }
   if (oonf_layer2_neighbor_has_tx_failed(neigh)) {
-    if (NULL == str_get_human_readable_number(
+    if (NULL == str_get_human_readable_u64(
         &_template_buf.txfailed, neigh->tx_failed, "", 3, true, raw)) {
       return -1;
     }
