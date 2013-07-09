@@ -9,4 +9,5 @@ add_subdirectory(remotecontrol)
 # linux specific plugins
 IF (LINUX)
     add_subdirectory(nl80211_listener)
+    add_subdirectory(eth_listener)
 ENDIF (LINUX)

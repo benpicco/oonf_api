@@ -6,6 +6,7 @@ OKAY=0
 BAD=0
 
 EXCEPT="-not -wholename ./src-plugins/nl80211_listener/nl80211.h"
+EXCEPT="${EXCEPT} -not -wholename ./src-plugins/eth_listener/ethtool-copy.h"
 for file in $(eval find ./src* -type f -name *[.][ch] ${EXCEPT})
 do
 	cmp --bytes ${LEN} ${file} ./files/default_licence.txt

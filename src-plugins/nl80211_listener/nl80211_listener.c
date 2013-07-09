@@ -146,7 +146,9 @@ static bool _nl80211_mc_set = false;
 static char _last_queried_if[IF_NAMESIZE];
 static enum query_type _next_query_type;
 
-/* timer for generating netlink requests */
+static uint32_t _l2_origin;
+
+/* timer for generatstatic ing netlink requests */
 static struct oonf_timer_info _transmission_timer_info = {
   .name = "nl80211 listener timer",
   .callback = _cb_transmission_event,
@@ -174,6 +176,8 @@ _init(void) {
     return -1;
   }
 
+  _l2_origin = oonf_layer2_register_origin();
+
   oonf_timer_add(&_transmission_timer_info);
 
   memset(_last_queried_if, 0, sizeof(_last_queried_if));
@@ -188,11 +192,34 @@ _init(void) {
  */
 static void
 _cleanup(void) {
+  oonf_layer2_unregister_origin(_l2_origin);
+
   oonf_timer_stop(&_transmission_timer);
   oonf_timer_remove(&_transmission_timer_info);
   os_system_netlink_remove(&_netlink_handler);
 
   free (_msgbuf);
+}
+
+static struct oonf_layer2_net *
+_create_l2net(struct netaddr *mac, int if_index, const char *if_name) {
+  struct oonf_layer2_net *net;
+  net = oonf_layer2_net_add(mac);
+  if (net == NULL) {
+    return NULL;
+  }
+
+  if (net->if_type ==  OONF_LAYER2_TYPE_UNDEFINED) {
+    net->if_type = OONF_LAYER2_TYPE_WIRELESS;
+    net->if_index = if_index;
+    strscpy(net->if_name, if_name, IF_NAMESIZE);
+  }
+  if (net->if_type !=  OONF_LAYER2_TYPE_WIRELESS) {
+    OONF_WARN(LOG_NL80211, "Wireless interface %s is already type %d",
+        if_name, net->if_type);
+    return NULL;
+  }
+  return net;
 }
 
 /**
@@ -303,10 +330,12 @@ _parse_cmd_new_station(struct nlmsghdr *hdr) {
   struct nlattr *rinfo[NL80211_RATE_INFO_MAX + 1];
 
   struct oonf_interface_data *if_data;
-  struct oonf_layer2_neighbor *neigh;
+  struct oonf_layer2_net *net;
+  struct oonf_layer2_neigh *neigh;
   struct netaddr mac;
   unsigned if_index;
   char if_name[IF_NAMESIZE];
+  int i;
 
 #ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str buf1, buf2;
@@ -343,58 +372,61 @@ _parse_cmd_new_station(struct nlmsghdr *hdr) {
   OONF_DEBUG(LOG_NL80211, "Add neighbor %s for network %s",
       netaddr_to_string(&buf1, &mac), netaddr_to_string(&buf2, &if_data->mac));
 
-  neigh = oonf_layer2_add_neighbor(&if_data->mac, &mac, if_index,
-      _config.interval + _config.interval / 4);
-  if (neigh == NULL) {
-    OONF_WARN(LOG_NL80211, "Not enough memory for new layer2 neighbor");
+  net = _create_l2net(&mac, if_data->index, if_name);
+  if (net == NULL) {
     return;
   }
 
-  /* make sure that the network is there */
-  oonf_layer2_add_network(&if_data->mac, if_index,
-        _config.interval + _config.interval / 4);
+  neigh = oonf_layer2_neigh_add(net, &mac);
+  if (neigh == NULL) {
+    return;
+  }
 
-  /* reset all existing data */
-  oonf_layer2_neighbor_clear(neigh);
+  /* remove old data */
+  for (i=0; i<OONF_LAYER2_NEIGH_COUNT; i++) {
+    oonf_layer2_reset_value(&neigh->data[i]);
+  }
+  neigh->last_seen = 0;
 
   /* insert new data */
   if (sinfo[NL80211_STA_INFO_INACTIVE_TIME]) {
-    oonf_layer2_neighbor_set_last_seen(neigh,
-        oonf_clock_get_absolute(nla_get_u32(sinfo[NL80211_STA_INFO_INACTIVE_TIME])));
+    neigh->last_seen = oonf_clock_get_absolute(nla_get_u32(sinfo[NL80211_STA_INFO_INACTIVE_TIME]));
   }
   if (sinfo[NL80211_STA_INFO_RX_BYTES]) {
-    oonf_layer2_neighbor_set_rx_bytes(neigh,
+    oonf_layer2_set_value(&neigh->data[OONF_LAYER2_NEIGH_RX_BYTES], _l2_origin,
         nla_get_u32(sinfo[NL80211_STA_INFO_RX_BYTES]));
   }
   if (sinfo[NL80211_STA_INFO_RX_PACKETS]) {
-    oonf_layer2_neighbor_set_rx_packets(neigh,
+    oonf_layer2_set_value(&neigh->data[OONF_LAYER2_NEIGH_RX_FRAMES], _l2_origin,
         nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]));
   }
   if (sinfo[NL80211_STA_INFO_TX_BYTES]) {
-    oonf_layer2_neighbor_set_tx_bytes(neigh,
+    oonf_layer2_set_value(&neigh->data[OONF_LAYER2_NEIGH_TX_BYTES], _l2_origin,
         nla_get_u32(sinfo[NL80211_STA_INFO_TX_BYTES]));
   }
   if (sinfo[NL80211_STA_INFO_TX_PACKETS]) {
-    oonf_layer2_neighbor_set_tx_packets(neigh,
+    oonf_layer2_set_value(&neigh->data[OONF_LAYER2_NEIGH_TX_FRAMES], _l2_origin,
         nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]));
   }
   if (sinfo[NL80211_STA_INFO_TX_RETRIES])  {
-    oonf_layer2_neighbor_set_tx_retries(neigh,
+    oonf_layer2_set_value(&neigh->data[OONF_LAYER2_NEIGH_TX_RETRIES], _l2_origin,
         nla_get_u32(sinfo[NL80211_STA_INFO_TX_RETRIES]));
   }
   if (sinfo[NL80211_STA_INFO_TX_FAILED]) {
-    oonf_layer2_neighbor_set_tx_fails(neigh,
+    oonf_layer2_set_value(&neigh->data[OONF_LAYER2_NEIGH_TX_FAILED], _l2_origin,
         nla_get_u32(sinfo[NL80211_STA_INFO_TX_FAILED]));
   }
   if (sinfo[NL80211_STA_INFO_SIGNAL])  {
-    oonf_layer2_neighbor_set_signal(neigh, (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]));
+    oonf_layer2_set_value(&neigh->data[OONF_LAYER2_NEIGH_SIGNAL], _l2_origin,
+        1000 * (int8_t)nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]));
   }
   if (sinfo[NL80211_STA_INFO_TX_BITRATE]) {
     if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX,
              sinfo[NL80211_STA_INFO_TX_BITRATE], rate_policy) == 0) {
       if (rinfo[NL80211_RATE_INFO_BITRATE]) {
-        uint64_t rate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
-        oonf_layer2_neighbor_set_tx_bitrate(neigh, ((uint64_t)rate * 1024 * 1024) / 10);
+        int64_t rate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
+        oonf_layer2_set_value(&neigh->data[OONF_LAYER2_NEIGH_TX_BITRATE], _l2_origin,
+            (rate * 1024 * 1024) / 10);
       }
       /* TODO: do we need the rest of the data ? */
 #if 0
@@ -411,8 +443,9 @@ _parse_cmd_new_station(struct nlmsghdr *hdr) {
     if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX,
              sinfo[NL80211_STA_INFO_RX_BITRATE], rate_policy) == 0) {
       if (rinfo[NL80211_RATE_INFO_BITRATE]) {
-        uint64_t rate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
-        oonf_layer2_neighbor_set_rx_bitrate(neigh, ((uint64_t)rate * 1024 * 1024) / 10);
+        int64_t rate = nla_get_u16(rinfo[NL80211_RATE_INFO_BITRATE]);
+        oonf_layer2_set_value(&neigh->data[OONF_LAYER2_NEIGH_RX_BITRATE], _l2_origin,
+            (rate * 1024 * 1024) / 10);
       }
       /* TODO: do we need the rest of the data ? */
 #if 0
@@ -426,7 +459,7 @@ _parse_cmd_new_station(struct nlmsghdr *hdr) {
     }
   }
 
-  oonf_layer2_neighbor_commit(neigh);
+  oonf_layer2_neigh_commit(neigh);
   return;
 }
 
@@ -439,7 +472,8 @@ _parse_cmd_del_station(struct nlmsghdr *hdr) {
   struct nlattr *tb[NL80211_ATTR_MAX + 1];
 
   struct oonf_interface_data *if_data;
-  struct oonf_layer2_neighbor *neigh;
+  struct oonf_layer2_neigh *neigh;
+  struct oonf_layer2_net *net;
   struct netaddr mac;
   unsigned if_index;
   char if_name[IF_NAMESIZE];
@@ -467,9 +501,14 @@ _parse_cmd_del_station(struct nlmsghdr *hdr) {
   OONF_DEBUG(LOG_NL80211, "Remove neighbor %s for network %s",
       netaddr_to_string(&buf1, &mac), netaddr_to_string(&buf2, &if_data->mac));
 
-  neigh = oonf_layer2_get_neighbor(&if_data->mac, &mac);
+  net = oonf_layer2_net_get(&if_data->mac);
+  if (net == NULL) {
+    return;
+  }
+
+  neigh = oonf_layer2_neigh_get(net, &mac);
   if (neigh != NULL) {
-    oonf_layer2_remove_neighbor(neigh);
+    oonf_layer2_neigh_remove(neigh, _l2_origin);
   }
 }
 
@@ -511,10 +550,11 @@ _parse_cmd_new_scan_result(struct nlmsghdr *msg) {
   struct nlattr *bss[NL80211_BSS_MAX + 1];
 
   struct oonf_interface_data *if_data;
-  struct oonf_layer2_network *net;
+  struct oonf_layer2_net *net;
   struct netaddr mac;
   unsigned if_index;
   char if_name[IF_NAMESIZE];
+  int i;
 #ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str buf;
 #endif
@@ -557,12 +597,16 @@ _parse_cmd_new_scan_result(struct nlmsghdr *msg) {
     return;
   }
 
-  net = oonf_layer2_add_network(&if_data->mac, if_index,
-      _config.interval + _config.interval / 4);
+  net = _create_l2net(&mac, if_data->index, if_name);
   if (net == NULL) {
-    OONF_WARN(LOG_NL80211, "Not enough memory for new layer2 network");
     return;
   }
+
+  /* remove old data */
+  for (i=0; i<OONF_LAYER2_NET_COUNT; i++) {
+    oonf_layer2_reset_value(&net->data[i]);
+  }
+  net->last_seen = 0;
 
   OONF_DEBUG(LOG_NL80211, "Add network %s", netaddr_to_string(&buf, &if_data->mac));
 #if 0
@@ -595,8 +639,8 @@ _parse_cmd_new_scan_result(struct nlmsghdr *msg) {
 #endif
 
   if (bss[NL80211_BSS_FREQUENCY]) {
-    oonf_layer2_network_set_frequency(net,
-        nla_get_u32(bss[NL80211_BSS_FREQUENCY]) * 1000000ull);
+    oonf_layer2_set_value(&net->data[OONF_LAYER2_NET_FREQUENCY], _l2_origin,
+        nla_get_u32(bss[NL80211_BSS_FREQUENCY]) * 1000000ll);
   }
 #if 0
   if (bss[NL80211_BSS_BEACON_INTERVAL])
@@ -639,18 +683,15 @@ _parse_cmd_new_scan_result(struct nlmsghdr *msg) {
   }
 #endif
   if (bss[NL80211_BSS_SEEN_MS_AGO]) {
-    oonf_layer2_network_set_last_seen(net,
-        nla_get_u32(bss[NL80211_BSS_SEEN_MS_AGO]));
+    net->last_seen = oonf_clock_get_absolute(nla_get_u32(bss[NL80211_BSS_SEEN_MS_AGO]));
   }
   if (bss[NL80211_BSS_INFORMATION_ELEMENTS] != NULL ||
       bss[NL80211_BSS_BEACON_IES] != NULL) {
-    int len,i;
+    int len;
     uint8_t *data;
-    uint8_t *rate1, *rate2;
-    uint8_t rate1_count, rate2_count;
-    uint64_t *rate;
+    int64_t rate, max_rate;
 
-    rate1 = rate2 = NULL;
+    max_rate = 0;
 
     if (bss[NL80211_BSS_INFORMATION_ELEMENTS]) {
       len = nla_len(bss[NL80211_BSS_INFORMATION_ELEMENTS]);
@@ -662,49 +703,39 @@ _parse_cmd_new_scan_result(struct nlmsghdr *msg) {
     }
 
     /* collect pointers to data-rates */
-    rate1_count = 0;
-    rate2_count = 0;
     while (len > 0) {
       if (data[0] == 0) {
         /* SSID */
-        char ssid[33];
-
-        memset(ssid, 0, sizeof(ssid));
-        memcpy(ssid, &data[2], data[1]);
-        oonf_layer2_network_set_ssid(net, ssid);
+        strscpy(net->if_ident, (const char *)(&data[2]), data[1]);
       }
       if (data[0] == 1) {
         /* supported rates */
-        rate1 = &data[2];
-        rate1_count = data[1];
+        for (i=0; i<data[1]; i++) {
+          rate = (data[2+i] & 0x7f) << 19;
+          if (rate > max_rate) {
+            max_rate = rate;
+          }
+        }
       }
       else if (data[0] == 50) {
         /* extended supported rates */
-        rate2 = &data[2];
-        rate2_count = data[1];
+        for (i=0; i<data[1]; i++) {
+          rate = (data[2+i] & 0x7f) << 19;
+          if (rate > max_rate) {
+            max_rate = rate;
+          }
+        }
       }
       len -= data[1] + 2;
       data += data[1] + 2;
     }
 
-    if (rate1_count + rate2_count > 0) {
-      rate = calloc(rate1_count + rate2_count, sizeof(uint64_t));
-      if (rate) {
-        len = 0;
-        for (i=0; i<rate1_count; i++) {
-          rate[len++] = (uint64_t)(rate1[i] & 0x7f) << 19;
-        }
-        for (i=0; i<rate2_count; i++) {
-          rate[len++] = (uint64_t)(rate2[i] & 0x7f) << 19;
-        }
-
-        oonf_layer2_network_set_supported_rates(net, rate, rate1_count + rate2_count);
-        free(rate);
-      }
+    if (max_rate) {
+      oonf_layer2_set_value(&net->data[OONF_LAYER2_NET_MAX_BITRATE], _l2_origin, max_rate);
     }
   }
 
-  oonf_layer2_network_commit(net);
+  oonf_layer2_net_commit(net);
   return;
 }
 
@@ -891,6 +922,5 @@ _cb_config_changed(void) {
     return;
   }
 
-  /* half of them station dumps, half of them passive scans */
-  oonf_timer_start(&_transmission_timer, _config.interval);
+  oonf_timer_set_ext(&_transmission_timer, 1, _config.interval);
 }

@@ -140,10 +140,11 @@ oonf_timer_remove(struct oonf_timer_info *info) {
 /**
  * Start or restart a new timer.
  * @param timer initialized timer entry
- * @param rel_time relative time when the timer should fire
+ * @param first relative time when the timer should fire the first time
+ * @param interval time between two timer events for periodic timers
  */
 void
-oonf_timer_start(struct oonf_timer_entry *timer, uint64_t rel_time)
+oonf_timer_start_ext(struct oonf_timer_entry *timer, uint64_t first, uint64_t interval)
 {
 #ifdef OONF_LOG_DEBUG_INFO
   struct human_readable_str timebuf1;
@@ -169,17 +170,17 @@ oonf_timer_start(struct oonf_timer_entry *timer, uint64_t rel_time)
   }
 
   /* Fill entry */
-  _calc_clock(timer, rel_time);
+  _calc_clock(timer, first);
 
   /* Singleshot or periodical timer ? */
-  timer->_period = timer->info->periodic ? rel_time : 0;
+  timer->_period = timer->info->periodic ? interval : 0;
 
   /* insert into tree */
   avl_insert(&_timer_tree, &timer->_node);
 
   OONF_DEBUG(LOG_TIMER, "TIMER: start timer '%s' firing in %s (%"PRIu64")\n",
       timer->info->name,
-      oonf_clock_toClockString(&timebuf1, rel_time), timer->_clock);
+      oonf_clock_toClockString(&timebuf1, first), timer->_clock);
 
   /* fix 'next event' pointers if necessary */
   if (_scheduling_now) {
@@ -219,18 +220,19 @@ oonf_timer_stop(struct oonf_timer_entry *timer)
  * or an existing timer is started or an existing timer is
  * terminated.
  * @param timer timer_entry pointer
- * @param rel_time time until the new timer should fire, 0 to stop timer
+ * @param first relative time when the timer should fire the first time
+ * @param interval time between two timer events for periodic timers
  */
 void
-oonf_timer_set(struct oonf_timer_entry *timer, uint64_t rel_time)
+oonf_timer_set_ext(struct oonf_timer_entry *timer, uint64_t first, uint64_t interval)
 {
-  if (rel_time == 0) {
+  if (first == 0) {
     /* No good future time provided, kill it. */
     oonf_timer_stop(timer);
   }
   else {
     /* Start or restart the timer */
-    oonf_timer_start(timer, rel_time);
+    oonf_timer_start_ext(timer, first, interval);
   }
 }
 

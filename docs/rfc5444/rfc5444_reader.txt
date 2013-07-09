@@ -2,7 +2,8 @@ RFC 5444 handler library
 Copyright (c) 2010 Henning Rogge <hrogge@googlemail.com>
 
 The rfc 5444 library is a combined parser and generator for the
-'Generalized Mobile Ad Hoc Network (MANET) Packet/Message Format'.The library is split into a separate reader and writer part, both
+'Generalized Mobile Ad Hoc Network (MANET) Packet/Message Format'.
+The library is split into a separate reader and writer part, both
 of them use a generic avl-tree and double-linked list implementation.
 
 The reader and writer allow multiple independent code blocks to read
@@ -31,7 +32,7 @@ protocol in their codebase (e.g. NHDP and OLSRv2).
 **********************
 
 The basic blocks of information of rfc5444 are addresses of 1 to 16
-bytes and tlvs. TLV is a shortcut for type-length-value. Each piece
+bytes and TLVs. TLV is a shortcut for type-length-value. Each piece
 of data which is not included in packet, message or address header
 has a type and a length field, which allows a parser which does not
 know this TLV to skip to the next TLV without being forced to stop
@@ -45,7 +46,7 @@ three different levels of hierarchy in RFC 5444:
   * message TLVs
   * address TLVs
 
-Each consumer registers on one of this tree levels and can use two
+Each consumer registers on one of this three levels and can use two
 different kinds of callbacks to learn about the relevant TLV-block and
 its context. Both group of callbacks can be used in the same consumer.
 
@@ -95,8 +96,6 @@ of the reader callbacks itself!
 To parse binary rfc5444, just call rfc5444_reader_handle_packet(). 
 
 Example:
-  see example/example_reader.c:
-
   (...)
   struct rfc5444_reader *context;
 

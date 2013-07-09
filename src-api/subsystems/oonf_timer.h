@@ -124,8 +124,8 @@ EXPORT void oonf_timer_walk(void);
 EXPORT void oonf_timer_add(struct oonf_timer_info *ti);
 EXPORT void oonf_timer_remove(struct oonf_timer_info *);
 
-EXPORT void oonf_timer_set(struct oonf_timer_entry *timer, uint64_t rel_time);
-EXPORT void oonf_timer_start(struct oonf_timer_entry *timer, uint64_t rel_time);
+EXPORT void oonf_timer_set_ext(struct oonf_timer_entry *timer, uint64_t first, uint64_t interval);
+EXPORT void oonf_timer_start_ext(struct oonf_timer_entry *timer, uint64_t first, uint64_t interval);
 EXPORT void oonf_timer_stop(struct oonf_timer_entry *);
 
 EXPORT uint64_t oonf_timer_getNextEvent(void);
@@ -157,5 +157,27 @@ oonf_timer_get_due(const struct oonf_timer_entry *timer) {
   return oonf_clock_get_relative(timer->_clock);
 }
 
+/**
+ * This is the one stop shop for all sort of timer manipulation.
+ * Depending on the passed in parameters a new timer is started,
+ * or an existing timer is started or an existing timer is
+ * terminated.
+ * @param timer timer_entry pointer
+ * @param rel_time relative time when the timer should fire
+ */
+static INLINE void
+oonf_timer_set(struct oonf_timer_entry *timer, uint64_t rel_time) {
+  oonf_timer_set_ext(timer, rel_time, rel_time);
+}
+
+/**
+ * Start or restart a new timer.
+ * @param timer initialized timer entry
+ * @param rel_time relative time when the timer should fire
+ */
+static INLINE void
+oonf_timer_start(struct oonf_timer_entry *timer, uint64_t rel_time) {
+  oonf_timer_start_ext(timer, rel_time, rel_time);
+}
 
 #endif /* OONF_TIMER_H_ */

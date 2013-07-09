@@ -49,7 +49,7 @@
 #include "common/string.h"
 
 static const char *_get_human_readable_u64(char *out,
-    uint64_t number, const char *unit, int fraction,
+    size_t out_len, uint64_t number, const char *unit, int fraction,
     bool binary, bool raw);
 
 /**
@@ -458,7 +458,7 @@ str_get_human_readable_u64(struct human_readable_str *out,
     uint64_t number, const char *unit, int fraction,
     bool binary, bool raw) {
   return _get_human_readable_u64(
-      out->buf, number, unit, fraction, binary, raw);
+      out->buf, sizeof(*out), number, unit, fraction, binary, raw);
 }
 
 /**
@@ -483,10 +483,13 @@ str_get_human_readable_s64(struct human_readable_str *out,
     bool binary, bool raw) {
   char *outbuf = out->buf;
   uint64_t num;
+  size_t len;
 
+  len = sizeof(*out);
   if (number == INT64_MIN) {
     *outbuf++ = '-';
     num = 1ull<<63;
+    len--;
   }
   else if (number < 0) {
     num = (uint64_t)(-number);
@@ -496,7 +499,7 @@ str_get_human_readable_s64(struct human_readable_str *out,
   }
 
   return _get_human_readable_u64(
-      outbuf, num, unit, fraction, binary, raw);
+      outbuf, len, num, unit, fraction, binary, raw);
 }
 
 int
@@ -606,7 +609,7 @@ str_parse_human_readable_u64(uint64_t *dst, const char *hrn, int fraction, bool 
 }
 
 static const char *
-_get_human_readable_u64(char *out,
+_get_human_readable_u64(char *out, size_t out_len,
     uint64_t number, const char *unit, int fraction,
     bool binary, bool raw) {
   static const char symbol[] = " kMGTPE";
@@ -628,7 +631,7 @@ _get_human_readable_u64(char *out,
   }
 
   /* print whole */
-  idx = snprintf(out, sizeof(*out), "%"PRIu64, number / multiplier);
+  idx = snprintf(out, out_len, "%"PRIu64, number / multiplier);
   len = idx;
 
   out[len++] = '.';
@@ -660,7 +663,7 @@ _get_human_readable_u64(char *out,
   out[idx++] = 0;
 
   if (unit) {
-    strscat(out, unit, sizeof(*out));
+    strscat(out, unit, out_len);
   }
 
   return out;

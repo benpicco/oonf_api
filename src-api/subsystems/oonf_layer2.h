@@ -44,415 +44,198 @@
 
 #include "common/avl.h"
 #include "common/common_types.h"
-#include "common/netaddr.h"
-
-#include "subsystems/oonf_clock.h"
+#include "core/oonf_subsystem.h"
 #include "subsystems/oonf_timer.h"
 
-/* both callbacks support ADD and REMOVE events */
-#define LAYER2_CLASS_NEIGHBOR           "layer2_neighbor"
-#define LAYER2_CLASS_NETWORK            "layer2_neighbor"
+#define LAYER2_CLASS_NEIGHBOR  "layer2_neighbor"
+#define LAYER2_CLASS_NETWORK   "layer2_network"
 
-enum oonf_layer2_neighbor_data {
-  OONF_L2NEIGH_SIGNAL = 1<<0,
-  OONF_L2NEIGH_LAST_SEEN = 1<<1,
-  OONF_L2NEIGH_RX_BITRATE = 1<<2,
-  OONF_L2NEIGH_RX_BYTES = 1<<3,
-  OONF_L2NEIGH_RX_PACKETS = 1<<4,
-  OONF_L2NEIGH_TX_BITRATE = 1<<5,
-  OONF_L2NEIGH_TX_BYTES = 1<<6,
-  OONF_L2NEIGH_TX_PACKETS = 1<<7,
-  OONF_L2NEIGH_TX_RETRIES = 1<<8,
-  OONF_L2NEIGH_TX_FAILED = 1<<9,
+#define OONF_LAYER2_NET_MAX_BITRATE_KEY  "max_bitrate"
+#define OONF_LAYER2_NET_FREQUENCY_KEY    "frequency"
+
+#define OONF_LAYER2_NEIGH_SIGNAL_KEY     "signal"
+#define OONF_LAYER2_NEIGH_TX_BITRATE_KEY "tx_bitrate"
+#define OONF_LAYER2_NEIGH_RX_BITRATE_KEY "rx_bitrate"
+#define OONF_LAYER2_NEIGH_TX_BYTES_KEY   "tx_bytes"
+#define OONF_LAYER2_NEIGH_RX_BYTES_KEY   "rx_bytes"
+#define OONF_LAYER2_NEIGH_TX_FRAMES_KEY  "tx_frames"
+#define OONF_LAYER2_NEIGH_RX_FRAMES_KEY  "rx_frames"
+#define OONF_LAYER2_NEIGH_TX_RETRIES_KEY "tx_retries"
+#define OONF_LAYER2_NEIGH_TX_FAILED_KEY  "tx_failed"
+
+struct oonf_layer2_data {
+  int64_t _value;
+  bool _has_value;
+  uint32_t _origin;
 };
 
-struct oonf_layer2_neighbor_key {
-  struct netaddr neighbor_mac;
-  struct netaddr radio_mac;
+enum oonf_layer2_network_index {
+  OONF_LAYER2_NET_FREQUENCY,
+  OONF_LAYER2_NET_MAX_BITRATE,
+
+  /* last entry */
+  OONF_LAYER2_NET_COUNT,
 };
 
-struct oonf_layer2_neighbor {
+enum oonf_layer2_network_type {
+  OONF_LAYER2_TYPE_UNDEFINED,
+  OONF_LAYER2_TYPE_WIRELESS,
+  OONF_LAYER2_TYPE_ETHERNET,
+  OONF_LAYER2_TYPE_TUNNEL,
+};
+
+enum oonf_layer2_neighbor_index {
+  OONF_LAYER2_NEIGH_SIGNAL,
+  OONF_LAYER2_NEIGH_TX_BITRATE,
+  OONF_LAYER2_NEIGH_RX_BITRATE,
+  OONF_LAYER2_NEIGH_TX_BYTES,
+  OONF_LAYER2_NEIGH_RX_BYTES,
+  OONF_LAYER2_NEIGH_TX_FRAMES,
+  OONF_LAYER2_NEIGH_RX_FRAMES,
+  OONF_LAYER2_NEIGH_TX_RETRIES,
+  OONF_LAYER2_NEIGH_TX_FAILED,
+
+  /* last entry */
+  OONF_LAYER2_NEIGH_COUNT,
+};
+
+struct oonf_layer2_net {
   struct avl_node _node;
-  struct oonf_layer2_neighbor_key key;
-  uint32_t if_index;
+  struct netaddr addr;
 
-  bool active;
+  int  if_index;
+  char if_name[IF_NAMESIZE];
+  char if_ident[64];
+  enum oonf_layer2_network_type if_type;
 
-  struct oonf_timer_entry _valitity_timer;
-  enum oonf_layer2_neighbor_data _available_data;
-
-  int16_t signal_dbm;
-  uint64_t last_seen;
-
-  uint64_t tx_bitrate, rx_bitrate;
-  uint32_t tx_bytes, tx_packets;
-  uint32_t rx_bytes, rx_packets;
-
-  uint32_t tx_retries, tx_failed;
-};
-
-enum oonf_layer2_network_data {
-  OONF_L2NET_SSID = 1<<0,
-  OONF_L2NET_LAST_SEEN = 1<<1,
-  OONF_L2NET_FREQUENCY = 1<<2,
-  OONF_L2NET_SUPPORTED_RATES = 1<<3,
-};
-
-struct oonf_layer2_network {
-  struct avl_node _id_node;
-
-  struct netaddr radio_id;
-  uint32_t if_index;
-
-  bool active;
-
-  struct oonf_timer_entry _valitity_timer;
-  enum oonf_layer2_network_data _available_data;
-
-  /* 0-terminated ssid string */
-  char ssid[33];
+  struct avl_tree neighbors;
+  struct avl_tree _ip_defaults;
 
   uint64_t last_seen;
 
-  uint64_t frequency;
-
-  uint64_t *supported_rates;
-  size_t rate_count;
+  struct oonf_layer2_data data[OONF_LAYER2_NET_COUNT];
+  struct oonf_layer2_data neighdata[OONF_LAYER2_NEIGH_COUNT];
 };
 
-struct oonf_layer2_network_config {
-  struct avl_node _name_node;
+struct oonf_layer2_neigh {
+  struct avl_node _node;
+  struct netaddr addr;
 
-  const char *if_name;
+  struct list_entity _neigh_ring;
 
-  uint64_t tx_bitrate;
+  struct oonf_layer2_net *network;
+
+  uint64_t last_seen;
+
+  struct oonf_layer2_data data[OONF_LAYER2_NEIGH_COUNT];
+};
+
+struct oonf_layer2_metadata {
+  const char key[16];
+  const char unit[8];
+  const int fraction;
+  const bool binary;
 };
 
 #define LOG_LAYER2 oonf_layer2_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_layer2_subsystem;
 
-EXPORT extern struct avl_tree oonf_layer2_network_id_tree;
-EXPORT extern struct avl_tree oonf_layer2_network_name_tree;
-EXPORT extern struct avl_tree oonf_layer2_neighbor_tree;
+EXPORT extern const struct oonf_layer2_metadata oonf_layer2_metadata_neigh[OONF_LAYER2_NEIGH_COUNT];
+EXPORT extern const struct oonf_layer2_metadata oonf_layer2_metadata_net[OONF_LAYER2_NET_COUNT];
 
-EXPORT struct oonf_layer2_network *oonf_layer2_add_network(
-    struct netaddr *ssid, uint32_t if_index, uint64_t vtime);
-EXPORT void oonf_layer2_remove_network(struct oonf_layer2_network *);
+EXPORT extern struct avl_tree oonf_layer2_net_tree;
 
-EXPORT struct oonf_layer2_neighbor *oonf_layer2_get_neighbor(
-    struct netaddr *radio_id, struct netaddr *neigh_mac);
-EXPORT struct oonf_layer2_neighbor *oonf_layer2_add_neighbor(
-    struct netaddr *radio_id, struct netaddr *neigh_mac,
-    uint32_t if_index, uint64_t vtime);
-EXPORT void oonf_layer2_remove_neighbor(struct oonf_layer2_neighbor *);
+EXPORT uint32_t oonf_layer2_register_origin(void);
+EXPORT void oonf_layer2_unregister_origin(uint32_t);
 
-EXPORT int oonf_layer2_network_set_supported_rates(
-    struct oonf_layer2_network *net,
-    uint64_t *rate_array, size_t rate_count);
+EXPORT struct oonf_layer2_net *oonf_layer2_net_add(struct netaddr *);
+EXPORT void oonf_layer2_net_remove(
+    struct oonf_layer2_net *, uint32_t origin);
+EXPORT bool oonf_layer2_net_commit(struct oonf_layer2_net *);
 
-EXPORT void oonf_layer2_neighbor_commit(struct oonf_layer2_neighbor *);
-EXPORT void oonf_layer2_network_commit(struct oonf_layer2_network *);
+EXPORT struct oonf_layer2_neigh *oonf_layer2_neigh_add(
+    struct oonf_layer2_net *, struct netaddr *l2neigh);
+EXPORT void oonf_layer2_neigh_remove(
+    struct oonf_layer2_neigh *l2neigh, uint32_t origin);
+EXPORT bool oonf_layer2_neigh_commit(struct oonf_layer2_neigh *l2neigh);
 
-/**
- * Retrieve a layer2 network entry from the database
- * @param radio mac address of the local interface
- * @return pointer to layer2 network, NULL if not found
- */
-static INLINE struct oonf_layer2_network *
-oonf_layer2_get_network_by_id(struct netaddr *radio) {
-  struct oonf_layer2_network *net;
-  return avl_find_element(&oonf_layer2_network_id_tree, radio, net, _id_node);
-}
-
-/*
- * The following inline functions should be used to set and test for
- * data in the layer 2 neighbor and network data. Reading can be done
- * by directly accessing the data fields (after testing if they contain
- * data at all).
- */
+EXPORT const struct oonf_layer2_data *oonf_layer2_neigh_query(
+    const struct netaddr *l2net, const struct netaddr *l2neigh,
+    enum oonf_layer2_neighbor_index idx);
 
 /**
- * @param neigh pointer to layer2 neighbor data
- * @return true if data contains signal strength, false otherwise
+ * Get a layer-2 addr object from the database
+ * @param addr local mac address of addr
+ * @return layer-2 addr object, NULL if not found
  */
-static INLINE bool
-oonf_layer2_neighbor_has_signal(struct oonf_layer2_neighbor *neigh) {
-  return (neigh->_available_data & OONF_L2NEIGH_SIGNAL) != 0;
+static inline struct oonf_layer2_net *
+oonf_layer2_net_get(const struct netaddr *addr) {
+  struct oonf_layer2_net *l2net;
+  return avl_find_element(&oonf_layer2_net_tree, addr, l2net, _node);
 }
 
 /**
- * @param neigh pointer to layer2 neighbor data
- * @return true if data contains timestamp
- *    when station has been seen last, false otherwise
+ * Get a layer-2 neighbor object from the database
+ * @param l2net layer-2 addr object
+ * @param addr remote mac address of neighbor
+ * @return layer-2 neighbor object, NULL if not found
  */
-static INLINE bool
-oonf_layer2_neighbor_has_last_seen(struct oonf_layer2_neighbor *neigh) {
-  return (neigh->_available_data & OONF_L2NEIGH_LAST_SEEN) != 0;
+static inline struct oonf_layer2_neigh *
+oonf_layer2_neigh_get(const struct oonf_layer2_net *l2net,
+    const struct netaddr *addr) {
+  struct oonf_layer2_neigh *l2neigh;
+  return avl_find_element(&l2net->neighbors, addr, l2neigh, _node);
 }
 
 /**
- * @param neigh pointer to layer2 neighbor data
- * @return true if data contains rx bitrate, false otherwise
+ * @param l2data layer-2 data object
+ * @return true if object contains a value, false otherwise
  */
-static INLINE bool
-oonf_layer2_neighbor_has_rx_bitrate(struct oonf_layer2_neighbor *neigh) {
-  return (neigh->_available_data & OONF_L2NEIGH_RX_BITRATE) != 0;
+static inline bool
+oonf_layer2_has_value(const struct oonf_layer2_data *l2data) {
+  return l2data->_has_value;
 }
 
 /**
- * @param neigh pointer to layer2 neighbor data
- * @return true if data contains rx bytes, false otherwise
+ * @param l2data layer-2 data object
+ * @return value of data object
  */
-static INLINE bool
-oonf_layer2_neighbor_has_rx_bytes(struct oonf_layer2_neighbor *neigh) {
-  return (neigh->_available_data & OONF_L2NEIGH_RX_BYTES) != 0;
+static inline int64_t
+oonf_layer2_get_value(const struct oonf_layer2_data *l2data) {
+  return l2data->_value;
 }
 
 /**
- * @param neigh pointer to layer2 neighbor data
- * @return true if data contains rx packets, false otherwise
+ * @param l2data layer-2 data object
+ * @return originator of data value
  */
-static INLINE bool
-oonf_layer2_neighbor_has_rx_packets(struct oonf_layer2_neighbor *neigh) {
-  return (neigh->_available_data & OONF_L2NEIGH_RX_PACKETS) != 0;
+static inline uint32_t
+oonf_layer2_get_origin(const struct oonf_layer2_data *l2data) {
+  return l2data->_origin;
 }
 
 /**
- * @param neigh pointer to layer2 neighbor data
- * @return true if data contains tx bitrate, false otherwise
+ * Set the value of a layer-2 data object
+ * @param l2data layer-2 data object
+ * @param origin originator of value
+ * @param value new value for data object
  */
-static INLINE bool
-oonf_layer2_neighbor_has_tx_bitrate(struct oonf_layer2_neighbor *neigh) {
-  return (neigh->_available_data & OONF_L2NEIGH_TX_BITRATE) != 0;
+static inline void
+oonf_layer2_set_value(struct oonf_layer2_data *l2data,
+    uint32_t origin, int64_t value) {
+  l2data->_has_value = true;
+  l2data->_value = value;
+  l2data->_origin = origin;
 }
 
 /**
- * @param neigh pointer to layer2 neighbor data
- * @return true if data contains tx bytes, false otherwise
+ * Removes the value of a layer-2 data object
+ * @param l2data layer-2 data object
  */
-static INLINE bool
-oonf_layer2_neighbor_has_tx_bytes(struct oonf_layer2_neighbor *neigh) {
-  return (neigh->_available_data & OONF_L2NEIGH_TX_BYTES) != 0;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @return true if data contains tx packets, false otherwise
- */
-static INLINE bool
-oonf_layer2_neighbor_has_tx_packets(struct oonf_layer2_neighbor *neigh) {
-  return (neigh->_available_data & OONF_L2NEIGH_TX_PACKETS) != 0;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @return true if data contains tx retries, false otherwise
- */
-static INLINE bool
-oonf_layer2_neighbor_has_tx_retries(struct oonf_layer2_neighbor *neigh) {
-  return (neigh->_available_data & OONF_L2NEIGH_TX_RETRIES) != 0;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @return true if data contains tx failed, false otherwise
- */
-static INLINE bool
-oonf_layer2_neighbor_has_tx_failed(struct oonf_layer2_neighbor *neigh) {
-  return (neigh->_available_data & OONF_L2NEIGH_TX_FAILED) != 0;
-}
-
-/**
- * Clear all optional data from a layer2 neighbor
- * @param neigh pointer to layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_neighbor_clear(struct oonf_layer2_neighbor *neigh) {
-  neigh->_available_data = 0;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @param signal_dbm signal strength to store in layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_neighbor_set_signal(struct oonf_layer2_neighbor *neigh, int16_t signal_dbm) {
-  neigh->_available_data |= OONF_L2NEIGH_SIGNAL;
-  neigh->signal_dbm = signal_dbm;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @param relative relative time since station was last seen
- *   to store in layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_neighbor_set_last_seen(struct oonf_layer2_neighbor *neigh, int64_t relative) {
-  neigh->_available_data |= OONF_L2NEIGH_LAST_SEEN;
-  neigh->last_seen = oonf_clock_get_absolute(-relative);
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @param bitrate incoming bitrate of station to store in layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_neighbor_set_rx_bitrate(struct oonf_layer2_neighbor *neigh, uint64_t bitrate) {
-  neigh->_available_data |= OONF_L2NEIGH_RX_BITRATE;
-  neigh->rx_bitrate = bitrate;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @param bytes total number of bytes received by station
- *    to store in layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_neighbor_set_rx_bytes(struct oonf_layer2_neighbor *neigh, uint32_t bytes) {
-  neigh->_available_data |= OONF_L2NEIGH_RX_BYTES;
-  neigh->rx_bytes = bytes;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @param packets total number of packets received by station
- *    to store in layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_neighbor_set_rx_packets(struct oonf_layer2_neighbor *neigh, uint32_t packets) {
-  neigh->_available_data |= OONF_L2NEIGH_RX_PACKETS;
-  neigh->rx_packets = packets;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @param bytes outgoing bitrate of station
- *    to store in layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_neighbor_set_tx_bitrate(struct oonf_layer2_neighbor *neigh, uint64_t bitrate) {
-  neigh->_available_data |= OONF_L2NEIGH_TX_BITRATE;
-  neigh->tx_bitrate = bitrate;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @param bytes total number of bytes sent to station
- *    to store in layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_neighbor_set_tx_bytes(struct oonf_layer2_neighbor *neigh, uint32_t bytes) {
-  neigh->_available_data |= OONF_L2NEIGH_TX_BYTES;
-  neigh->tx_bytes = bytes;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @param packets total number of packwets sent to station
- *    to store in layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_neighbor_set_tx_packets(struct oonf_layer2_neighbor *neigh, uint32_t packets) {
-  neigh->_available_data |= OONF_L2NEIGH_TX_PACKETS;
-  neigh->tx_packets = packets;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @param retries total number of transmission retries to station
- *   to store in layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_neighbor_set_tx_retries(struct oonf_layer2_neighbor *neigh, uint32_t retries) {
-  neigh->_available_data |= OONF_L2NEIGH_TX_PACKETS;
-  neigh->tx_retries = retries;
-}
-
-/**
- * @param neigh pointer to layer2 neighbor data
- * @param signal_dbm signal strength to store in layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_neighbor_set_tx_fails(struct oonf_layer2_neighbor *neigh, uint32_t failed) {
-  neigh->_available_data |= OONF_L2NEIGH_TX_PACKETS;
-  neigh->tx_failed = failed;
-}
-
-/**
- * @param neigh pointer to layer2 network data
- * @return true if data contains bssid of network, false otherwise
- */
-static INLINE bool
-oonf_layer2_network_has_ssid(struct oonf_layer2_network *net) {
-  return (net->_available_data & OONF_L2NET_SSID) != 0;
-}
-
-/**
- * @param neigh pointer to layer2 network data
- * @return true if data contains timestamp when network
- *    has been seen last, false otherwise
- */
-static INLINE bool
-oonf_layer2_network_has_last_seen(struct oonf_layer2_network *net) {
-  return (net->_available_data & OONF_L2NET_LAST_SEEN) != 0;
-}
-
-/**
- * @param neigh pointer to layer2 network data
- * @return true if data contains signal strength, false otherwise
- */
-static INLINE bool
-oonf_layer2_network_has_frequency(struct oonf_layer2_network *net) {
-  return (net->_available_data & OONF_L2NET_FREQUENCY) != 0;
-}
-
-/**
- * @param neigh pointer to layer2 network data
- * @return true if data contains supported data-rates, false otherwise
- */
-static INLINE bool
-oonf_layer2_network_has_supported_rates(struct oonf_layer2_network *net) {
-  return (net->_available_data & OONF_L2NET_SUPPORTED_RATES) != 0;
-}
-
-/**
- * Clear all optional data from a layer2 neighbor
- * @param neigh pointer to layer2 neighbor data
- */
-static INLINE void
-oonf_layer2_network_clear(struct oonf_layer2_network *net) {
-  net->_available_data = 0;
-}
-
-/**
- * @param neigh pointer to layer2 network data
- * @param bssid bssid to store in layer2 network data
- */
-static INLINE void
-oonf_layer2_network_set_ssid(struct oonf_layer2_network *net, char *ssid) {
-  net->_available_data |= OONF_L2NET_SSID;
-  strscpy(net->ssid, ssid, sizeof(net->ssid));
-}
-
-/**
- * @param neigh pointer to layer2 network data
- * @param relative relative timestamp when network has been seen last
- *    to store in layer2 network data
- */
-static INLINE void
-oonf_layer2_network_set_last_seen(struct oonf_layer2_network *net, uint64_t relative) {
-  net->_available_data |= OONF_L2NET_LAST_SEEN;
-  net->last_seen = oonf_clock_get_absolute(-relative);
-}
-
-/**
- * @param neigh pointer to layer2 network data
- * @param frequency frequency of network to store in layer2 network data
- */
-static INLINE void
-oonf_layer2_network_set_frequency(struct oonf_layer2_network *net, uint64_t frequency) {
-  net->_available_data |= OONF_L2NET_FREQUENCY;
-  net->frequency = frequency;
+static inline void
+oonf_layer2_reset_value(struct oonf_layer2_data *l2data) {
+  l2data->_has_value = false;
+  l2data->_origin = 0;
 }
 
 #endif /* OONF_LAYER2_H_ */

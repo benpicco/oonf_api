@@ -62,21 +62,9 @@
 #define KEY_neighbor "neighbor"
 #define KEY_radio "radio"
 #define KEY_ifindex "ifindex"
+#define KEY_ifid    "ifid"
 #define KEY_interface "interface"
-#define KEY_active "active"
-#define KEY_shortactive "shortactive"
 #define KEY_lastseen "lastseen"
-#define KEY_ssid "ssid"
-#define KEY_frequency "frequency"
-#define KEY_signal "signal"
-#define KEY_rxbitrate "rxbitrate"
-#define KEY_rxbytes "rxbytes"
-#define KEY_rxpackets "rxpackets"
-#define KEY_txbitrate "txbitrate"
-#define KEY_txbytes "txbytes"
-#define KEY_txpackets "txpackets"
-#define KEY_txretries "txretries"
-#define KEY_txfailed "txfailed"
 
 /* definitions */
 struct _l2viewer_config {
@@ -135,123 +123,83 @@ static struct oonf_telnet_command _telnet_cmd =
 
 /* template buffers */
 static struct {
-  struct netaddr_str neighbor;
-  struct netaddr_str radio;
+  struct netaddr_str neigh_addr;
+  struct netaddr_str radio_addr;
   char ifindex[10];
   char interface[IF_NAMESIZE];
-  char active[JSON_BOOL_LENGTH];
-  char shortactive[2];
   struct human_readable_str lastseen;
-  char ssid[33];
-  struct human_readable_str frequency;
-  char signal[7];
-  struct human_readable_str rxbitrate;
-  struct human_readable_str rxbytes;
-  struct human_readable_str rxpackets;
-  struct human_readable_str txbitrate;
-  struct human_readable_str txbytes;
-  struct human_readable_str txpackets;
-  struct human_readable_str txretries;
-  struct human_readable_str txfailed;
+  char if_id[33];
+  struct human_readable_str network[OONF_LAYER2_NET_COUNT];
+  struct human_readable_str neighbor[OONF_LAYER2_NEIGH_COUNT];
 } _template_buf;
 
-static struct abuf_template_data _template_neigh_data[] = {
-  { .key = KEY_neighbor, .value = _template_buf.neighbor.buf, .string = true},
-  { .key = KEY_radio, .value = _template_buf.radio.buf, .string = true},
+static struct abuf_template_data _template_neigh_data[5 + OONF_LAYER2_NEIGH_COUNT] = {
+  { .key = KEY_neighbor, .value = _template_buf.neigh_addr.buf, .string = true},
+  { .key = KEY_radio, .value = _template_buf.radio_addr.buf, .string = true},
   { .key = KEY_ifindex, .value = _template_buf.ifindex },
   { .key = KEY_interface, .value = _template_buf.interface, .string = true },
-  { .key = KEY_active, .value = _template_buf.active },
-  { .key = KEY_shortactive, .value = _template_buf.shortactive, .string = true },
   { .key = KEY_lastseen, .value = _template_buf.lastseen.buf },
-  { .key = KEY_signal, .value = _template_buf.signal },
-  { .key = KEY_rxbitrate, .value = _template_buf.rxbitrate.buf },
-  { .key = KEY_rxbytes, .value = _template_buf.rxbytes.buf },
-  { .key = KEY_rxpackets, .value = _template_buf.rxpackets.buf },
-  { .key = KEY_txbitrate, .value = _template_buf.txbitrate.buf },
-  { .key = KEY_txbytes, .value = _template_buf.txbytes.buf },
-  { .key = KEY_txpackets, .value = _template_buf.txpackets.buf },
-  { .key = KEY_txretries, .value = _template_buf.txretries.buf },
-  { .key = KEY_txfailed, .value = _template_buf.txfailed.buf },
 };
 
-static struct abuf_template_data _template_net_data[] = {
-  { .key = KEY_radio, .value = _template_buf.radio.buf, .string = true},
+static struct abuf_template_data _template_net_data[5 + OONF_LAYER2_NET_COUNT] = {
+  { .key = KEY_radio, .value = _template_buf.radio_addr.buf, .string = true},
   { .key = KEY_ifindex, .value = _template_buf.ifindex },
   { .key = KEY_interface, .value = _template_buf.interface, .string = true },
-  { .key = KEY_active, .value = _template_buf.active },
   { .key = KEY_lastseen, .value = _template_buf.lastseen.buf },
-  { .key = KEY_ssid, .value = _template_buf.ssid, .string = true},
-  { .key = KEY_frequency, .value = _template_buf.frequency.buf },
+  { .key = KEY_ifid, .value = _template_buf.if_id, .string = true},
 };
 
 struct _command_params {
-  const char *cmd_full;
-  const char *cmd_active;
-  const char *cmd_inactive;
+  const char *sub;
   const char *tmpl_full;
   const char *tmpl_table;
-  const char *tmpl_filtered_table;
   const char *headline_table;
-  const char *headline_filtered_table;
 
   /* set by runtime */
   const char *template;
-  bool active;
-  bool inactive;
 };
 
 struct _command_params _net_params = {
-  .cmd_full = "net_full",
-  .cmd_active = "net",
-  .cmd_inactive = "net_inactive",
+  .sub = "net",
 
   .tmpl_full =
-      "Radio MAC: %" KEY_radio     "%\n"
-      "Active:    %" KEY_active    "%\n"
-      "If-Index:  %" KEY_ifindex   "%\n"
-      "Interface: %" KEY_interface "%\n"
-      "SSID:      %" KEY_ssid      "%\n"
-      "Last seen: %" KEY_lastseen  "% seconds ago\n"
-      "Frequency: %" KEY_frequency "%\n"
+      "Radio MAC:    %" KEY_radio     "%\n"
+      "If-Index:     %" KEY_ifindex   "%\n"
+      "Interface:    %" KEY_interface "%\n"
+      "Interf. ID:   %" KEY_ifid      "%\n"
+      "Last seen:    %" KEY_lastseen  "% seconds ago\n"
+      "Frequency:    %" OONF_LAYER2_NET_FREQUENCY_KEY "%\n"
+      "Max. Bitrate: %" OONF_LAYER2_NET_MAX_BITRATE_KEY "%\n"
       "\n",
   .tmpl_table =
-      "%"KEY_shortactive"%%"KEY_interface"%\t%"KEY_radio"%\n",
-  .tmpl_filtered_table =
       "%"KEY_interface"%\t%"KEY_radio"%\n",
 
-  .headline_table = "  If\tRadio            \n",
-  .headline_filtered_table = "If\tRadio            \n",
+  .headline_table = "If\tRadio\n",
 };
 
 struct _command_params _neigh_params = {
-  .cmd_full = "neigh_full",
-  .cmd_active = "neigh",
-  .cmd_inactive = "neigh_inactive",
+  .sub = "neigh",
 
   .tmpl_full =
       "Neighbor MAC: %" KEY_neighbor  "%\n"
-      "Active:       %" KEY_active    "%\n"
       "Radio MAC:    %" KEY_radio     "%\n"
       "If-Index:     %" KEY_ifindex   "%\n"
       "Interface:    %" KEY_interface "%\n"
       "Last seen:    %" KEY_lastseen  "% seconds ago\n"
-      "Signal:       %" KEY_signal    "% dBm\n"
-      "Rx bitrate:   %" KEY_rxbitrate "%\n"
-      "Rx bytes:     %" KEY_rxbytes   "%\n"
-      "Rx packets:   %" KEY_rxpackets "%\n"
-      "Tx bitrate:   %" KEY_txbitrate "%\n"
-      "Tx bytes:     %" KEY_txbytes   "%\n"
-      "Tx packets:   %" KEY_txpackets "%\n"
-      "Tx retries:   %" KEY_txretries "%\n"
-      "Tx failed:    %" KEY_txfailed  "%\n"
+      "Signal:       %" OONF_LAYER2_NEIGH_SIGNAL_KEY    "% dBm\n"
+      "Rx bitrate:   %" OONF_LAYER2_NEIGH_RX_BITRATE_KEY "%\n"
+      "Rx bytes:     %" OONF_LAYER2_NEIGH_RX_BYTES_KEY   "%\n"
+      "Rx frames:    %" OONF_LAYER2_NEIGH_RX_FRAMES_KEY "%\n"
+      "Tx bitrate:   %" OONF_LAYER2_NEIGH_TX_BITRATE_KEY "%\n"
+      "Tx bytes:     %" OONF_LAYER2_NEIGH_TX_BYTES_KEY   "%\n"
+      "Tx frames:    %" OONF_LAYER2_NEIGH_TX_FRAMES_KEY "%\n"
+      "Tx retries:   %" OONF_LAYER2_NEIGH_TX_RETRIES_KEY "%\n"
+      "Tx failed:    %" OONF_LAYER2_NEIGH_TX_FAILED_KEY  "%\n"
       "\n",
   .tmpl_table =
-      "%"KEY_shortactive"%%"KEY_interface"%\t%"KEY_radio"%\t%"KEY_neighbor"%\n",
-  .tmpl_filtered_table =
       "%"KEY_interface"%\t%"KEY_radio"%\t%"KEY_neighbor"%\n",
 
-  .headline_table = "  If\tRadio            \tNeighbor\n",
-  .headline_filtered_table = "If\tRadio            \tNeighbor\n",
+  .headline_table = "  If\tRadio\tNeighbor\n",
 };
 
 /**
@@ -260,7 +208,21 @@ struct _command_params _neigh_params = {
  */
 static int
 _init(void) {
+  int i;
+
   oonf_telnet_add(&_telnet_cmd);
+
+  /* initialize templates */
+  for (i=0; i<OONF_LAYER2_NET_COUNT; i++) {
+    _template_net_data[5+i].key = oonf_layer2_metadata_net[i].key;
+    _template_net_data[5+i].string = false;
+    _template_net_data[5+i].value = _template_buf.network[i].buf;
+  }
+  for (i=0; i<OONF_LAYER2_NEIGH_COUNT; i++) {
+    _template_neigh_data[5+i].key = oonf_layer2_metadata_neigh[i].key;
+    _template_neigh_data[5+i].string = false;
+    _template_neigh_data[5+i].value = _template_buf.neighbor[i].buf;
+  }
   return 0;
 }
 
@@ -272,32 +234,44 @@ _cleanup(void) {
   oonf_telnet_remove(&_telnet_cmd);
 }
 
+static int
+_print_value(struct human_readable_str *dst, struct oonf_layer2_data *data,
+    const struct oonf_layer2_metadata *meta, bool raw) {
+  int64_t value;
+
+  value = oonf_layer2_get_value(data);
+  if (str_get_human_readable_s64(dst, value,
+      meta->unit, meta->fraction, meta->binary, raw)) {
+    return 0;
+  }
+  return -1;
+}
+
 /**
- * Print the data of a layer2 network to the telnet stream
+ * Print the data of a layer2 addr to the telnet stream
  * @param out pointer to output stream
- * @param net pointer to layer2 network data
+ * @param net pointer to layer2 addr data
  * @return -1 if an error happened, 0 otherwise
  */
 static int
-_init_network_template(struct oonf_layer2_network *net, bool raw) {
+_init_network_template_value(struct oonf_layer2_net *net, bool raw) {
+  int i;
+
   memset (&_template_buf, 0, sizeof(_template_buf));
 
-  if (NULL == netaddr_to_string(&_template_buf.radio, &net->radio_id))
+  if (NULL == netaddr_to_string(&_template_buf.radio_addr, &net->addr))
     return -1;
-
-  strcpy (_template_buf.active, abuf_json_getbool(net->active));
-  strcpy (_template_buf.shortactive, net->active ? "*" : " ");
 
   if (net->if_index) {
     sprintf(_template_buf.ifindex, "%u", net->if_index);
     if_indextoname(net->if_index, _template_buf.interface);
   }
 
-  if (oonf_layer2_network_has_ssid(net)) {
-    strscpy(_template_buf.ssid, net->ssid, sizeof(_template_buf.ssid));
+  if (net->if_ident[0]) {
+    strscpy(_template_buf.if_id, net->if_ident, sizeof(_template_buf.if_id));
   }
 
-  if (oonf_layer2_network_has_last_seen(net)) {
+  if (net->last_seen) {
     int64_t relative;
 
     relative = oonf_clock_get_relative(net->last_seen);
@@ -305,10 +279,14 @@ _init_network_template(struct oonf_layer2_network *net, bool raw) {
       return -1;
     }
   }
-  if (oonf_layer2_network_has_frequency(net)) {
-    if (NULL == str_get_human_readable_u64(
-        &_template_buf.frequency, net->frequency, "Hz", 3, false, raw)) {
-      return -1;
+
+
+  for (i=0; i<OONF_LAYER2_NET_COUNT; i++) {
+    if (oonf_layer2_has_value(&net->data[i])) {
+      if (_print_value(&_template_buf.network[i], &net->data[i],
+          &oonf_layer2_metadata_net[i],raw)) {
+        return -1;
+      }
     }
   }
   return 0;
@@ -321,22 +299,21 @@ _init_network_template(struct oonf_layer2_network *net, bool raw) {
  * @return -1 if an error happened, 0 otherwise
  */
 static int
-_init_neighbor_template(struct oonf_layer2_neighbor *neigh, bool raw) {
-  if (NULL == netaddr_to_string(&_template_buf.neighbor, &neigh->key.neighbor_mac))
+_init_neighbor_template_value(struct oonf_layer2_neigh *neigh, bool raw) {
+  int i;
+
+  if (NULL == netaddr_to_string(&_template_buf.neigh_addr, &neigh->addr))
     return -1;
 
-  strcpy (_template_buf.active, abuf_json_getbool(neigh->active));
-  strcpy (_template_buf.shortactive, neigh->active ? "*" : " ");
-
-  if (NULL == netaddr_to_string(&_template_buf.radio, &neigh->key.radio_mac))
+  if (NULL == netaddr_to_string(&_template_buf.radio_addr, &neigh->network->addr))
     return -1;
 
-  if (neigh->if_index) {
-    sprintf(_template_buf.ifindex, "%u", neigh->if_index);
-    if_indextoname(neigh->if_index, _template_buf.interface);
+  if (neigh->network->if_index) {
+    sprintf(_template_buf.ifindex, "%u", neigh->network->if_index);
+    if_indextoname(neigh->network->if_index, _template_buf.interface);
   }
 
-  if (oonf_layer2_neighbor_has_last_seen(neigh)) {
+  if (neigh->last_seen) {
     int64_t relative;
 
     relative = oonf_clock_get_relative(neigh->last_seen);
@@ -345,55 +322,12 @@ _init_neighbor_template(struct oonf_layer2_neighbor *neigh, bool raw) {
     }
   }
 
-  if (oonf_layer2_neighbor_has_signal(neigh)) {
-    sprintf(_template_buf.signal, "%d", neigh->signal_dbm);
-  }
-  if (oonf_layer2_neighbor_has_rx_bitrate(neigh)) {
-    if (NULL == str_get_human_readable_u64(
-        &_template_buf.rxbitrate, neigh->rx_bitrate, "bit/s", 1, true, raw)) {
-      return -1;
-    }
-  }
-  if (oonf_layer2_neighbor_has_rx_bytes(neigh)) {
-    if (NULL == str_get_human_readable_u64(
-        &_template_buf.rxbytes, neigh->rx_bytes, "Byte", 1, true, raw)) {
-      return -1;
-    }
-  }
-  if (oonf_layer2_neighbor_has_rx_packets(neigh)) {
-    if (NULL == str_get_human_readable_u64(
-        &_template_buf.rxpackets, neigh->rx_packets, "", 0, true, raw)) {
-      return -1;
-    }
-  }
-  if (oonf_layer2_neighbor_has_tx_bitrate(neigh)) {
-    if (NULL == str_get_human_readable_u64(
-        &_template_buf.txbitrate, neigh->tx_bitrate, "bit/s", 1, true, raw)) {
-      return -1;
-    }
-  }
-  if (oonf_layer2_neighbor_has_tx_bytes(neigh)) {
-    if (NULL == str_get_human_readable_u64(
-        &_template_buf.txbytes, neigh->tx_bytes, "Byte", 1, true, raw)) {
-      return -1;
-    }
-  }
-  if (oonf_layer2_neighbor_has_tx_packets(neigh)) {
-    if (NULL == str_get_human_readable_u64(
-        &_template_buf.txpackets, neigh->tx_packets, "", 0, true, raw)) {
-      return -1;
-    }
-  }
-  if (oonf_layer2_neighbor_has_tx_retries(neigh)) {
-    if (NULL == str_get_human_readable_u64(
-        &_template_buf.txretries, neigh->tx_retries, "", 3, true, raw)) {
-      return -1;
-    }
-  }
-  if (oonf_layer2_neighbor_has_tx_failed(neigh)) {
-    if (NULL == str_get_human_readable_u64(
-        &_template_buf.txfailed, neigh->tx_failed, "", 3, true, raw)) {
-      return -1;
+  for (i=0; i<OONF_LAYER2_NEIGH_COUNT; i++) {
+    if (oonf_layer2_has_value(&neigh->data[i])) {
+      if (_print_value(&_template_buf.neighbor[i], &neigh->data[i],
+          &oonf_layer2_metadata_neigh[i], raw)) {
+        return -1;
+      }
     }
   }
   return 0;
@@ -410,34 +344,14 @@ _init_neighbor_template(struct oonf_layer2_neighbor *neigh, bool raw) {
 static bool
 _parse_mode(struct autobuf *out, const char *cmd, struct _command_params *params) {
   const char *next;
-  bool filtered;
 
-  filtered = false;
-  if ((next = str_hasnextword(cmd, params->cmd_full))) {
-    params->active = true;
-    params->inactive = true;
-  }
-  else if ((next = str_hasnextword(cmd, params->cmd_active))) {
-    params->active = true;
-    filtered = true;
-  }
-  else if ((next = str_hasnextword(cmd, params->cmd_inactive))) {
-    params->inactive = true;
-    filtered = true;
-  }
-  else {
+  if ((next = str_hasnextword(cmd, params->sub)) == NULL) {
     return false;
   }
 
   if (strcasecmp(next, "list") == 0) {
-    if (filtered) {
-      abuf_puts(out, params->headline_filtered_table);
-      params->template = params->tmpl_filtered_table;
-    }
-    else {
-      abuf_puts(out, params->headline_table);
-      params->template = params->tmpl_table;
-    }
+    abuf_puts(out, params->headline_table);
+    params->template = params->tmpl_table;
   }
   else if (strcasecmp(next, JSON_TEMPLATE_FORMAT) == 0) {
     params->template = NULL;
@@ -458,8 +372,8 @@ _parse_mode(struct autobuf *out, const char *cmd, struct _command_params *params
  */
 static enum oonf_telnet_result
 _cb_handle_layer2(struct oonf_telnet_data *data) {
-  struct oonf_layer2_network *net;
-  struct oonf_layer2_neighbor *neigh;
+  struct oonf_layer2_net *net;
+  struct oonf_layer2_neigh *neigh;
   struct abuf_template_storage *tmpl_storage = NULL;
 
   if (data->parameter == NULL || *data->parameter == 0) {
@@ -476,19 +390,17 @@ _cb_handle_layer2(struct oonf_telnet_data *data) {
       }
     }
 
-    avl_for_each_element(&oonf_layer2_network_id_tree, net, _id_node) {
-      if (net->active ? _net_params.active : _net_params.inactive) {
-        if (_init_network_template(net, _net_params.template == NULL)) {
-          free(tmpl_storage);
-          return TELNET_RESULT_INTERNAL_ERROR;
-        }
-        if (_net_params.template) {
-          abuf_add_template(data->out, _net_params.template, tmpl_storage);
-        }
-        else {
-          abuf_add_json(data->out, "",
-              _template_net_data, ARRAYSIZE(_template_net_data));
-        }
+    avl_for_each_element(&oonf_layer2_net_tree, net, _node) {
+      if (_init_network_template_value(net, _net_params.template == NULL)) {
+        free(tmpl_storage);
+        return TELNET_RESULT_INTERNAL_ERROR;
+      }
+      if (_net_params.template) {
+        abuf_add_template(data->out, _net_params.template, tmpl_storage);
+      }
+      else {
+        abuf_add_json(data->out, "",
+            _template_net_data, ARRAYSIZE(_template_net_data));
       }
     }
   }
@@ -501,9 +413,9 @@ _cb_handle_layer2(struct oonf_telnet_data *data) {
       }
     }
 
-    avl_for_each_element(&oonf_layer2_neighbor_tree, neigh, _node) {
-      if (neigh->active ? _neigh_params.active : _neigh_params.inactive) {
-        if (_init_neighbor_template(neigh, _neigh_params.template == NULL)) {
+    avl_for_each_element(&oonf_layer2_net_tree, net, _node) {
+      avl_for_each_element(&net->neighbors, neigh, _node) {
+        if (_init_neighbor_template_value(neigh, _neigh_params.template == NULL)) {
           free(tmpl_storage);
           return TELNET_RESULT_INTERNAL_ERROR;
         }
