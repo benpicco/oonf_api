@@ -1,6 +1,6 @@
 
 /*
- * The olsr.org Optimized Link-State Routing daemon version 2 (olsrd )
+ * The olsr.org Optimized Link-State Routing daemon(olsrd)
  * Copyright (c) 2004-2013, the olsr.org team - see HISTORY file
  * All rights reserved.
  *
@@ -38,3 +38,16 @@
  * the copyright holders.
  *
  */
+
+#ifndef READER_H_
+#define READER_H_
+
+#include "common/common_types.h"
+#include "rfc5444/rfc5444_reader.h"
+
+EXPORT extern struct rfc5444_reader reader;
+
+void reader_init(void);
+void reader_cleanup(void);
+
+#endif /* READER_H_ */
