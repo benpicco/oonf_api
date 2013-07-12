@@ -97,11 +97,13 @@ _cb_blocktlv_packet_okay(struct rfc5444_reader_tlvblock_context *cont) {
 
   /* tlv type 0 was not defined mandatory in block callback entries */
   if (_consumer_entries[0].tlv) {
+    /* values of TLVs are not aligned well in memory, so we have to copy them */
     memcpy(&value, _consumer_entries[0].tlv->single_value, sizeof(value));
     printf("\ttlv 0: %d\n", ntohl(value));
   }
 
   /* tlv type 1 was defined mandatory in block callback entries */
+  /* values of TLVs are not aligned well in memory, so we have to copy them */
   memcpy(&value, _consumer_entries[1].tlv->single_value, sizeof(value));
   printf("\ttlv 1: %d\n", ntohl(value));
 
