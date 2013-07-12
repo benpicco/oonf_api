@@ -68,7 +68,7 @@ write_packet(struct rfc5444_writer *wr __attribute__ ((unused)),
   printf("%s()\n", __func__);
 
   /* generate hexdump of packet */
-  rfc5444_print_hexdump(&_hexbuf, "\t", buffer, length);
+  abuf_hexdump(&_hexbuf, "\t", buffer, length);
   rfc5444_print_direct(&_hexbuf, buffer, length);
 
   /* print hexdump to console */

@@ -841,7 +841,7 @@ _print_packet_to_buffer(union netaddr_socket *sock __attribute__((unused)),
 
   if (oonf_log_mask_test(log_global_mask, LOG_RFC5444, LOG_SEVERITY_DEBUG)) {
     abuf_clear(&_printer_buffer);
-    rfc5444_print_hexdump(&_printer_buffer, "", ptr, len);
+    abuf_hexdump(&_printer_buffer, "", ptr, len);
 
     result = rfc5444_reader_handle_packet(&_printer, ptr, len);
     if (result) {
@@ -901,7 +901,7 @@ _cb_receive_data(struct oonf_packet_socket *sock,
         netaddr_socket_to_string(&buf, from), rfc5444_strerror(result), result);
 
     abuf_clear(&_printer_buffer);
-    rfc5444_print_hexdump(&_printer_buffer, "", sock->config.input_buffer, length);
+    abuf_hexdump(&_printer_buffer, "", sock->config.input_buffer, length);
 
     OONF_WARN_NH(LOG_RFC5444, "%s", abuf_getptr(&_printer_buffer));
   }

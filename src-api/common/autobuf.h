@@ -80,6 +80,8 @@ EXPORT int abuf_memcpy(struct autobuf * autobuf,
 EXPORT int abuf_memcpy_prepend(struct autobuf *autobuf,
     const void *p, const size_t len);
 EXPORT void abuf_pull(struct autobuf * autobuf, size_t len);
+EXPORT void abuf_hexdump(struct autobuf *out,
+    const char *prefix, void *buffer, size_t length);
 
 /**
  * Clears the content of an autobuf

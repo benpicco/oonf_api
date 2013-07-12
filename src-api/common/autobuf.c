@@ -64,6 +64,7 @@ ROUND_UP_TO_POWER_OF_2(size_t val, size_t pow2) {
 }
 
 static int _autobuf_enlarge(struct autobuf *autobuf, size_t new_size);
+static void _print_hexline(struct autobuf *out, void *buffer, size_t length);
 
 /**
  * Initialize an autobuffer and allocate a chunk of memory
@@ -314,6 +315,48 @@ abuf_pull(struct autobuf * autobuf, size_t len) {
   return;
 }
 
+/**
+ * Print a hexdump of a buffer to an autobuf and prepends a prefix string
+ * to each line.
+ * @param out output buffer
+ * @param prefix string to prepend to each line
+ * @param buffer buffer to be hexdumped
+ * @param length length of buffer in bytes
+ */
+void
+abuf_hexdump(struct autobuf *out, const char *prefix, void *buffer, size_t length) {
+  uint8_t *buf;
+  size_t j, l;
+
+  buf = buffer;
+
+  for (j = 0; j < length; j += 32) {
+    abuf_appendf(out, "%s%04zx:", prefix, j);
+
+    l = length - j;
+    if (l > 32) {
+      l = 32;
+    }
+    _print_hexline(out, &buf[j], l);
+    abuf_puts(out, "\n");
+  }
+}
+
+/**
+ * Print a line for a hexdump
+ * @param out output buffer
+ * @param buffer buffer to be hexdumped
+ * @param length length of buffer in bytes
+ */
+static void
+_print_hexline(struct autobuf *out, void *buffer, size_t length) {
+  size_t i;
+  uint8_t *buf = buffer;
+
+  for (i = 0; i < length; i++) {
+    abuf_appendf(out, "%s%02x", ((i & 3) == 0) ? " " : "", (int) (buf[i]));
+  }
+}
 
 /**
  * Enlarge an autobuffer if necessary

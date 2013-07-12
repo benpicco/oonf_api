@@ -48,8 +48,6 @@
 #include "rfc5444/rfc5444_reader.h"
 #include "rfc5444/rfc5444_print.h"
 
-static void _print_hexline(struct autobuf *out, void *buffer, size_t length);
-
 static enum rfc5444_result _cb_print_pkt_start(
     struct rfc5444_reader_tlvblock_context *context);
 static enum rfc5444_result _cb_print_pkt_tlv(
@@ -145,49 +143,6 @@ rfc5444_print_direct(struct autobuf *out, void *buffer, size_t length) {
 }
 
 /**
- * Print a hexdump of a buffer to an autobuf and prepends a prefix string
- * to each line.
- * @param out output buffer
- * @param prefix string to prepend to each line
- * @param buffer buffer to be hexdumped
- * @param length length of buffer in bytes
- */
-void
-rfc5444_print_hexdump(struct autobuf *out, const char *prefix, void *buffer, size_t length) {
-  uint8_t *buf;
-  size_t j, l;
-
-  buf = buffer;
-
-  for (j = 0; j < length; j += 32) {
-    abuf_appendf(out, "%s%04zx:", prefix, j);
-
-    l = length - j;
-    if (l > 32) {
-      l = 32;
-    }
-    _print_hexline(out, &buf[j], l);
-    abuf_puts(out, "\n");
-  }
-}
-
-/**
- * Print a line for a hexdump
- * @param out output buffer
- * @param buffer buffer to be hexdumped
- * @param length length of buffer in bytes
- */
-static void
-_print_hexline(struct autobuf *out, void *buffer, size_t length) {
-  size_t i;
-  uint8_t *buf = buffer;
-
-  for (i = 0; i < length; i++) {
-    abuf_appendf(out, "%s%02x", ((i & 3) == 0) ? " " : "", (int) (buf[i]));
-  }
-}
-
-/**
  * Clear output buffer and print start of packet
  * @param c
  * @param context
@@ -238,7 +193,7 @@ _cb_print_pkt_tlv(struct rfc5444_reader_tlvblock_entry *tlv,
   abuf_puts(session->output, "\n");
   if (tlv->length > 0) {
     abuf_appendf(session->output, "\t|    |     Value length: %u\n", tlv->length);
-    rfc5444_print_hexdump(session->output, "\t|    |       ", tlv->single_value, tlv->length);
+    abuf_hexdump(session->output, "\t|    |       ", tlv->single_value, tlv->length);
   }
   return RFC5444_OKAY;
 }
@@ -328,7 +283,7 @@ _cb_print_msg_tlv(struct rfc5444_reader_tlvblock_entry *tlv,
   abuf_puts(session->output, "\n");
   if (tlv->length > 0) {
     abuf_appendf(session->output, "\t|    |    |     Value length: %u\n", tlv->length);
-    rfc5444_print_hexdump(session->output, "\t|    |    |       ", tlv->single_value, tlv->length);
+    abuf_hexdump(session->output, "\t|    |    |       ", tlv->single_value, tlv->length);
   }
   return RFC5444_OKAY;
 }
@@ -399,7 +354,7 @@ _cb_print_addr_tlv(struct rfc5444_reader_tlvblock_entry *tlv,
   abuf_puts(session->output, "\n");
   if (tlv->length > 0) {
     abuf_appendf(session->output, "\t|    |    |    |     Value length: %u\n", tlv->length);
-    rfc5444_print_hexdump(session->output, "\t|    |    |    |       ", tlv->single_value, tlv->length);
+    abuf_hexdump(session->output, "\t|    |    |    |       ", tlv->single_value, tlv->length);
   }
   return RFC5444_OKAY;
 }
