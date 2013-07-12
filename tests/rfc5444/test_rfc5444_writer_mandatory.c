@@ -1,6 +1,7 @@
+
 /*
- * RFC 5444 handler library
- * Copyright (c) 2010 Henning Rogge <hrogge@googlemail.com>
+ * The olsr.org Optimized Link-State Routing daemon version 2 (olsrd2)
+ * Copyright (c) 2004-2013, the olsr.org team - see HISTORY file
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,13 +31,13 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * Visit http://www.olsr.org/git for more information.
+ * Visit http://www.olsr.org for more information.
  *
  * If you find this software useful feel free to make a donation
  * to the project. For more information see the website or contact
  * the copyright holders.
+ *
  */
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
