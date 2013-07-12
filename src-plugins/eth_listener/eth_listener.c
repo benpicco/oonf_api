@@ -126,7 +126,7 @@ _init(void) {
 
 static void
 _cleanup(void) {
-  oonf_layer2_unregister_origin(_l2_origin);
+  oonf_layer2_cleanup_origin(_l2_origin);
 
   oonf_timer_stop(&_transmission_timer);
   oonf_timer_remove(&_transmission_timer_info);

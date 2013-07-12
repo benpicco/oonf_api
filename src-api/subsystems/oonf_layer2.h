@@ -146,7 +146,7 @@ EXPORT extern const struct oonf_layer2_metadata oonf_layer2_metadata_net[OONF_LA
 EXPORT extern struct avl_tree oonf_layer2_net_tree;
 
 EXPORT uint32_t oonf_layer2_register_origin(void);
-EXPORT void oonf_layer2_unregister_origin(uint32_t);
+EXPORT void oonf_layer2_cleanup_origin(uint32_t);
 
 EXPORT struct oonf_layer2_net *oonf_layer2_net_add(struct netaddr *);
 EXPORT void oonf_layer2_net_remove(
