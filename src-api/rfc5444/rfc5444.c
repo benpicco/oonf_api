@@ -170,7 +170,7 @@ rfc5444_timetlv_decode(uint8_t encoded) {
 }
 
 /**
- * Encode a metric value in OONFv2 specified format.
+ * Encode a metric value in OLSRv2 specified format.
  * A metric value larger than the maximum will be encoded to 4095.
  * Encoding for metric value 0 is not specified.
  *
@@ -210,7 +210,7 @@ rfc5444_metric_encode(uint32_t decoded) {
 }
 
 /**
- * Decode an OONFv2 encoded metric value.
+ * Decode an OLSRv2 encoded metric value.
  * @param encoded encoded metric
  * @return decoded metric value
  */

@@ -111,10 +111,10 @@ struct oonf_rfc5444_protocol {
   struct rfc5444_reader reader;
   struct rfc5444_writer writer;
 
-  /* processed set as defined in OONFv2 */
+  /* processed set as defined in OLSRv2 */
   struct oonf_duplicate_set processed_set;
 
-  /* forwarded set as defined in OONFv2 */
+  /* forwarded set as defined in OLSRv2 */
   struct oonf_duplicate_set forwarded_set;
 
   /* node for tree of protocols */
@@ -166,9 +166,6 @@ struct oonf_rfc5444_interface {
 
   /* pointer to ipv4/ipv6 targets for this interface */
   struct oonf_rfc5444_target *multicast4, *multicast6;
-
-  /* receive set as defined in OONFv2 */
-  struct oonf_duplicate_set duplicate_set;
 
   /* number of users of this interface */
   int _refcount;

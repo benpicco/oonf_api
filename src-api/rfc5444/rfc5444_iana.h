@@ -76,7 +76,7 @@ enum rfc5444_msgtype_iana {
   /* RFC 6130 (NHDP) */
   RFC5444_MSGTYPE_HELLO = 0,
 
-  /* OONFv2 draft 19 */
+  /* OLSRv2 draft 19 */
   RFC5444_MSGTYPE_TC = 1,
 };
 
@@ -105,7 +105,7 @@ enum rfc5444_msgtlvs_iana {
   RFC5444_MSGTLV_ICV           = 5,
   RFC5444_MSGTLV_TIMESTAMP     = 6,
 
-  /* OONFv2 draft-17 */
+  /* OLSRv2 draft-19 */
   RFC5444_MSGTLV_MPR_WILLING   = 224,
   RFC5444_MSGTLV_CONT_SEQ_NUM  = 225,
 };
@@ -151,7 +151,7 @@ enum rfc5444_addrtlv_iana {
   RFC5444_ADDRTLV_ICV           = 5,
   RFC5444_ADDRTLV_TIMESTAMP     = 6,
 
-  /* OONFv2 draft-17 */
+  /* OLSRv2 draft-17 */
   RFC5444_ADDRTLV_LINK_METRIC   = 224,
   RFC5444_ADDRTLV_MPR           = 225,
   RFC5444_ADDRTLV_NBR_ADDR_TYPE = 226,

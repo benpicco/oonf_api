@@ -516,9 +516,6 @@ oonf_rfc5444_add_interface(struct oonf_rfc5444_protocol *protocol,
     /* initialize target subtree */
     avl_init(&interf->_target_tree, avl_comp_netaddr, false);
 
-    /* initialize received set */
-    oonf_duplicate_set_add(&interf->duplicate_set);
-
     /* initialize socket */
     memcpy (&interf->_socket.config, &_socket_config, sizeof(_socket_config));
     interf->_socket.config.user = interf;
@@ -579,9 +576,6 @@ oonf_rfc5444_remove_interface(struct oonf_rfc5444_interface *interf,
   if (interf->multicast6) {
     _destroy_target(interf->multicast6);
   }
-
-  /* remove received set */
-  oonf_duplicate_set_remove(&interf->duplicate_set);
 
   /* remove from protocol tree */
   avl_remove(&interf->protocol->_interface_tree, &interf->_node);
