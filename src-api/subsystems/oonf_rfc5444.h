@@ -47,9 +47,10 @@
 #include "common/netaddr.h"
 #include "rfc5444/rfc5444_reader.h"
 #include "rfc5444/rfc5444_writer.h"
+#include "subsystems/oonf_duplicate_set.h"
+#include "subsystems/oonf_interface.h"
 #include "subsystems/oonf_packet_socket.h"
 #include "subsystems/oonf_timer.h"
-#include "subsystems/oonf_duplicate_set.h"
 
 /* suggested priorities for RFC5444 readers */
 
@@ -78,7 +79,7 @@ enum {
 #define RFC5444_PROTOCOL "rfc5444_default"
 
 /* Interface name for unicast targets */
-#define RFC5444_UNICAST_TARGET "any"
+#define RFC5444_UNICAST_TARGET OONF_INTERFACE_WILDCARD
 
 struct oonf_rfc5444_target;
 

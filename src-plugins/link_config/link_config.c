@@ -42,7 +42,8 @@
 #include "common/avl.h"
 #include "common/avl_comp.h"
 #include "common/common_types.h"
-
+#include "config/cfg_schema.h"
+#include "config/cfg_validate.h"
 #include "core/oonf_logging.h"
 #include "core/oonf_subsystem.h"
 #include "subsystems/oonf_class.h"
@@ -133,31 +134,25 @@ _cb_validate_linkdata(const struct cfg_schema_entry *entry,
     const char *section_name, const char *value, struct autobuf *out) {
   struct human_readable_str sbuf;
   struct netaddr_str nbuf;
-  struct netaddr dummy;
   const char *ptr;
-  uint64_t speed;
 
   /* test if first word is a human readable number */
   ptr = str_cpynextword(sbuf.buf, value, sizeof(sbuf));
-  if (str_parse_human_readable_u64(&speed, sbuf.buf,
+  if (cfg_validate_int(out, section_name, entry->key.entry, sbuf.buf,
+      INT64_MIN, INT64_MAX, 8,
       oonf_layer2_metadata_neigh[entry->validate_param[0].i32[0]].fraction,
       oonf_layer2_metadata_neigh[entry->validate_param[0].i32[0]].binary)) {
-    cfg_append_printable_line(out, "Value '%s' for entry '%s'"
-        " in section %s is no valid human readable number",
-        value, entry->key.entry, section_name);
     return -1;
   }
 
   while (ptr) {
+    int8_t af[] = { AF_MAC48, AF_EUI64 };
+
     /* test if the rest of the words are mac addresses */
     ptr = str_cpynextword(nbuf.buf, ptr, sizeof(nbuf));
 
-    if (netaddr_from_string(&dummy, nbuf.buf) != 0
-        || (netaddr_get_address_family(&dummy) != AF_MAC48
-            && netaddr_get_address_family(&dummy) != AF_EUI64)) {
-      cfg_append_printable_line(out, "Value '%s' for entry '%s'"
-          " in section %s is no valid mac/eui64 address",
-          value, entry->key.entry, section_name);
+    if (cfg_validate_netaddr(out, section_name, entry->key.entry,
+        nbuf.buf, false, af, ARRAYSIZE(af))) {
       return -1;
     }
   }

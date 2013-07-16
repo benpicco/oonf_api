@@ -39,65 +39,21 @@
  *
  */
 
-#ifndef INTERFACE_H_
-#define INTERFACE_H_
+#ifndef CFG_HELP_H_
+#define CFG_HELP_H_
 
+#include "common/autobuf.h"
 #include "common/common_types.h"
-#include "common/avl.h"
-#include "common/list.h"
-#include "common/netaddr.h"
 
-#include "subsystems/oonf_timer.h"
-#include "subsystems/os_net.h"
+EXPORT void cfg_help_printable(struct autobuf *out, size_t len);
+EXPORT void cfg_help_strlen(struct autobuf *out, size_t len);
+EXPORT void cfg_help_choice(struct autobuf *out, bool preamble,
+    const char **choices, size_t choice_count);
+EXPORT void cfg_help_int(struct autobuf *out,
+    int64_t min, int64_t max, uint16_t bytelen, uint16_t fraction, bool base2);
+EXPORT void cfg_help_netaddr(struct autobuf *out, bool preamble,
+    bool prefix, const int8_t *af_types, size_t af_types_count);
+EXPORT void cfg_help_acl(struct autobuf *out, bool preamble,
+    bool prefix, const int8_t *af_types, size_t af_types_count);
 
-/*
- * Configuration settings for interface section
- */
-#define CFG_INTERFACE_SECTION      "interface"
-#define CFG_INTERFACE_SECTION_MODE CFG_SSMODE_NAMED_MANDATORY
-
-/* wildcard name for interfaces */
-#define OONF_INTERFACE_WILDCARD "any"
-
-struct oonf_interface_listener {
-  /* name of interface */
-  const char *name;
-
-  /*
-   * set to true if listener is on a mesh traffic interface.
-   * keep this false if in doubt, true will trigger some interface
-   * reconfiguration to allow forwarding of user traffic
-   */
-  bool mesh;
-
-  /* callback for interface change */
-  void (*process)(struct oonf_interface_listener *);
-
-  /*
-   * pointer to the interface this listener is registered to
-   */
-  struct oonf_interface *interface;
-
-  /*
-   * pointer to the interface data before the change happened, will be
-   * set by the core while process() is called
-   */
-  struct oonf_interface_data *old;
-
-  /* hook into list of listeners */
-  struct list_entity _node;
-};
-
-#define LOG_INTERFACE oonf_interface_subsystem.logging
-EXPORT extern struct oonf_subsystem oonf_interface_subsystem;
-EXPORT extern struct avl_tree oonf_interface_tree;
-
-EXPORT int oonf_interface_add_listener(struct oonf_interface_listener *);
-EXPORT void oonf_interface_remove_listener(struct oonf_interface_listener *);
-
-EXPORT struct oonf_interface_data *oonf_interface_get_data(
-    const char *name, struct oonf_interface_data *buffer);
-EXPORT void oonf_interface_trigger_change(const char *name, bool down);
-EXPORT void oonf_interface_trigger_handler(struct oonf_interface *interf);
-
-#endif /* INTERFACE_H_ */
+#endif /* CFG_HELP_H_ */

@@ -177,45 +177,45 @@ str_hasnextword (const char *buffer, const char *word) {
  * Copies the next word of a constant stringbuffer into
  * a second buffer.
  * @param dst pointer to target buffer
- * @param buffer constant source buffer
- * @param len length of source buffer
+ * @param src constant source buffer
+ * @param len maximum length of copied data
  * @return pointer to next word behind the copied word
  */
 const char *
-str_cpynextword (char *dst, const char *buffer, size_t len) {
+str_cpynextword (char *dst, const char *src, size_t len) {
   size_t i;
 
   /* sanity check */
-  if (buffer == NULL) {
+  if (src == NULL) {
     *dst = 0;
     return NULL;
   }
 
   /* skip whitespace prefix */
-  while (isblank(*buffer)) {
-    buffer++;
+  while (isblank(*src)) {
+    src++;
   }
 
   /* copy next word */
   i = 0;
-  while (*buffer != 0 && !isblank(*buffer) && i < len-1) {
-    dst[i++] = *buffer++;
+  while (*src != 0 && !isblank(*src) && i < len-1) {
+    dst[i++] = *src++;
   }
 
   /* terminate */
   dst[i] = 0;
 
-  /* skip ahead in buffer */
-  while (isblank(*buffer)) {
-    buffer++;
+  /* skip ahead in src */
+  while (isblank(*src)) {
+    src++;
   }
 
-  if (*buffer) {
+  if (*src) {
     /* return next word */
-    return buffer;
+    return src;
   }
 
-  /* end of buffer */
+  /* end of src */
   return NULL;
 }
 
