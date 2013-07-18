@@ -385,8 +385,16 @@ cfg_cmd_handle_schema(struct cfg_db *db,
   }
 
   if (strcmp(arg, "all") == 0) {
+    const char *last_type = NULL;
+
     avl_for_each_element(&db->schema->sections, s_section, _section_node) {
-      _print_schema_section(log, db, s_section->type);
+      if (last_type == NULL || strcasecmp(s_section->type, last_type) != 0) {
+        if (last_type != NULL) {
+          abuf_puts(log, "\n");
+        }
+        _print_schema_section(log, db, s_section->type);
+        last_type = s_section->type;
+      }
     }
     return 0;
   }

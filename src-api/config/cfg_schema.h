@@ -344,6 +344,8 @@ EXPORT int cfg_schema_validate(struct cfg_db *db,
 
 EXPORT int cfg_schema_tobin(void *target, struct cfg_named_section *named,
     const struct cfg_schema_entry *entries, size_t count);
+EXPORT const struct const_strarray *cfg_schema_tovalue(struct cfg_named_section *named,
+    const struct cfg_schema_entry *entry);
 
 EXPORT int cfg_schema_handle_db_changes(struct cfg_db *pre_change, struct cfg_db *post_change);
 EXPORT int cfg_schema_handle_db_startup_changes(struct cfg_db *db);

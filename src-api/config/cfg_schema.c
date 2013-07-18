@@ -333,24 +333,38 @@ cfg_schema_tobin(void *target, struct cfg_named_section *named,
       continue;
     }
 
-    /* cleanup pointer */
-    if (named) {
-      value = cfg_db_get_entry_value(
-          named->section_type->db,
-          named->section_type->type,
-          named->name,
-          entries[i].key.entry);
-    }
-    else {
-      value = &entries[i].def;
-    }
-
+    value = cfg_schema_tovalue(named, &entries[i]);
     if (entries[i].cb_to_binary(&entries[i], value, ptr + entries[i].bin_offset)) {
       /* error in conversion */
       return -1-i;
     }
   }
   return 0;
+}
+
+/**
+ * Get the value of an db entry. Will return the default value if no
+ * db entry is available in section.
+ * @param named pointer to named section, might be NULL to refer to
+ *   default settings
+ * @param entry pointer to schema entry
+ * @return pointer to constant string array,
+ *   NULL if none found and no default.
+ */
+const struct const_strarray *
+cfg_schema_tovalue(struct cfg_named_section *named,
+    const struct cfg_schema_entry *entry) {
+  /* cleanup pointer */
+  if (named) {
+    return cfg_db_get_entry_value(
+        named->section_type->db,
+        named->section_type->type,
+        named->name,
+        entry->key.entry);
+  }
+  else {
+    return &entry->def;
+  }
 }
 
 /**
