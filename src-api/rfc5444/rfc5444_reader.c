@@ -57,7 +57,8 @@
 static int _consumer_avl_comp(const void *k1, const void *k2);
 static int _calc_tlvconsumer_intorder(struct rfc5444_reader_tlvblock_consumer_entry *entry);
 static int _calc_tlvblock_intorder(struct rfc5444_reader_tlvblock_entry *entry);
-static bool _has_same_tlvtype(int int_type1, int int_type2);
+static int _compare_tlvtypes(struct rfc5444_reader_tlvblock_entry *tlv,
+    struct rfc5444_reader_tlvblock_consumer_entry *entry);
 static uint8_t _rfc5444_get_u8(uint8_t **ptr, uint8_t *end, enum rfc5444_result *result);
 static uint16_t _rfc5444_get_u16(uint8_t **ptr, uint8_t *end, enum rfc5444_result *result);
 static void _free_tlvblock(struct rfc5444_reader *parser, struct avl_tree *entries);
@@ -349,11 +350,25 @@ _calc_tlvblock_intorder(struct rfc5444_reader_tlvblock_entry *entry) {
  * Checks if two internal types have the same tlv type
  * @param int_type1 first internal type
  * @param int_type2 second internal type
- * @return true if both have the same tlv type, false otherwise
+ * @param match_ext true if extension type is relevant
+ * @return <0 if type1<type2, ==0 if type1==type2, >0 if type1>type2
  */
-static INLINE bool
-_has_same_tlvtype(int int_type1, int int_type2) {
-  return (int_type1 & 0xff00) == (int_type2 & 0xff00);
+static int
+_compare_tlvtypes(struct rfc5444_reader_tlvblock_entry *tlv, struct rfc5444_reader_tlvblock_consumer_entry *entry) {
+  if (entry == NULL) {
+    if (tlv == NULL) {
+      return 0;
+    }
+    return -1;
+  }
+  if (tlv == NULL) {
+    return 1;
+  }
+
+  if (entry->match_type_ext) {
+    return (int)tlv->_order - _calc_tlvconsumer_intorder(entry);
+  }
+  return (int)tlv->type - (int)entry->type;
 }
 
 /**
@@ -594,7 +609,6 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
   struct rfc5444_reader_tlvblock_entry *tlv = NULL, *nexttlv = NULL;
   struct rfc5444_reader_tlvblock_consumer_entry *cons_entry;
   bool constraints_failed;
-  int cons_order, tlv_order;
   enum rfc5444_result result = RFC5444_OKAY;
 
   constraints_failed = false;
@@ -602,21 +616,17 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
   /* initialize tlv pointers, there must be TLVs */
   if (avl_is_empty(entries)) {
     tlv = NULL;
-    tlv_order = TLVTYPE_ORDER_INFINITE;
   }
   else {
     tlv = avl_first_element(entries, tlv, node);
-    tlv_order = tlv->_order;
   }
 
   /* initialize consumer pointer */
   if (list_is_empty(&consumer->_consumer_list)) {
     cons_entry = NULL;
-    cons_order = TLVTYPE_ORDER_INFINITE;
   }
   else {
     cons_entry = list_first_element(&consumer->_consumer_list, cons_entry, _node);
-    cons_order = _calc_tlvconsumer_intorder(cons_entry);
     cons_entry->tlv = NULL;
   }
 
@@ -633,12 +643,7 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
     /* check index for address blocks */
     if (tlv != NULL && cons_entry != NULL && index_match) {
       /* calculate match between tlv and consumer */
-      if (cons_entry->match_type_ext) {
-        match = cons_order == tlv_order;
-      }
-      else {
-        match = _has_same_tlvtype(cons_order, tlv_order);
-      }
+      match = _compare_tlvtypes(tlv, cons_entry) == 0;
     }
 
     if (index_match && tlv->_multivalue_tlv) {
@@ -673,7 +678,7 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
     }
 
     /* run through both sorted lists until finding a match */
-    if (cons_order <= tlv_order) {
+    if (_compare_tlvtypes(tlv, cons_entry) >= 0) {
       constraints_failed |= cons_entry->mandatory && !match;
 
       if (match) {
@@ -710,28 +715,24 @@ _schedule_tlvblock(struct rfc5444_reader_tlvblock_consumer *consumer, struct rfc
         }
       }
     }
-    if (tlv_order <= cons_order && tlv != NULL) {
+    if (tlv != NULL && _compare_tlvtypes(tlv, cons_entry) <= 0) {
       /* advance tlv pointer */
       if (avl_is_last(entries, &tlv->node)) {
         tlv = NULL;
-        tlv_order = TLVTYPE_ORDER_INFINITE;
       }
       else {
         tlv = avl_next_element(tlv, node);
-        tlv_order = tlv->_order;
       }
     }
-    if (cons_order < tlv_order) {
+    if (_compare_tlvtypes(tlv, cons_entry) > 0) {
       constraints_failed |= cons_entry->mandatory && !match;
 
       /* advance consumer pointer */
       if (list_is_last(&consumer->_consumer_list, &cons_entry->_node)) {
         cons_entry = NULL;
-        cons_order = TLVTYPE_ORDER_INFINITE;
       }
       else {
         cons_entry = list_next_element(cons_entry, _node);
-        cons_order = _calc_tlvconsumer_intorder(cons_entry);
         cons_entry->tlv = NULL;
       }
     }

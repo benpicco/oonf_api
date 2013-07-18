@@ -173,7 +173,7 @@ rfc5444_timetlv_decode(uint8_t encoded) {
  * Encode a metric value in OLSRv2 specified format.
  * A metric value larger than the maximum will be encoded to 4095.
  * Encoding for metric value 0 is not specified.
- *
+ * A metric value larger or equal to RFC5444_METRIC infinite is encoded as 0.
  * @param decoded metric value.
  * @return encoded metric value.
  */
@@ -185,7 +185,7 @@ rfc5444_metric_encode(uint32_t decoded) {
    * metric-code := 256 * a + b
    */
 
-  if (decoded < RFC5444_METRIC_MIN) {
+  if (decoded < RFC5444_METRIC_MIN || decoded >= RFC5444_METRIC_INFINITE) {
     return 0;
   }
   if (decoded > RFC5444_METRIC_MAX) {
