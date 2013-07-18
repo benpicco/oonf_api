@@ -87,8 +87,6 @@ static void _set_addr_bitarray(struct rfc5444_reader_bitarray256 *b, int idx);
 static bool _test_addrbitarray(struct rfc5444_reader_bitarray256 *b, int idx);
 #endif
 
-static const int TLVTYPE_ORDER_INFINITE = 0x10000;
-
 /**
  * Initalize the context of a parser with default values.
  * @param context pointer to parser context
