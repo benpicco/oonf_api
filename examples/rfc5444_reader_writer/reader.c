@@ -48,25 +48,50 @@
 
 #include "rfc5444_reader_writer/reader.h"
 
-static enum rfc5444_result _cb_blocktlv_packet_okay(
+static enum rfc5444_result _cb_blocktlv_messagetlvs_okay(
+    struct rfc5444_reader_tlvblock_context *cont);
+
+static enum rfc5444_result _cb_blocktlv_addresstlvs_okay(
     struct rfc5444_reader_tlvblock_context *cont);
 
 /*
- * message consumer entries definition
+ * Message consumer entries definition
  * TLV type 0
  * TLV type 1 (mandatory)
  */
-static struct rfc5444_reader_tlvblock_consumer_entry _consumer_entries[] = {
+static struct rfc5444_reader_tlvblock_consumer_entry _message_consumer_entries[] = {
   { .type = 0 },
   { .type = 1, .mandatory = true }
 };
 
+/*
+ * Message consumer, will be called once for every message with
+ * type 1 that contains all the mandatory message TLVs
+ */
 static struct rfc5444_reader_tlvblock_consumer _consumer = {
   /* parse message type 1 */
   .msg_id = 1,
 
   /* use a block callback */
-  .block_callback = _cb_blocktlv_packet_okay,
+  .block_callback = _cb_blocktlv_messagetlvs_okay,
+};
+
+/*
+ * Address consumer entries definition
+ * TLV type 0
+ */
+static struct rfc5444_reader_tlvblock_consumer_entry _address_consumer_entries[] = {
+  { .type = 0 },
+};
+
+/*
+ * Address consumer. Will be called once for every address in a message with
+ * type 1.
+ */
+static struct rfc5444_reader_tlvblock_consumer _address_consumer = {
+  .msg_id = 1,
+  .addrblock_consumer = true,
+  .block_callback = _cb_blocktlv_addresstlvs_okay,
 };
 
 struct rfc5444_reader reader;
@@ -79,16 +104,17 @@ struct rfc5444_reader reader;
  * @return
  */
 static enum rfc5444_result
-_cb_blocktlv_packet_okay(struct rfc5444_reader_tlvblock_context *cont) {
+_cb_blocktlv_messagetlvs_okay(struct rfc5444_reader_tlvblock_context *cont) {
   int value;
+  struct rfc5444_reader_tlvblock_entry* tlv;
+  struct netaddr_str nbuf;
 
   printf("%s()\n", __func__);
 
   printf("\tmessage type: %d\n", cont->type);
 
   if (cont->has_origaddr) {
-    struct netaddr_str dst;
-    printf("\torig_addr: %s\n", netaddr_to_string(&dst, &cont->orig_addr));
+    printf("\torig_addr: %s\n", netaddr_to_string(&nbuf, &cont->orig_addr));
   }
 
   if (cont->has_seqno) {
@@ -96,16 +122,51 @@ _cb_blocktlv_packet_okay(struct rfc5444_reader_tlvblock_context *cont) {
   }
 
   /* tlv type 0 was not defined mandatory in block callback entries */
-  if (_consumer_entries[0].tlv) {
+  while (tlv) {
     /* values of TLVs are not aligned well in memory, so we have to copy them */
-    memcpy(&value, _consumer_entries[0].tlv->single_value, sizeof(value));
+    memcpy(&value, tlv->single_value, sizeof(value));
     printf("\ttlv 0: %d\n", ntohl(value));
+    tlv = tlv->next_entry;
   }
 
-  /* tlv type 1 was defined mandatory in block callback entries */
-  /* values of TLVs are not aligned well in memory, so we have to copy them */
-  memcpy(&value, _consumer_entries[1].tlv->single_value, sizeof(value));
-  printf("\ttlv 1: %d\n", ntohl(value));
+  /*
+   * tlv type 1 was defined mandatory in block callback entries,
+   * if we would only expect one tlv, we could just use
+   * the single_value pointer
+   */
+  tlv = _message_consumer_entries[1].tlv;
+  do {
+    /* values of TLVs are not aligned well in memory, so we have to copy them */
+    memcpy(&value, tlv->single_value, sizeof(value));
+    printf("\ttlv 1: %d\n", ntohl(value));
+  } while ((tlv = tlv->next_entry));
+
+  return RFC5444_OKAY;
+}
+
+/**
+ * This block callback is called for every address
+ *
+ * @param cont
+ * @return
+ */
+static enum rfc5444_result
+_cb_blocktlv_addresstlvs_okay(struct rfc5444_reader_tlvblock_context *cont) {
+  struct netaddr_str nbuf;
+  struct rfc5444_reader_tlvblock_entry* tlv;
+  int value;
+
+  printf("_cb_blocktlv_address_okay()\n");
+  printf("addr: %s\n", netaddr_to_string(&nbuf, &cont->addr));
+
+  /* tlv type 0 was not defined mandatory in block callback entries */
+  tlv = _address_consumer_entries[0].tlv;
+  while (tlv) {
+    /* values of TLVs are not aligned well in memory, so we have to copy them */
+    memcpy(&value, tlv->single_value, sizeof(value));
+    printf("\ttlv 0: %d\n", ntohl(value));
+    tlv = tlv->next_entry;
+  }
 
   return RFC5444_OKAY;
 }
@@ -122,7 +183,11 @@ reader_init(void) {
 
   /* register message consumer */
   rfc5444_reader_add_message_consumer(&reader, &_consumer,
-      _consumer_entries, ARRAYSIZE(_consumer_entries));
+      _message_consumer_entries, ARRAYSIZE(_message_consumer_entries));
+
+  /* register address consumer */
+  rfc5444_reader_add_message_consumer(&reader, &_address_consumer,
+      _address_consumer_entries, ARRAYSIZE(_address_consumer_entries));
 }
 
 /**
