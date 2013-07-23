@@ -43,7 +43,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef RIOT
 #include <net/if.h>
+#else
+#include "net_help.h"
+#include "inet_ntop.h"
+#include "inet_pton.h"
+#define DONT_HAVE_SIN6_SCOPE_ID
+#endif
 
 #include "common/common_types.h"
 #include "common/string.h"
@@ -326,7 +333,9 @@ netaddr_socket_init(union netaddr_socket *combined, const struct netaddr *addr,
       /* ipv6 */
       memcpy(&combined->v6.sin6_addr, addr->_addr, 16);
       combined->v6.sin6_port = htons(port);
+#ifndef DONT_HAVE_SIN6_SCOPE_ID      
       combined->v6.sin6_scope_id = if_index;
+#endif
       break;
     default:
       /* unknown address type */
@@ -561,6 +570,7 @@ netaddr_socket_to_string(struct netaddr_str *dst, const union netaddr_socket *sr
         ntohs(src->v4.sin_port));
   }
   else if (src->std.sa_family == AF_INET6) {
+#ifndef DONT_HAVE_SIN6_SCOPE_ID
     if (src->v6.sin6_scope_id) {
       char scope_buf[IF_NAMESIZE];
 
@@ -569,7 +579,9 @@ netaddr_socket_to_string(struct netaddr_str *dst, const union netaddr_socket *sr
           ntohs(src->v6.sin6_port),
           if_indextoname(src->v6.sin6_scope_id, scope_buf));
     }
-    else {
+    else
+#endif
+    {
       snprintf(dst->buf, sizeof(*dst), "[%s]:%d",
           inet_ntop(AF_INET6, &src->v6.sin6_addr, buf.buf, sizeof(buf)),
           ntohs(src->v6.sin6_port));

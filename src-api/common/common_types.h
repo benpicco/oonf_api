@@ -77,6 +77,11 @@
   #define PRINTF_SIZE_T_HEX_SPECIFIER "Ix"
   #define PRINTF_SSIZE_T_SPECIFIER    "Id"
   #define PRINTF_PTRDIFF_T_SPECIFIER  "Id"
+#elif defined(RIOT)
+  #define PRINTF_SIZE_T_SPECIFIER      "d"
+  #define PRINTF_SIZE_T_HEX_SPECIFIER  "x"
+  #define PRINTF_SSIZE_T_SPECIFIER     "d"
+  #define PRINTF_PTRDIFF_T_SPECIFIER   "d"
 #elif defined(__GNUC__)
   #define PRINTF_SIZE_T_SPECIFIER     "zu"
   #define PRINTF_SIZE_T_HEX_SPECIFIER "zx"

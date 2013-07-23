@@ -41,8 +41,13 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef RIOT
+#include "destiny/socket.h"
+#include "inet_ntop.h"
+#else
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#endif
 
 #include "common/netaddr.h"
 #include "rfc5444/rfc5444_reader.h"

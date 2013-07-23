@@ -43,16 +43,23 @@
 #define NETADDR_H_
 
 
-#ifndef _WIN32
+#if (!defined(_WIN32)) && (!defined(RIOT))
 #include <arpa/inet.h>
 #include <netinet/if_ether.h>
 #include <netinet/ip.h>
 #include <net/if.h>
-#else
+#endif
+
+#ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
 #define IF_NAMESIZE 16
+#endif
+
+#ifdef RIOT
+#include "compat_misc/compat_misc.h"
+#include "destiny/socket.h"
 #endif
 
 #include <assert.h>

@@ -48,7 +48,7 @@
 #include "common/common_types.h"
 #include "common/daemonize.h"
 
-#ifndef WIN32
+#if (!defined(_WIN32)) && (!defined(RIOT))
 /**
  * Prepare the start of a daemon. Fork into background,
  * but keep stdin/out/err open and a pipe connected to

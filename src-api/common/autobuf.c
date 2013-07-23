@@ -51,6 +51,10 @@
 #include <winsock2.h>
 #endif
 
+#ifdef RIOT
+#include "compat_misc/compat_misc.h"
+#endif
+
 #include "common/autobuf.h"
 
 /**
