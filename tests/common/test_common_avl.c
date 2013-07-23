@@ -816,17 +816,17 @@ static void random_delete(uint32_t *array, int count) {
 
 /* insert/remove 1000's random numbers into tree and check if everything is okay */
 static void test_random_insert(void) {
-  uint32_t array[1000];
+  uint32_t array[100];
   struct tree_element *e, *ptr;
 
   srand(0);
   START_TEST();
   avl_init(&head, avl_comp_uint32, true);
 
-  random_insert(array, 1000);
-  random_delete(array, 500);
-  random_insert(array, 400);
-  random_delete(array, 600);
+  random_insert(array, 100);
+  random_delete(array, 50);
+  random_insert(array, 40);
+  random_delete(array, 60);
 
   avl_remove_all_elements(&head, e, node, ptr) {
     free(e);
