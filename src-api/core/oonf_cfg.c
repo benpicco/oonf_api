@@ -210,7 +210,7 @@ oonf_cfg_loadplugins(void) {
   bool found;
 
   /* load plugins */
-  FOR_ALL_STRINGS(&config_global.plugin, ptr) {
+  strarray_for_each_element(&config_global.plugin, ptr) {
     /* ignore empty strings */
     if (*ptr == 0) {
       continue;
@@ -230,7 +230,7 @@ oonf_cfg_loadplugins(void) {
     found = false;
 
     /* search if plugin should still be active */
-    FOR_ALL_STRINGS(&config_global.plugin, ptr) {
+    strarray_for_each_element(&config_global.plugin, ptr) {
       if (oonf_plugins_get(ptr) == plugin) {
         found = true;
         break;

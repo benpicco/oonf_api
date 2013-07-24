@@ -396,7 +396,7 @@ _auth_okay(struct oonf_http_handler *handler,
     return false;
   }
 
-  FOR_ALL_STRINGS(&handler->auth, ptr) {
+  strarray_for_each_element(&handler->auth, ptr) {
     if (strcmp(ptr, name_pw_base64) == 0) {
       return true;
     }

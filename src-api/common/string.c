@@ -374,7 +374,7 @@ strarray_get_count(const struct strarray *array) {
   size_t count = 0;
   char *ptr;
 
-  FOR_ALL_STRINGS(array, ptr) {
+  strarray_for_each_element(array, ptr) {
     count ++;
   }
   return count;
@@ -390,7 +390,7 @@ strarray_get(const struct strarray *array, size_t idx) {
   size_t count = 0;
   char *ptr;
 
-  FOR_ALL_STRINGS(array, ptr) {
+  strarray_for_each_element(array, ptr) {
     if (count == idx) {
       return ptr;
     }
@@ -454,7 +454,7 @@ strarray_cmp(const struct strarray *a1, const struct strarray *a2) {
  * @return pointer to converted string
  */
 const char *
-str_get_human_readable_u64(struct human_readable_str *out,
+str_to_isonumber_u64(struct isonumber_str *out,
     uint64_t number, const char *unit, int fraction,
     bool binary, bool raw) {
   return _get_human_readable_u64(
@@ -478,7 +478,7 @@ str_get_human_readable_u64(struct human_readable_str *out,
  * @return pointer to converted string
  */
 const char *
-str_get_human_readable_s64(struct human_readable_str *out,
+str_to_isonumber_s64(struct isonumber_str *out,
     int64_t number, const char *unit, int fraction,
     bool binary, bool raw) {
   char *outbuf = out->buf;
@@ -503,7 +503,7 @@ str_get_human_readable_s64(struct human_readable_str *out,
 }
 
 int
-str_parse_human_readable_s64(int64_t *dst, const char *hrn, int fractions, bool binary) {
+str_from_isonumber_s64(int64_t *dst, const char *hrn, int fractions, bool binary) {
   const char *ptr;
   int result;
   uint64_t u64;
@@ -513,7 +513,7 @@ str_parse_human_readable_s64(int64_t *dst, const char *hrn, int fractions, bool 
     ptr++;
   }
 
-  result = str_parse_human_readable_u64(&u64, ptr, fractions, binary);
+  result = str_from_isonumber_u64(&u64, ptr, fractions, binary);
   if (!result) {
     if (*hrn == '-') {
       *dst = -((int64_t)u64);
@@ -526,7 +526,7 @@ str_parse_human_readable_s64(int64_t *dst, const char *hrn, int fractions, bool 
 }
 
 int
-str_parse_human_readable_u64(uint64_t *dst, const char *hrn, int fraction, bool binary) {
+str_from_isonumber_u64(uint64_t *dst, const char *hrn, int fraction, bool binary) {
   uint64_t num;
   uint64_t factor;
   uint64_t multiplicator;

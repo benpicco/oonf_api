@@ -70,7 +70,7 @@ EXPORT int oonf_clock_update(void) __attribute__((warn_unused_result));
 
 EXPORT uint64_t oonf_clock_getNow(void);
 
-EXPORT const char *oonf_clock_toClockString(struct human_readable_str *, uint64_t);
+EXPORT const char *oonf_clock_toClockString(struct isonumber_str *, uint64_t);
 
 EXPORT int oonf_clock_validate(const struct cfg_schema_entry *entry,
     const char *section_name, const char *value, struct autobuf *out);
@@ -87,8 +87,8 @@ EXPORT void  oonf_clock_help(
  * @return pointer to string representation
  */
 static INLINE const char *
-oonf_clock_toIntervalString(struct human_readable_str *buf, int64_t i) {
-  return str_get_human_readable_s64(buf, i, "", 3, false, true);
+oonf_clock_toIntervalString(struct isonumber_str *buf, int64_t i) {
+  return str_to_isonumber_s64(buf, i, "", 3, false, true);
 }
 
 /**
@@ -103,7 +103,7 @@ oonf_clock_fromIntervalString(uint64_t *result, const char *string) {
   int64_t t;
   int r;
 
-  r = str_parse_human_readable_s64(&t, string, 3, false);
+  r = str_from_isonumber_s64(&t, string, 3, false);
   if (r == 0) {
     *result = t;
   }

@@ -196,7 +196,7 @@ _cb_compact_serialize(struct autobuf *dst, struct cfg_db *src,
       }
 
       CFG_FOR_ALL_ENTRIES(name, entry, e_it) {
-        FOR_ALL_STRINGS(&entry->val, ptr) {
+        strarray_for_each_element(&entry->val, ptr) {
           abuf_appendf(dst, "\t%s %s\n", entry->name, ptr);
         }
       }

@@ -118,7 +118,7 @@ oonf_clock_getNow(void) {
  * @return buffer to a formatted system time string.
  */
 const char *
-oonf_clock_toClockString(struct human_readable_str *buf, uint64_t clk)
+oonf_clock_toClockString(struct isonumber_str *buf, uint64_t clk)
 {
   uint64_t msec = clk % MSEC_PER_SEC;
   uint64_t sec = clk / MSEC_PER_SEC;
@@ -194,7 +194,7 @@ oonf_clock_tobin(
 void
 oonf_clock_help(
     const struct cfg_schema_entry *entry, struct autobuf *out) {
-  struct human_readable_str buf;
+  struct isonumber_str buf;
 
   cfg_append_printable_line(out,
       "    Parameter must be an timestamp with a maximum of 3 fractional digits");

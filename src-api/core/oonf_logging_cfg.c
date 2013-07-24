@@ -291,7 +291,7 @@ _apply_log_setting(struct cfg_named_section *named,
 
   entry = cfg_db_get_entry(named, entry_name);
   if (entry) {
-    FOR_ALL_STRINGS(&entry->val, ptr) {
+    strarray_for_each_element(&entry->val, ptr) {
       for (i=0; i<oonf_log_get_sourcecount(); i++) {
         if (strcasecmp(ptr, LOG_SOURCE_NAMES[i]) == 0) {
           oonf_log_mask_set(logging_cfg, i, severity);

@@ -127,10 +127,10 @@ static struct {
   struct netaddr_str radio_addr;
   char ifindex[10];
   char interface[IF_NAMESIZE];
-  struct human_readable_str lastseen;
+  struct isonumber_str lastseen;
   char if_id[33];
-  struct human_readable_str network[OONF_LAYER2_NET_COUNT];
-  struct human_readable_str neighbor[OONF_LAYER2_NEIGH_COUNT];
+  struct isonumber_str network[OONF_LAYER2_NET_COUNT];
+  struct isonumber_str neighbor[OONF_LAYER2_NEIGH_COUNT];
 } _template_buf;
 
 static struct abuf_template_data _template_neigh_data[5 + OONF_LAYER2_NEIGH_COUNT] = {
@@ -235,12 +235,12 @@ _cleanup(void) {
 }
 
 static int
-_print_value(struct human_readable_str *dst, struct oonf_layer2_data *data,
+_print_value(struct isonumber_str *dst, struct oonf_layer2_data *data,
     const struct oonf_layer2_metadata *meta, bool raw) {
   int64_t value;
 
   value = oonf_layer2_get_value(data);
-  if (str_get_human_readable_s64(dst, value,
+  if (str_to_isonumber_s64(dst, value,
       meta->unit, meta->fraction, meta->binary, raw)) {
     return 0;
   }

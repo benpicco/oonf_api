@@ -80,15 +80,15 @@ cfg_help_choice(struct autobuf *out, bool preamble,
 void
 cfg_help_int(struct autobuf *out,
     int64_t min, int64_t max, uint16_t bytelen, uint16_t fraction, bool base2) {
-  struct human_readable_str hbuf1, hbuf2;
+  struct isonumber_str hbuf1, hbuf2;
   int64_t min64, max64;
 
   min64 = INT64_MIN >> (8 * (8 - bytelen));
   max64 = INT64_MAX >> (8 * (8 - bytelen));
 
   /* get string representation of min/max */
-  str_get_human_readable_s64(&hbuf1, min, "", fraction, base2, true);
-  str_get_human_readable_s64(&hbuf2, max, "", fraction, base2, true);
+  str_to_isonumber_s64(&hbuf1, min, "", fraction, base2, true);
+  str_to_isonumber_s64(&hbuf2, max, "", fraction, base2, true);
 
   if (min > min64) {
     if (max < max64) {

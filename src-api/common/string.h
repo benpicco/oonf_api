@@ -54,7 +54,7 @@ enum { STRARRAY_BLOCKSIZE = 64 };
 
 /*
  * Represents a string or an array of strings
- * The strings (including there Zero-Byte) are just appended
+ * The strings (including the zero byte) are just appended
  * into a large binary buffer. The struct contains a pointer
  * to the first string and the size of the binary buffer
  *
@@ -75,7 +75,11 @@ struct const_strarray {
   const size_t length;
 };
 
-struct human_readable_str {
+/*
+ * buffer for the string representation of a fractional
+ * number with iso prefix.
+ */
+struct isonumber_str {
     char buf[48];
 };
 
@@ -85,14 +89,14 @@ EXPORT char *str_trim (char *ptr);
 EXPORT const char *str_hasnextword (const char *buffer, const char *word);
 EXPORT const char *str_cpynextword (char *dst, const char *buffer, size_t len);
 
-EXPORT const char *str_get_human_readable_u64(struct human_readable_str *out,
+EXPORT const char *str_to_isonumber_u64(struct isonumber_str *out,
     uint64_t number, const char *unit, int fraction, bool binary, bool raw);
-EXPORT const char *str_get_human_readable_s64(struct human_readable_str *out,
+EXPORT const char *str_to_isonumber_s64(struct isonumber_str *out,
     int64_t number, const char *unit, int fraction, bool binary, bool raw);
-EXPORT int str_parse_human_readable_u64(
-    uint64_t *dst, const char *hrn, int fractions, bool binary);
-EXPORT int str_parse_human_readable_s64(
-    int64_t *dst, const char *hrn, int fractions, bool binary);
+EXPORT int str_from_isonumber_u64(
+    uint64_t *dst, const char *iso, int fractions, bool binary);
+EXPORT int str_from_isonumber_s64(
+    int64_t *dst, const char *iso, int fractions, bool binary);
 
 EXPORT bool str_is_printable(const char *value);
 
@@ -106,6 +110,10 @@ EXPORT size_t strarray_get_count(const struct strarray *array);
 
 EXPORT int strarray_cmp(const struct strarray *a1, const struct strarray *a2);
 
+/**
+ * @param c character
+ * @return true if character is printable, false otherwise
+ */
 static INLINE bool
 str_char_is_printable(char c) {
   unsigned char uc = (unsigned char) c;
@@ -285,6 +293,6 @@ strarray_cmp_c(const struct const_strarray *a1, const struct const_strarray *a2)
  * @param array pointer to strarray object
  * @param charptr pointer to loop variable
  */
-#define FOR_ALL_STRINGS(array, charptr) for (charptr = (array)->value; charptr != NULL && charptr < (array)->value + (array)->length; charptr += strlen(charptr) + 1)
+#define strarray_for_each_element(array, charptr) for (charptr = (array)->value; charptr != NULL && charptr < (array)->value + (array)->length; charptr += strlen(charptr) + 1)
 
 #endif

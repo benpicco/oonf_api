@@ -83,7 +83,7 @@ test_list_1(void) {
   CHECK_TRUE(cfg_db_is_multipart_entry(entry1), "Error, append did not create a multipart value");
 
   cnt = 0;
-  FOR_ALL_STRINGS(&entry1->val, ptr) {
+  strarray_for_each_element(&entry1->val, ptr) {
     CHECK_TRUE(cnt < 3, "append did create more than three entries: %d", cnt+1);
     cnt++;
 
@@ -106,7 +106,7 @@ test_list_1(void) {
       "could not remove first entry");
 
   cnt = 0;
-  FOR_ALL_STRINGS(&entry1->val, ptr) {
+  strarray_for_each_element(&entry1->val, ptr) {
     CHECK_TRUE(cnt < 2, "append+remove did create more than two entries: %d", cnt+1);
     cnt++;
 
@@ -149,7 +149,7 @@ test_list_2(void) {
   CHECK_TRUE(cfg_db_is_multipart_entry(entry1), "Error, append did not create a multipart value");
 
   cnt = 0;
-  FOR_ALL_STRINGS(&entry1->val, ptr) {
+  strarray_for_each_element(&entry1->val, ptr) {
     CHECK_TRUE(cnt < 3, "append did create more than three entries: %d", cnt+1);
     cnt++;
 
@@ -172,7 +172,7 @@ test_list_2(void) {
       "could not remove first entry");
 
   cnt = 0;
-  FOR_ALL_STRINGS(&entry1->val, ptr) {
+  strarray_for_each_element(&entry1->val, ptr) {
     CHECK_TRUE(cnt < 2, "append+remove did create more than two entries: %d", cnt+1);
     cnt++;
 
@@ -215,7 +215,7 @@ test_list_3(void) {
   CHECK_TRUE(cfg_db_is_multipart_entry(entry1), "Error, append did not create a multipart value");
 
   cnt = 0;
-  FOR_ALL_STRINGS(&entry1->val, ptr) {
+  strarray_for_each_element(&entry1->val, ptr) {
     CHECK_TRUE(cnt < 3, "append did create more than three entries: %d", cnt+1);
     cnt++;
 
@@ -238,7 +238,7 @@ test_list_3(void) {
       "could not remove first entry");
 
   cnt = 0;
-  FOR_ALL_STRINGS(&entry1->val, ptr) {
+  strarray_for_each_element(&entry1->val, ptr) {
     CHECK_TRUE(cnt < 2, "append+remove did create more than two entries: %d", cnt+1);
     cnt++;
 

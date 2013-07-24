@@ -252,7 +252,7 @@ cfg_cmd_handle_get(struct cfg_instance *instance, struct cfg_db *db,
     }
 
     cfg_append_printable_line(log, "Key '%s' has value:", arg);
-    FOR_ALL_STRINGS(&entry->val, tmp) {
+    strarray_for_each_element(&entry->val, tmp) {
       cfg_append_printable_line(log, "%s", tmp);
     }
     result = 0;
@@ -487,7 +487,7 @@ _print_schema_entry(struct autobuf *log, struct cfg_db *db,
       /* print defaults */
       if (!strarray_is_empty_c(&s_entry->def)) {
         cfg_append_printable_line(log, "    Default value:");
-        FOR_ALL_STRINGS(&s_entry->def, c_ptr) {
+        strarray_for_each_element(&s_entry->def, c_ptr) {
           cfg_append_printable_line(log, "        '%s'", c_ptr);
         }
       }

@@ -131,7 +131,7 @@ _cfg_db_append(struct cfg_db *dst, struct cfg_db *src,
           continue;
         }
 
-        FOR_ALL_STRINGS(&entry->val, ptr) {
+        strarray_for_each_element(&entry->val, ptr) {
           if (cfg_db_set_entry_ext(
               dst, section->type, named->name, entry->name, ptr, true, false) == NULL) {
             return -1;
@@ -434,7 +434,7 @@ cfg_db_remove_element(struct cfg_db *db, const char *section_type,
     return -1;
   }
 
-  FOR_ALL_STRINGS(&entry->val, ptr) {
+  strarray_for_each_element(&entry->val, ptr) {
     if (strcmp(ptr, value) == 0) {
       strarray_remove(&entry->val, ptr);
       return 0;

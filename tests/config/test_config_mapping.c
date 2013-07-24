@@ -132,7 +132,7 @@ test_binary_mapping(void) {
   int result;
   struct bin_data data;
   struct cfg_named_section *named;
-  struct human_readable_str fbuf;
+  struct isonumber_str fbuf;
 
   START_TEST();
 
@@ -156,7 +156,7 @@ test_binary_mapping(void) {
       CHECK_TRUE(data.choice == 1, "Choice is not '1' but '%d'", data.choice);
       CHECK_TRUE(data.integer == 42, "Integer is not '42' but '%d'", data.integer);
       CHECK_TRUE(data.fractional == -31415, "Integer is not '-3.1415' but '%s'",
-          str_get_human_readable_s64(&fbuf, data.fractional, "", 4, false, true));
+          str_to_isonumber_s64(&fbuf, data.fractional, "", 4, false, true));
       CHECK_TRUE(memcmp(netaddr_get_binptr(&data.address), IP_10_coloncolon_1, 16) == 0,
           "Netaddr Address part is not consistent");
       CHECK_TRUE(netaddr_get_prefix_length(&data.address) == 128,

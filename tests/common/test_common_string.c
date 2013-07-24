@@ -354,7 +354,7 @@ test_strarray_2(void) {
   strarray_append(&string_array, "3");
 
   count = 0;
-  FOR_ALL_STRINGS(&string_array, ptr) {
+  strarray_for_each_element(&string_array, ptr) {
     count++;
     switch(count) {
       case 1:
@@ -430,7 +430,7 @@ test_strarray_4(void) {
       strarray_get_count(&string_array));
 
   count = 0;
-  FOR_ALL_STRINGS(&string_array, ptr) {
+  strarray_for_each_element(&string_array, ptr) {
     count++;
     switch(count) {
       case 1:
@@ -468,7 +468,7 @@ test_strarray_5(void) {
       strarray_get_count(&string_array));
 
   count = 0;
-  FOR_ALL_STRINGS(&string_array, ptr) {
+  strarray_for_each_element(&string_array, ptr) {
     count++;
     switch(count) {
       case 1:
@@ -506,7 +506,7 @@ test_strarray_6(void) {
       strarray_get_count(&string_array));
 
   count = 0;
-  FOR_ALL_STRINGS(&string_array, ptr) {
+  strarray_for_each_element(&string_array, ptr) {
     count++;
     switch(count) {
       case 1:
@@ -573,7 +573,7 @@ test_strarray_8(void) {
   strarray_prepend(&string_array, "3");
 
   count = 0;
-  FOR_ALL_STRINGS(&string_array, ptr) {
+  strarray_for_each_element(&string_array, ptr) {
     count++;
     switch(count) {
       case 1:

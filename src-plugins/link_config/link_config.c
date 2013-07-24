@@ -132,7 +132,7 @@ _cleanup(void) {
 int
 _cb_validate_linkdata(const struct cfg_schema_entry *entry,
     const char *section_name, const char *value, struct autobuf *out) {
-  struct human_readable_str sbuf;
+  struct isonumber_str sbuf;
   struct netaddr_str nbuf;
   const char *ptr;
 
@@ -197,7 +197,7 @@ _parse_strarray(struct strarray *array, const char *ifname,
   struct oonf_interface_data *ifptr;
   struct netaddr_str nbuf;
   struct netaddr linkmac;
-  struct human_readable_str hbuf;
+  struct isonumber_str hbuf;
   int64_t value;
   char *entry;
   const char *ptr;
@@ -213,9 +213,9 @@ _parse_strarray(struct strarray *array, const char *ifname,
     return;
   }
 
-  FOR_ALL_STRINGS(array, entry) {
+  strarray_for_each_element(array, entry) {
     ptr = str_cpynextword(hbuf.buf, entry, sizeof(hbuf));
-    if (str_parse_human_readable_s64(&value, hbuf.buf,
+    if (str_from_isonumber_s64(&value, hbuf.buf,
         oonf_layer2_metadata_neigh[idx].fraction,
         oonf_layer2_metadata_neigh[idx].binary)) {
       continue;

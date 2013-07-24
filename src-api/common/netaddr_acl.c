@@ -86,7 +86,7 @@ netaddr_acl_from_strarray(struct netaddr_acl *acl,
   memset(acl, 0, sizeof(*acl));
 
   /* count number of address entries */
-  FOR_ALL_STRINGS(value, ptr) {
+  strarray_for_each_element(value, ptr) {
     if (netaddr_acl_handle_keywords(acl, ptr) == 0) {
       continue;
     }
@@ -114,7 +114,7 @@ netaddr_acl_from_strarray(struct netaddr_acl *acl,
   }
 
   /* read netaddr strings into buffers */
-  FOR_ALL_STRINGS(value, ptr) {
+  strarray_for_each_element(value, ptr) {
     const char *addr;
     if (netaddr_acl_handle_keywords(acl, ptr) == 0) {
       continue;

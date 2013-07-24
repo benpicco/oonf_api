@@ -147,7 +147,7 @@ void
 oonf_timer_start_ext(struct oonf_timer_entry *timer, uint64_t first, uint64_t interval)
 {
 #ifdef OONF_LOG_DEBUG_INFO
-  struct human_readable_str timebuf1;
+  struct isonumber_str timebuf1;
 #endif
 
   assert(timer->info);
