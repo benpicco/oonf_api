@@ -48,7 +48,7 @@
 
 #include "common/string.h"
 
-static const char *_get_human_readable_u64(char *out,
+static const char *_isonumber_u64_to_string(char *out,
     size_t out_len, uint64_t number, const char *unit, int fraction,
     bool binary, bool raw);
 
@@ -457,7 +457,7 @@ const char *
 str_to_isonumber_u64(struct isonumber_str *out,
     uint64_t number, const char *unit, int fraction,
     bool binary, bool raw) {
-  return _get_human_readable_u64(
+  return _isonumber_u64_to_string(
       out->buf, sizeof(*out), number, unit, fraction, binary, raw);
 }
 
@@ -498,24 +498,34 @@ str_to_isonumber_s64(struct isonumber_str *out,
     num = (uint64_t)number;
   }
 
-  return _get_human_readable_u64(
+  return _isonumber_u64_to_string(
       outbuf, len, num, unit, fraction, binary, raw);
 }
 
+/**
+ * Converts a string representation of a (fractional) number with iso-prefix
+ * to a signed 64bit integer.
+ * @param dst pointer to destination variable
+ * @param iso pointer to string source
+ * @param fractions number of fractional digits, might be zero
+ * @param binary true if prefixes should use factor 1024, false if they should
+ *   use a factor of 1000
+ * @return -1 if an error happened, 0 otherwise
+ */
 int
-str_from_isonumber_s64(int64_t *dst, const char *hrn, int fractions, bool binary) {
+str_from_isonumber_s64(int64_t *dst, const char *iso, int fractions, bool binary) {
   const char *ptr;
   int result;
   uint64_t u64;
 
-  ptr = hrn;
-  if (*hrn == '-') {
+  ptr = iso;
+  if (*iso == '-') {
     ptr++;
   }
 
   result = str_from_isonumber_u64(&u64, ptr, fractions, binary);
   if (!result) {
-    if (*hrn == '-') {
+    if (*iso == '-') {
       *dst = -((int64_t)u64);
     }
     else {
@@ -525,8 +535,18 @@ str_from_isonumber_s64(int64_t *dst, const char *hrn, int fractions, bool binary
   return result;
 }
 
+/**
+ * Converts a string representation of a (fractional) number with iso-prefix
+ * to an unsigned 64bit integer.
+ * @param dst pointer to destination variable
+ * @param iso pointer to string source
+ * @param fractions number of fractional digits, might be zero
+ * @param binary true if prefixes should use factor 1024, false if they should
+ *   use a factor of 1000
+ * @return -1 if an error happened, 0 otherwise
+ */
 int
-str_from_isonumber_u64(uint64_t *dst, const char *hrn, int fraction, bool binary) {
+str_from_isonumber_u64(uint64_t *dst, const char *iso, int fraction, bool binary) {
   uint64_t num;
   uint64_t factor;
   uint64_t multiplicator;
@@ -534,7 +554,7 @@ str_from_isonumber_u64(uint64_t *dst, const char *hrn, int fraction, bool binary
   char *next = NULL;
 
   errno = 0;
-  num = strtoull(hrn, &next, 10);
+  num = strtoull(iso, &next, 10);
   if (errno) {
     return -1;
   }
@@ -608,8 +628,22 @@ str_from_isonumber_u64(uint64_t *dst, const char *hrn, int fraction, bool binary
   return 0;
 }
 
+/**
+ * Helper function to convert an unsigned 64bit integer
+ * into a string representation with fractional digits,
+ * an optional unit and iso-prefixes
+ * @param out pointer to output buffer
+ * @param out_len length of output buffer
+ * @param number number to convert
+ * @param unit unit that should be appended on result
+ * @param fraction number of fractional digits
+ * @param binary true if prefixes should use factor 1024, false if they should
+ *   use a factor of 1000
+ * @param raw true to suppress iso prefixes, false otherwise
+ * @return pointer to output buffer
+ */
 static const char *
-_get_human_readable_u64(char *out, size_t out_len,
+_isonumber_u64_to_string(char *out, size_t out_len,
     uint64_t number, const char *unit, int fraction,
     bool binary, bool raw) {
   static const char symbol[] = " kMGTPE";
