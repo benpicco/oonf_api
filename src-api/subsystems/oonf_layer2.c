@@ -313,15 +313,17 @@ oonf_layer2_neigh_query(const struct netaddr *l2net_addr,
     return NULL;
   }
 
+  /* look for neighbor specific data */
   l2neigh = oonf_layer2_neigh_get(l2net, l2neigh_addr);
-  if (l2neigh == NULL) {
+  if (l2neigh != NULL) {
     data = &l2neigh->data[idx];
     if (oonf_layer2_has_value(data)) {
       return data;
     }
   }
 
-  data = &l2neigh->network->neighdata[idx];
+  /* look for network specific default */
+  data = &l2net->neighdata[idx];
   if (oonf_layer2_has_value(data)) {
     return data;
   }
