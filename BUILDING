@@ -1,4 +1,11 @@
-To build the OLSR.org Network Framework open a shell:
+At the moment you need the following things to compile OLSRd2:
+1) a C buildchain (normally gcc, but should work with LLVM/Clang)
+2) cmake
+3) git
+4) developer files for libnl-3 (e.g. libnl-3-dev)
+
+To build the OLSR.org Network Framework open a shell in the OONF
+directory and run the following commands:
 
 > cd build
 > cmake ..
