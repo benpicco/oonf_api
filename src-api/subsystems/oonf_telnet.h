@@ -148,7 +148,7 @@ struct oonf_telnet_command {
 #define LOG_TELNET oonf_telnet_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_telnet_subsystem;
 
-EXPORT struct avl_tree telnet_cmd_tree;
+EXPORT struct avl_tree oonf_telnet_cmd_tree;
 
 EXPORT int oonf_telnet_add(struct oonf_telnet_command *command);
 EXPORT void oonf_telnet_remove(struct oonf_telnet_command *command);

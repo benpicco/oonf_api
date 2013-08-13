@@ -81,7 +81,7 @@ static enum oonf_telnet_result _cb_telnet_timeout(struct oonf_telnet_data *data)
 static enum oonf_telnet_result _cb_telnet_version(struct oonf_telnet_data *data);
 
 /* configuration of telnet server */
-static struct cfg_schema_entry telnet_entries[] = {
+static struct cfg_schema_entry _telnet_entries[] = {
   CFG_MAP_ACL_V46(oonf_stream_managed_config,
       acl, "acl", "127.0.0.1", "Access control list for telnet interface"),
   CFG_MAP_NETADDR_V4(oonf_stream_managed_config,
@@ -92,13 +92,13 @@ static struct cfg_schema_entry telnet_entries[] = {
       port, "port", "2006", "Network port for telnet interface", 0, false, 1, 65535),
 };
 
-static struct cfg_schema_section telnet_section = {
+static struct cfg_schema_section _telnet_section = {
   .type = "telnet",
   .mode = CFG_SSMODE_UNNAMED,
   .help = "Settings for the telnet interface",
   .cb_delta_handler = _cb_config_changed,
-  .entries = telnet_entries,
-  .entry_count = ARRAYSIZE(telnet_entries),
+  .entries = _telnet_entries,
+  .entry_count = ARRAYSIZE(_telnet_entries),
 };
 
 /* built-in telnet commands */
@@ -121,7 +121,7 @@ struct oonf_subsystem oonf_telnet_subsystem = {
   .name = "telnet",
   .init = _init,
   .cleanup = _cleanup,
-  .cfg_section = &telnet_section,
+  .cfg_section = &_telnet_section,
 };
 
 /* telnet session handling */
@@ -148,7 +148,7 @@ static struct oonf_stream_managed _telnet_managed = {
   },
 };
 
-struct avl_tree telnet_cmd_tree;
+struct avl_tree oonf_telnet_cmd_tree;
 
 /**
  * Initialize telnet subsystem
@@ -164,7 +164,7 @@ _init(void) {
   oonf_stream_add_managed(&_telnet_managed);
 
   /* initialize telnet commands */
-  avl_init(&telnet_cmd_tree, avl_comp_strcasecmp, false);
+  avl_init(&oonf_telnet_cmd_tree, avl_comp_strcasecmp, false);
   for (i=0; i<ARRAYSIZE(_builtin); i++) {
     oonf_telnet_add(&_builtin[i]);
   }
@@ -188,7 +188,7 @@ _cleanup(void) {
 int
 oonf_telnet_add(struct oonf_telnet_command *command) {
   command->_node.key = command->command;
-  if (avl_insert(&telnet_cmd_tree, &command->_node)) {
+  if (avl_insert(&oonf_telnet_cmd_tree, &command->_node)) {
     return -1;
   }
   return 0;
@@ -200,7 +200,7 @@ oonf_telnet_add(struct oonf_telnet_command *command) {
  */
 void
 oonf_telnet_remove(struct oonf_telnet_command *command) {
-  avl_remove(&telnet_cmd_tree, &command->_node);
+  avl_remove(&oonf_telnet_cmd_tree, &command->_node);
 }
 
 /**
@@ -249,8 +249,8 @@ _cb_config_changed(void) {
 
   /* generate binary config */
   memset(&config, 0, sizeof(config));
-  if (cfg_schema_tobin(&config, telnet_section.post,
-      telnet_entries, ARRAYSIZE(telnet_entries))) {
+  if (cfg_schema_tobin(&config, _telnet_section.post,
+      _telnet_entries, ARRAYSIZE(_telnet_entries))) {
     /* error in conversion */
     OONF_WARN(LOG_TELNET, "Cannot map telnet config to binary data");
     goto apply_config_failed;
@@ -526,7 +526,7 @@ _check_telnet_command(struct oonf_telnet_data *data,
 
   // TODO: split into two functions
   if (cmd == NULL) {
-    cmd = avl_find_element(&telnet_cmd_tree, name, cmd, _node);
+    cmd = avl_find_element(&oonf_telnet_cmd_tree, name, cmd, _node);
     if (cmd == NULL) {
       return cmd;
     }
@@ -584,7 +584,7 @@ _cb_telnet_help(struct oonf_telnet_data *data) {
     return TELNET_RESULT_INTERNAL_ERROR;
   }
 
-  avl_for_each_element(&telnet_cmd_tree, cmd, _node) {
+  avl_for_each_element(&oonf_telnet_cmd_tree, cmd, _node) {
     if (_check_telnet_command(data, NULL, cmd)) {
       if (abuf_appendf(data->out, "  %s\n", cmd->command) < 0) {
         return TELNET_RESULT_INTERNAL_ERROR;

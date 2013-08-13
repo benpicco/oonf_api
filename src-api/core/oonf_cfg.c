@@ -69,7 +69,7 @@ static char **_argv;
 static int _argc;
 
 /* define global configuration template */
-static struct cfg_schema_entry global_entries[] = {
+static struct cfg_schema_entry _global_entries[] = {
   CFG_MAP_BOOL(oonf_config_global, fork, "fork", "no",
       "Set to true to fork daemon into background."),
   CFG_MAP_BOOL(oonf_config_global, failfast, "failfast", "no",
@@ -87,10 +87,10 @@ static struct cfg_schema_entry global_entries[] = {
       "Set list of plugins to be loaded by daemon. Some might need configuration options."),
 };
 
-static struct cfg_schema_section global_section = {
+static struct cfg_schema_section _global_section = {
   .type = CFG_SECTION_GLOBAL,
-  .entries = global_entries,
-  .entry_count = ARRAYSIZE(global_entries),
+  .entries = _global_entries,
+  .entry_count = ARRAYSIZE(_global_entries),
 };
 
 
@@ -108,12 +108,12 @@ oonf_cfg_init(int argc, char **argv) {
    * initialize default for lockfile, make sure that index stays correct!
    *
     */
-  global_entries[3].def.value = oonf_log_get_appdata()->default_lockfile;
-  global_entries[3].def.length = strlen(oonf_log_get_appdata()->default_lockfile) + 1;
+  _global_entries[3].def.value = oonf_log_get_appdata()->default_lockfile;
+  _global_entries[3].def.length = strlen(oonf_log_get_appdata()->default_lockfile) + 1;
 
   /* initialize schema */
   cfg_schema_add(&_oonf_schema);
-  cfg_schema_add_section(&_oonf_schema, &global_section);
+  cfg_schema_add_section(&_oonf_schema, &_global_section);
 
   /* initialize database */
   if ((_oonf_raw_db = cfg_db_add()) == NULL) {
@@ -421,7 +421,7 @@ oonf_cfg_update_globalcfg(bool raw) {
       raw ? _oonf_raw_db : _oonf_work_db, CFG_SECTION_GLOBAL, NULL);
 
   return cfg_schema_tobin(&config_global,
-      named, global_entries, ARRAYSIZE(global_entries));
+      named, _global_entries, ARRAYSIZE(_global_entries));
 }
 
 /**

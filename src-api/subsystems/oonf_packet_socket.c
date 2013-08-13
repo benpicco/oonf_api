@@ -81,8 +81,8 @@ struct oonf_subsystem oonf_packet_socket_subsystem = {
 };
 
 /* other global variables */
-static struct list_entity packet_sockets = { NULL, NULL };
-static char input_buffer[65536];
+static struct list_entity _packet_sockets = { NULL, NULL };
+static char _input_buffer[65536];
 
 /**
  * Initialize packet socket handler
@@ -90,7 +90,7 @@ static char input_buffer[65536];
  */
 static int
 _init(void) {
-  list_init_head(&packet_sockets);
+  list_init_head(&_packet_sockets);
   return 0;
 }
 
@@ -101,8 +101,8 @@ static void
 _cleanup(void) {
   struct oonf_packet_socket *skt;
 
-  while (!list_is_empty(&packet_sockets)) {
-    skt = list_first_element(&packet_sockets, skt, node);
+  while (!list_is_empty(&_packet_sockets)) {
+    skt = list_first_element(&_packet_sockets, skt, node);
 
     oonf_packet_remove(skt, true);
   }
@@ -137,12 +137,12 @@ oonf_packet_add(struct oonf_packet_socket *pktsocket,
   oonf_socket_add(&pktsocket->scheduler_entry);
 
   abuf_init(&pktsocket->out);
-  list_add_tail(&packet_sockets, &pktsocket->node);
+  list_add_tail(&_packet_sockets, &pktsocket->node);
   memcpy(&pktsocket->local_socket, local, sizeof(pktsocket->local_socket));
 
   if (pktsocket->config.input_buffer_length == 0) {
-    pktsocket->config.input_buffer = input_buffer;
-    pktsocket->config.input_buffer_length = sizeof(input_buffer);
+    pktsocket->config.input_buffer = _input_buffer;
+    pktsocket->config.input_buffer_length = sizeof(_input_buffer);
   }
   return 0;
 }
@@ -222,8 +222,8 @@ oonf_packet_send(struct oonf_packet_socket *pktsocket, union netaddr_socket *rem
 void
 oonf_packet_add_managed(struct oonf_packet_managed *managed) {
   if (managed->config.input_buffer_length == 0) {
-    managed->config.input_buffer = input_buffer;
-    managed->config.input_buffer_length = sizeof(input_buffer);
+    managed->config.input_buffer = _input_buffer;
+    managed->config.input_buffer_length = sizeof(_input_buffer);
   }
 
   managed->_if_listener.process = _cb_interface_listener;

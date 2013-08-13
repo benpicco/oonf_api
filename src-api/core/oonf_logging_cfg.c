@@ -66,7 +66,7 @@ static void _apply_log_setting(struct cfg_named_section *named,
     const char *entry_name, enum oonf_log_severity severity);
 
 /* define logging configuration template */
-static struct cfg_schema_entry logging_entries[] = {
+static struct cfg_schema_entry _logging_entries[] = {
   /* the next three parameters are configured to a different list during runtime */
   CFG_VALIDATE_LOGSOURCE(LOG_DEBUG_ENTRY, "",
       "Set logging sources that display debug, info and warnings",
@@ -80,22 +80,22 @@ static struct cfg_schema_entry logging_entries[] = {
   CFG_VALIDATE_STRING(LOG_FILE_ENTRY, "", "Set a filename to log to a file"),
 };
 
-static struct cfg_schema_section logging_section = {
+static struct cfg_schema_section _logging_section = {
   .type = LOG_SECTION,
-  .entries = logging_entries,
-  .entry_count = ARRAYSIZE(logging_entries),
+  .entries = _logging_entries,
+  .entry_count = ARRAYSIZE(_logging_entries),
   .cb_delta_handler = _cb_logcfg_apply,
 };
 
 /* global logger configuration */
-static uint8_t logging_cfg[LOG_MAXIMUM_SOURCES];
-static struct oonf_log_handler_entry stderr_handler = {
+static uint8_t _logging_cfg[LOG_MAXIMUM_SOURCES];
+static struct oonf_log_handler_entry _stderr_handler = {
   .handler = oonf_log_stderr
 };
-static struct oonf_log_handler_entry syslog_handler = {
+static struct oonf_log_handler_entry _syslog_handler = {
   .handler = oonf_log_syslog
 };
-static struct oonf_log_handler_entry file_handler = {
+static struct oonf_log_handler_entry _file_handler = {
   .handler = oonf_log_file
 };
 
@@ -104,8 +104,8 @@ static struct oonf_log_handler_entry file_handler = {
  */
 void
 oonf_logcfg_init(void) {
-  memset(logging_cfg, 0, LOG_MAXIMUM_SOURCES);
-  cfg_schema_add_section(oonf_cfg_get_schema(), &logging_section);
+  memset(_logging_cfg, 0, LOG_MAXIMUM_SOURCES);
+  cfg_schema_add_section(oonf_cfg_get_schema(), &_logging_section);
 }
 
 /**
@@ -114,20 +114,20 @@ oonf_logcfg_init(void) {
 void
 oonf_logcfg_cleanup(void) {
   /* clean up former handlers */
-  if (list_is_node_added(&stderr_handler.node)) {
-    oonf_log_removehandler(&stderr_handler);
+  if (list_is_node_added(&_stderr_handler.node)) {
+    oonf_log_removehandler(&_stderr_handler);
   }
-  if (list_is_node_added(&syslog_handler.node)) {
-    oonf_log_removehandler(&syslog_handler);
+  if (list_is_node_added(&_syslog_handler.node)) {
+    oonf_log_removehandler(&_syslog_handler);
   }
-  if (list_is_node_added(&file_handler.node)) {
+  if (list_is_node_added(&_file_handler.node)) {
     FILE *f;
 
-    f = file_handler.custom;
+    f = _file_handler.custom;
     fflush(f);
     fclose(f);
 
-    oonf_log_removehandler(&file_handler);
+    oonf_log_removehandler(&_file_handler);
   }
 }
 
@@ -144,7 +144,7 @@ oonf_logcfg_apply(struct cfg_db *db) {
   bool activate_syslog, activate_file, activate_stderr;
 
   /* clean up logging mask */
-  oonf_log_mask_clear(logging_cfg);
+  oonf_log_mask_clear(_logging_cfg);
 
   /* now apply specific settings */
   named = cfg_db_find_namedsection(db, LOG_SECTION, NULL);
@@ -153,9 +153,9 @@ oonf_logcfg_apply(struct cfg_db *db) {
     _apply_log_setting(named, LOG_DEBUG_ENTRY, LOG_SEVERITY_DEBUG);
   }
 
-  oonf_log_mask_copy(syslog_handler.user_bitmask, logging_cfg);
-  oonf_log_mask_copy(stderr_handler.user_bitmask, logging_cfg);
-  oonf_log_mask_copy(file_handler.user_bitmask, logging_cfg);
+  oonf_log_mask_copy(_syslog_handler.user_bitmask, _logging_cfg);
+  oonf_log_mask_copy(_stderr_handler.user_bitmask, _logging_cfg);
+  oonf_log_mask_copy(_file_handler.user_bitmask, _logging_cfg);
 
   /* load settings which loggershould be activated */
   ptr = cfg_db_get_entry_value(db, LOG_SECTION, NULL, LOG_SYSLOG_ENTRY)->value;
@@ -169,22 +169,22 @@ oonf_logcfg_apply(struct cfg_db *db) {
 
   /* and finally modify the logging handlers */
   /* log.file */
-  if (activate_file && !list_is_node_added(&file_handler.node)) {
+  if (activate_file && !list_is_node_added(&_file_handler.node)) {
     FILE *f;
 
     f = fopen(file_name, "w");
     if (f != NULL) {
-      oonf_log_addhandler(&file_handler);
-      file_handler.custom = f;
+      oonf_log_addhandler(&_file_handler);
+      _file_handler.custom = f;
     }
     else {
       file_errno = errno;
       activate_file = false;
     }
   }
-  else if (!activate_file && list_is_node_added(&file_handler.node)) {
-    FILE *f = file_handler.custom;
-    oonf_log_removehandler(&file_handler);
+  else if (!activate_file && list_is_node_added(&_file_handler.node)) {
+    FILE *f = _file_handler.custom;
+    oonf_log_removehandler(&_file_handler);
 
     fflush(f);
     fclose(f);
@@ -195,11 +195,11 @@ oonf_logcfg_apply(struct cfg_db *db) {
     activate_stderr |= !(activate_syslog || activate_file);
   }
 
-  if (activate_stderr && !list_is_node_added(&stderr_handler.node)) {
-    oonf_log_addhandler(&stderr_handler);
+  if (activate_stderr && !list_is_node_added(&_stderr_handler.node)) {
+    oonf_log_addhandler(&_stderr_handler);
   }
-  else if (!activate_stderr && list_is_node_added(&stderr_handler.node)) {
-    oonf_log_removehandler(&stderr_handler);
+  else if (!activate_stderr && list_is_node_added(&_stderr_handler.node)) {
+    oonf_log_removehandler(&_stderr_handler);
   }
 
   /* log.syslog */
@@ -207,11 +207,11 @@ oonf_logcfg_apply(struct cfg_db *db) {
     activate_syslog |= !(activate_stderr || activate_file);
   }
 
-  if (activate_syslog && !list_is_node_added(&syslog_handler.node)) {
-    oonf_log_addhandler(&syslog_handler);
+  if (activate_syslog && !list_is_node_added(&_syslog_handler.node)) {
+    oonf_log_addhandler(&_syslog_handler);
   }
-  else if (!activate_syslog && list_is_node_added(&syslog_handler.node)) {
-    oonf_log_removehandler(&syslog_handler);
+  else if (!activate_syslog && list_is_node_added(&_syslog_handler.node)) {
+    oonf_log_removehandler(&_syslog_handler);
   }
 
   /* reload logging mask */
@@ -294,7 +294,7 @@ _apply_log_setting(struct cfg_named_section *named,
     strarray_for_each_element(&entry->val, ptr) {
       for (i=0; i<oonf_log_get_sourcecount(); i++) {
         if (strcasecmp(ptr, LOG_SOURCE_NAMES[i]) == 0) {
-          oonf_log_mask_set(logging_cfg, i, severity);
+          oonf_log_mask_set(_logging_cfg, i, severity);
         }
       }
     }

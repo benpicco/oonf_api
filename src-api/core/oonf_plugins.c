@@ -84,7 +84,7 @@ enum {
  * %VER:     version number as defined by the app (e.g. "0.1.0")
  */
 // TODO: put a "local library path" setting into the configuration
-static const char *dlopen_patterns[] = {
+static const char *DLOPEN_PATTERNS[] = {
   "%PATH%/oonf/%PRE%%LIB%%POST%.%VER%",
   "%PATH%/oonf/%PRELIB%%LIB%%POSTLIB%.%VERLIB%",
   "%PATH%/oonf/%PRE%%LIB%%POST%",
@@ -342,18 +342,18 @@ _open_plugin(const char *filename) {
   result = NULL;
   _dlopen_data[IDX_DLOPEN_LIB].value = filename;
 
-  for (i=0; result == NULL && i<ARRAYSIZE(dlopen_patterns); i++) {
+  for (i=0; result == NULL && i<ARRAYSIZE(DLOPEN_PATTERNS); i++) {
     table = abuf_template_init(
-        _dlopen_data, ARRAYSIZE(_dlopen_data), dlopen_patterns[i]);
+        _dlopen_data, ARRAYSIZE(_dlopen_data), DLOPEN_PATTERNS[i]);
 
     if (table == NULL) {
       OONF_WARN(LOG_PLUGINS, "Could not parse pattern %s for dlopen",
-          dlopen_patterns[i]);
+          DLOPEN_PATTERNS[i]);
       continue;
     }
 
     abuf_clear(&abuf);
-    abuf_add_template(&abuf, dlopen_patterns[i], table);
+    abuf_add_template(&abuf, DLOPEN_PATTERNS[i], table);
     free(table);
 
     OONF_DEBUG(LOG_PLUGINS, "Trying to load library: %s", abuf_getptr(&abuf));

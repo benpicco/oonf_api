@@ -71,12 +71,12 @@ static void _cb_timeout_handler(void *);
 struct list_entity oonf_stream_head;
 
 /* server socket */
-static struct oonf_class connection_cookie = {
+static struct oonf_class _connection_cookie = {
   .name = "stream socket connection",
   .size = sizeof(struct oonf_stream_session)
 };
 
-static struct oonf_timer_info connection_timeout = {
+static struct oonf_timer_info _connection_timeout = {
   .name = "stream socket timout",
   .callback = _cb_timeout_handler,
 };
@@ -94,8 +94,8 @@ struct oonf_subsystem oonf_stream_socket_subsystem = {
  */
 static int
 _init(void) {
-  oonf_class_add(&connection_cookie);
-  oonf_timer_add(&connection_timeout);
+  oonf_class_add(&_connection_cookie);
+  oonf_timer_add(&_connection_timeout);
   list_init_head(&oonf_stream_head);
   return 0;
 }
@@ -113,8 +113,8 @@ _cleanup(void) {
     oonf_stream_remove(comport, true);
   }
 
-  oonf_class_remove(&connection_cookie);
-  oonf_timer_remove(&connection_timeout);
+  oonf_class_remove(&_connection_cookie);
+  oonf_timer_remove(&_connection_timeout);
 }
 
 /**
@@ -166,7 +166,7 @@ oonf_stream_add(struct oonf_stream_socket *stream_socket,
   memcpy(&stream_socket->local_socket, local, sizeof(stream_socket->local_socket));
 
   if (stream_socket->config.memcookie == NULL) {
-    stream_socket->config.memcookie = &connection_cookie;
+    stream_socket->config.memcookie = &_connection_cookie;
   }
   if (stream_socket->config.allowed_sessions == 0) {
     stream_socket->config.allowed_sessions = 10;
@@ -415,7 +415,7 @@ _apply_managed_socket(struct oonf_stream_managed *managed,
   /* copy configuration */
   memcpy(&stream->config, &managed->config, sizeof(stream->config));
   if (stream->config.memcookie == NULL) {
-    stream->config.memcookie = &connection_cookie;
+    stream->config.memcookie = &_connection_cookie;
   }
   return 0;
 }
@@ -526,7 +526,7 @@ _create_session(struct oonf_stream_socket *stream_socket,
   }
 
   session->timeout.cb_context = session;
-  session->timeout.info = &connection_timeout;
+  session->timeout.info = &_connection_timeout;
   if (stream_socket->config.session_timeout) {
     oonf_timer_start(&session->timeout, stream_socket->config.session_timeout);
   }
