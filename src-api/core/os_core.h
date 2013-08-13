@@ -56,12 +56,15 @@
 #error "Unknown operation system"
 #endif
 
+
 /* pre-decleare inlines */
 static INLINE int os_core_gettimeofday(struct timeval *tv);
 static INLINE unsigned int os_core_random(void);
 
+#define LOG_OS_CORE (oonf_os_core_subsystem.logging)
 EXPORT extern struct oonf_subsystem oonf_os_core_subsystem;
 
 EXPORT void os_core_syslog(enum oonf_log_severity, const char *);
+EXPORT int os_core_create_lockfile(const char *);
 
 #endif /* OS_CORE_H_ */

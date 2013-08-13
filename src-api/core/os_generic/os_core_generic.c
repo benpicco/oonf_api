@@ -40,6 +40,8 @@
  */
 
 #include <sys/times.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <syslog.h>
 
@@ -107,4 +109,36 @@ os_core_syslog(enum oonf_log_severity severity, const char *msg) {
   }
 
   syslog(log_sev, "%s", msg);
+}
+
+/**
+ * Create a lock file of a certain name
+ * @param path name of lockfile including path
+ * @return 0 if the lock was created sucessfully, false otherwise
+ */
+int
+os_core_create_lockfile(const char *path) {
+  struct flock lck;
+  int lock_fd;
+
+  /* create file for lock */
+  lock_fd = open(path, O_WRONLY | O_CREAT, S_IRWXU);
+  if (lock_fd == -1) {
+    return -1;
+  }
+
+  /* create exclusive lock for the whole file */
+  lck.l_type = F_WRLCK;
+  lck.l_whence = SEEK_SET;
+  lck.l_start = 0;
+  lck.l_len = 0;
+  lck.l_pid = 0;
+
+  if (fcntl(lock_fd, F_SETLK, &lck) == -1) {
+    close(lock_fd);
+    return -1;
+  }
+
+  /* lock will be released when process ends */
+  return 0;
 }

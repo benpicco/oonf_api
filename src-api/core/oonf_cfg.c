@@ -74,7 +74,15 @@ static struct cfg_schema_entry global_entries[] = {
       "Set to true to fork daemon into background."),
   CFG_MAP_BOOL(oonf_config_global, failfast, "failfast", "no",
       "Set to true to stop daemon statup if at least one plugin doesn't load."),
+  CFG_MAP_STRING(oonf_config_global, pidfile, "pidfile", "",
+      "Write the process id of the forced child into a file"),
 
+  /*
+   * this array entry is accessed in oonf_cfg_init(),
+   * be careful when changing position in array!
+   */
+  CFG_MAP_STRING(oonf_config_global, lockfile, "lockfile", "",
+      "Write the process id of the forced child into a file"),
   CFG_MAP_STRINGLIST(oonf_config_global, plugin, CFG_GLOBAL_PLUGIN, "",
       "Set list of plugins to be loaded by daemon. Some might need configuration options."),
 };
@@ -95,6 +103,13 @@ oonf_cfg_init(int argc, char **argv) {
   struct oonf_subsystem *plugin;
 
   cfg_add(&_oonf_cfg_instance);
+
+  /*
+   * initialize default for lockfile, make sure that index stays correct!
+   *
+    */
+  global_entries[3].def.value = oonf_log_get_appdata()->default_lockfile;
+  global_entries[3].def.length = strlen(oonf_log_get_appdata()->default_lockfile) + 1;
 
   /* initialize schema */
   cfg_schema_add(&_oonf_schema);
@@ -139,6 +154,7 @@ oonf_cfg_init(int argc, char **argv) {
 void
 oonf_cfg_cleanup(void) {
   free(config_global.plugin.value);
+  free(config_global.pidfile);
 
   cfg_db_remove(_oonf_raw_db);
   cfg_db_remove(_oonf_work_db);

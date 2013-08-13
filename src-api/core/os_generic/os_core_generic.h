@@ -47,6 +47,8 @@
 
 #include "core/os_core.h"
 
+#define OS_CORE_LOCKFILE_FOLDER        "/tmp/"
+
 /**
  * Inline wrapper around gettimeofday
  * @param tv pointer to target timeval object

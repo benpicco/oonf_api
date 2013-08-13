@@ -46,16 +46,17 @@
 
 #ifndef WIN32
 EXPORT int daemonize_prepare(void);
-EXPORT void daemonize_finish(int pipe_fd, int exitcode);
+EXPORT int daemonize_finish(int pipe_fd, int exitcode, const char *pidfile);
 #else
 
 static INLINE int
 daemonize_prepare(void) {
   return -1;
 }
-static INLINE void
+static INLINE int
 daemonize_finish(int pipe_fd __attribute__((unused)),
-    int exitcode __attribute__((unused))) {
+    int exitcode __attribute__((unused)),
+    const char *pidfile __attribute__((unused))) {
   return;
 }
 #endif

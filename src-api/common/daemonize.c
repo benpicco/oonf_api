@@ -38,8 +38,8 @@
  * the copyright holders.
  *
  */
-
 #include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -111,12 +111,31 @@ daemonize_prepare(void) {
  * tell it to exit.
  * @param pipe_fd returned file desriptor of daemonize_prepare
  * @param exit_code exit code for parent
+ * @param pidfile filename to store the new process id into, NULL to not
+ *   store the PID
+ * @return -1 if pidfile couldn't be written, 0 otherwise
  */
-void
-daemonize_finish(int pipe_fd, int exit_code) {
+int
+daemonize_finish(int pipe_fd, int exit_code, const char *pidfile) {
+  int result = 0;
+
   if (pipe_fd == 0) {
     /* ignore call if pipe not set */
-    return;
+    return 0;
+  }
+
+  if (exit_code == 0 && pidfile != NULL && *pidfile != 0) {
+    pid_t pidt = getpid();
+    FILE *pidf = fopen(pidfile, "w");
+
+    if (pidf != NULL) {
+      fprintf(pidf, "%d\n", pidt);
+      fclose(pidf);
+    }
+    else {
+      exit_code = 1;
+      result = -1;
+    }
   }
 
   /* tell parent to shut down with defined exit_code */
@@ -124,10 +143,14 @@ daemonize_finish(int pipe_fd, int exit_code) {
     /* there is nothing we can do here */
   }
 
+  close (pipe_fd);
+
   /* shut down stdin/out/err */
   close (STDIN_FILENO);
   close (STDOUT_FILENO);
   close (STDERR_FILENO);
+
+  return result;
 }
 
 #endif

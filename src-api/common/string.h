@@ -72,7 +72,7 @@ struct strarray {
 struct const_strarray {
   const char *value;
 
-  const size_t length;
+  size_t length;
 };
 
 /*

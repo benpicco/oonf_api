@@ -58,7 +58,7 @@ main(int argc __attribute__((unused)), char **argv __attribute__((unused))) {
   /* we are in the background process now */
   fprintf(stdout, "Forked away...\n");
 
-  daemonize_finish(fd, 0);
+  daemonize_finish(fd, 0, NULL);
 
   fprintf(stdout, "This will not be visible\n");
 

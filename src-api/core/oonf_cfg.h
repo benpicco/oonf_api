@@ -51,7 +51,8 @@
 
 struct oonf_config_global {
   struct strarray plugin;
-
+  char *pidfile;
+  char *lockfile;
   bool fork;
   bool failfast;
 };

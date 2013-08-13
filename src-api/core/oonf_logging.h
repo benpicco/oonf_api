@@ -102,6 +102,7 @@ struct oonf_appdata {
   const char *help_suffix;
 
   const char *default_config;
+  const char *default_lockfile;
 
   const char *git_commit;
 
