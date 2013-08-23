@@ -72,8 +72,8 @@ static void _handle_named_section_change(struct cfg_schema_section *s_section,
 static int _handle_db_changes(struct cfg_db *pre_change,
     struct cfg_db *post_change, bool startup);
 
-const char *CFGLIST_BOOL_TRUE[] = { "true", "1", "on", "yes" };
-const char *CFGLIST_BOOL[] = { "true", "1", "on", "yes", "false", "0", "off", "no" };
+const char *CFGLIST_BOOL_TRUE[] = { CFGLIST_BOOL_TRUE_VALUES };
+const char *CFGLIST_BOOL[] = { CFGLIST_BOOL_VALUES };
 const char *CFG_SCHEMA_SECTIONMODE[CFG_SSMODE_MAX] = {
   [CFG_SSMODE_UNNAMED] = "unnamed",
   [CFG_SSMODE_UNNAMED_OPTIONAL_STARTUP_TRIGGER] = "unnamed, optional",

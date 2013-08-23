@@ -74,7 +74,11 @@ static void _cleanup(void);
 static void _cb_handle_netlink_timeout(void *);
 static void _netlink_handler(int fd, void *data,
     bool event_read, bool event_write);
-static void _handle_rtnetlink(struct nlmsghdr *hdr);
+static void _cb_rtnetlink_message(struct nlmsghdr *hdr);
+static void _cb_rtnetlink_error(uint32_t seq, int error);
+static void _cb_rtnetlink_done(uint32_t seq);
+static void _cb_rtnetlink_timeout(void);
+static void _address_finished(struct os_system_address *addr, int error);
 
 static void _handle_nl_err(struct os_system_netlink *, struct nlmsghdr *);
 
@@ -111,7 +115,7 @@ static struct msghdr _netlink_send_msg = {
   &_netlink_nladdr,
   sizeof(_netlink_nladdr),
   &_netlink_send_iov[0],
-  2,
+  1,
   NULL,
   0,
   0
@@ -123,10 +127,15 @@ static struct oonf_timer_info _netlink_timer= {
   .callback = _cb_handle_netlink_timeout,
 };
 
-/* built in rtnetlink multicast receiver */
+/* built in rtnetlink receiver */
 static struct os_system_netlink _rtnetlink_receiver = {
-  .cb_message = _handle_rtnetlink,
+  .cb_message = _cb_rtnetlink_message,
+  .cb_error = _cb_rtnetlink_error,
+  .cb_done = _cb_rtnetlink_done,
+  .cb_timeout = _cb_rtnetlink_timeout,
 };
+
+struct list_entity _rtnetlink_feedback;
 
 const uint32_t _rtnetlink_mcast[] = {
   RTNLGRP_LINK, RTNLGRP_IPV4_IFADDR, RTNLGRP_IPV6_IFADDR
@@ -168,6 +177,7 @@ _init(void) {
 
   oonf_timer_add(&_netlink_timer);
   list_init_head(&_ifchange_listener);
+  list_init_head(&_rtnetlink_feedback);
   return 0;
 }
 
@@ -316,6 +326,8 @@ os_system_netlink_remove(struct os_system_netlink *nl) {
 int
 os_system_netlink_send(struct os_system_netlink *nl,
     struct nlmsghdr *nl_hdr) {
+  OONF_DEBUG(LOG_OS_SYSTEM, "Prepare to send netlink message (%u bytes)",
+      nl_hdr->nlmsg_len);
   nl->seq_used = (nl->seq_used + 1) & INT32_MAX;
 
   nl_hdr->nlmsg_seq = nl->seq_used;
@@ -407,6 +419,67 @@ os_system_netlink_addreq(struct nlmsghdr *n,
 
   memcpy((char *)nl_attr + NLA_HDRLEN, data, len);
   return 0;
+}
+
+int
+os_system_ifaddr_set(struct os_system_address *addr) {
+  uint8_t buffer[UIO_MAXIOV];
+  struct nlmsghdr *msg;
+  struct netaddr_str nbuf;
+  struct ifaddrmsg *ifaddrreq;
+  int seq;
+
+  memset(buffer, 0, sizeof(buffer));
+
+  /* get pointers for netlink message */
+  msg = (void *)&buffer[0];
+
+  if (addr->set) {
+    msg->nlmsg_flags = NLM_F_REQUEST | NLM_F_CREATE | NLM_F_REPLACE | NLM_F_ACK;
+    msg->nlmsg_type = RTM_NEWADDR;
+  }
+  else {
+    msg->nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+    msg->nlmsg_type = RTM_DELADDR;
+  }
+
+  /* set length of netlink message with ifaddrmsg payload */
+  msg->nlmsg_len = NLMSG_LENGTH(sizeof(struct ifaddrmsg));
+
+  OONF_DEBUG(LOG_OS_SYSTEM, "%sset address on if %d: %s",
+      addr->set ? "" : "re", addr->if_index,
+      netaddr_to_string(&nbuf, &addr->address));
+
+  ifaddrreq = NLMSG_DATA(msg);
+  ifaddrreq->ifa_family = netaddr_get_address_family(&addr->address);
+  ifaddrreq->ifa_prefixlen = netaddr_get_prefix_length(&addr->address);
+  ifaddrreq->ifa_index= addr->if_index;
+  ifaddrreq->ifa_scope = addr->scope;
+
+  if (os_system_netlink_addnetaddr(msg, IFA_LOCAL, &addr->address)) {
+    return -1;
+  }
+
+  /* cannot fail */
+  seq = os_system_netlink_send(&_rtnetlink_receiver, msg);
+
+  if (addr->cb_finished) {
+    list_add_tail(&_rtnetlink_feedback, &addr->_internal._node);
+    addr->_internal.nl_seq = seq;
+  }
+  return 0;
+}
+
+void
+os_system_ifaddr_interrupt(struct os_system_address *addr) {
+  if (list_is_node_added(&addr->_internal._node)) {
+    /* remove first to prevent any kind of recursive cleanup */
+    list_remove(&addr->_internal._node);
+
+    if (addr->cb_finished) {
+      addr->cb_finished(addr, -1);
+    }
+  }
 }
 
 /**
@@ -575,7 +648,7 @@ netlink_rcv_retry:
  * @param hdr pointer to netlink message
  */
 static void
-_handle_rtnetlink(struct nlmsghdr *hdr) {
+_cb_rtnetlink_message(struct nlmsghdr *hdr) {
   struct ifinfomsg *ifi;
   struct ifaddrmsg *ifa;
 
@@ -609,6 +682,78 @@ _handle_rtnetlink(struct nlmsghdr *hdr) {
     OONF_DEBUG(LOG_OS_SYSTEM, "Address of interface '%s' changed", if_name);
     list_for_each_element(&_ifchange_listener, listener, _node) {
       listener->if_changed(if_name, false);
+    }
+  }
+}
+
+/**
+ * Handle feedback from netlink socket
+ * @param seq
+ * @param error
+ */
+static void
+_cb_rtnetlink_error(uint32_t seq, int error) {
+  struct os_system_address *addr;
+
+  OONF_DEBUG(LOG_OS_SYSTEM, "Got feedback: %d %d", seq, error);
+
+  /* transform into errno number */
+  error = -error;
+
+  list_for_each_element(&_rtnetlink_feedback, addr, _internal._node) {
+    if (seq == addr->_internal.nl_seq) {
+      _address_finished(addr, error);
+      break;
+    }
+  }
+}
+
+/**
+ * Handle ack timeout from netlink socket
+ */
+static void
+_cb_rtnetlink_timeout(void) {
+  struct os_system_address *addr;
+
+  OONF_DEBUG(LOG_OS_SYSTEM, "Got timeout");
+
+  list_for_each_element(&_rtnetlink_feedback, addr, _internal._node) {
+    _address_finished(addr, -1);
+  }
+}
+
+/**
+ * Handle done from multipart netlink messages
+ * @param seq
+ */
+static void
+_cb_rtnetlink_done(uint32_t seq) {
+  struct os_system_address *addr;
+
+  OONF_DEBUG(LOG_OS_SYSTEM, "Got done: %u", seq);
+
+  list_for_each_element(&_rtnetlink_feedback, addr, _internal._node) {
+    if (seq == addr->_internal.nl_seq) {
+      _address_finished(addr, 0);
+      break;
+    }
+  }
+}
+
+/**
+ * Stop processing of an ip address command and set error code
+ * for callback
+ * @param addr pointer to os_system_address
+ * @param error error code, 0 if no error
+ */
+static void
+_address_finished(struct os_system_address *addr, int error) {
+  if (list_is_node_added(&addr->_internal._node)) {
+    /* remove first to prevent any kind of recursive cleanup */
+    list_remove(&addr->_internal._node);
+
+    if (addr->cb_finished) {
+      addr->cb_finished(addr, error);
     }
   }
 }

@@ -43,10 +43,16 @@
 #define OS_SYSTEM_LINUX_H_
 
 #include <linux/netlink.h>
+#include <linux/rtnetlink.h>
 
 #include "common/netaddr.h"
 #include "subsystems/oonf_socket.h"
 #include "subsystems/oonf_timer.h"
+
+enum os_addr_scope {
+  OS_ADDR_SCOPE_LINK = RT_SCOPE_LINK,
+  OS_ADDR_SCOPE_GLOBAL = RT_SCOPE_UNIVERSE,
+};
 
 struct os_system_netlink {
   struct oonf_socket_entry socket;
@@ -66,6 +72,12 @@ struct os_system_netlink {
   void (*cb_done)(uint32_t seq);
 
   struct oonf_timer_entry timeout;
+};
+
+struct os_system_address_internal {
+  struct list_entity _node;
+
+  uint32_t nl_seq;
 };
 
 EXPORT int os_system_netlink_add(struct os_system_netlink *,

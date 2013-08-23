@@ -69,6 +69,26 @@ struct os_system_if_listener {
 #error "Unknown operation system"
 #endif
 
+struct os_system_address {
+  /* used for delivering feedback about netlink commands */
+  struct os_system_address_internal _internal;
+
+  /* source, gateway and destination */
+  struct netaddr address;
+
+  /* index of interface */
+  unsigned int if_index;
+
+  /* address scope */
+  enum os_addr_scope scope;
+
+  /* set or reset address */
+  bool set;
+
+  /* callback when operation is finished */
+  void (*cb_finished)(struct os_system_address *, int error);
+};
+
 #define LOG_OS_SYSTEM oonf_os_system_subsystem.logging
 EXPORT extern struct oonf_subsystem oonf_os_system_subsystem;
 
@@ -76,5 +96,7 @@ EXPORT extern struct oonf_subsystem oonf_os_system_subsystem;
 EXPORT void os_system_iflistener_add(struct os_system_if_listener *);
 EXPORT void os_system_iflistener_remove(struct os_system_if_listener *);
 EXPORT int os_system_set_interface_state(const char *dev, bool up);
+EXPORT int os_system_ifaddr_set(struct os_system_address *addr);
+EXPORT void os_system_ifaddr_interrupt(struct os_system_address *addr);
 
 #endif /* OS_SYSTEM_H_ */

@@ -283,6 +283,7 @@ oonf_class_free(struct oonf_class *ci, void *ptr)
 
 /**
  * Register an extension to an existing class without objects.
+ * This function can only fail if ext->size is not 0.
  * @param ext pointer to class extension
  * @return 0 if extension was registered, -1 if an error happened
  */
@@ -302,7 +303,7 @@ oonf_class_extension_add(struct oonf_class_extension *ext) {
     return -1;
   }
 
-  if (c->_allocated != 0) {
+  if (c->_allocated != 0 && ext->size > 0) {
     OONF_WARN(LOG_CLASS, "Class %s is already in use and cannot be extended",
         c->name);
     return -1;
@@ -311,18 +312,20 @@ oonf_class_extension_add(struct oonf_class_extension *ext) {
   /* add to class extension list */
   list_add_tail(&c->_extensions, &ext->_node);
 
-  /* make sure freelist is empty */
-  _free_freelist(c);
+  if (ext->size > 0) {
+    /* make sure freelist is empty */
+    _free_freelist(c);
 
-  /* old size is new offset */
-  ext->_offset = c->total_size;
+    /* old size is new offset */
+    ext->_offset = c->total_size;
 
-  /* calculate new size */
-  c->total_size = _roundup(c->total_size + ext->size);
+    /* calculate new size */
+    c->total_size = _roundup(c->total_size + ext->size);
 
-  OONF_DEBUG(LOG_CLASS, "Class %s extended: %" PRINTF_SIZE_T_SPECIFIER " bytes,"
-      " '%s' has offset %" PRINTF_SIZE_T_SPECIFIER " and length %" PRINTF_SIZE_T_SPECIFIER "\n",
-             c->name, c->total_size, ext->name, ext->_offset, ext->size);
+    OONF_DEBUG(LOG_CLASS, "Class %s extended: %" PRINTF_SIZE_T_SPECIFIER " bytes,"
+        " '%s' has offset %" PRINTF_SIZE_T_SPECIFIER " and length %" PRINTF_SIZE_T_SPECIFIER "\n",
+        c->name, c->total_size, ext->name, ext->_offset, ext->size);
+  }
 
   return 0;
 }

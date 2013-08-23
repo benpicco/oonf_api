@@ -330,6 +330,9 @@ struct cfg_schema_entry {
   bool delta_changed;
 };
 
+#define CFGLIST_BOOL_VALUES "true", "1", "on", "yes", "false", "0", "off", "no"
+#define CFGLIST_BOOL_TRUE_VALUES "true", "1", "on", "yes"
+
 EXPORT extern const char *CFGLIST_BOOL_TRUE[4];
 EXPORT extern const char *CFGLIST_BOOL[8];
 EXPORT extern const char *CFG_SCHEMA_SECTIONMODE[CFG_SSMODE_MAX];

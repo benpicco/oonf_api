@@ -159,6 +159,20 @@ oonf_plugins_cleanup(void) {
 }
 
 /**
+ * Tell plugins to begin to shutdown
+ */
+void
+oonf_plugins_initiate_shutdown(void) {
+  struct oonf_subsystem *plugin, *iterator;
+
+  avl_for_each_element_safe(&oonf_plugin_tree, plugin, _node, iterator) {
+    if (plugin->initiate_shutdown) {
+      plugin->initiate_shutdown();
+    }
+  }
+}
+
+/**
  * This function is called by the constructor of a plugin to
  * insert the plugin into the global list. It will be called before
  * any subsystem was initialized!
@@ -268,6 +282,18 @@ oonf_plugins_call_init(struct oonf_subsystem *plugin) {
 }
 
 /**
+ * Tell plugin it should begin to free its resources
+ * @param plugin pointer to plugin db object
+ */
+void
+oonf_plugins_initiate_unload(struct oonf_subsystem *plugin) {
+  if (plugin->initiate_shutdown) {
+    plugin->initiate_shutdown();
+    plugin->_unload_initiated = true;
+  }
+}
+
+/**
  * Unloads an active plugin. Static plugins cannot be removed until
  * final cleanup.
  * @param plugin pointer to plugin db object
@@ -275,6 +301,9 @@ oonf_plugins_call_init(struct oonf_subsystem *plugin) {
  */
 int
 oonf_plugins_unload(struct oonf_subsystem *plugin) {
+  if (plugin->initiate_shutdown != NULL && !plugin->_unload_initiated) {
+    return -1;
+  }
   return _unload_plugin(plugin, false);
 }
 

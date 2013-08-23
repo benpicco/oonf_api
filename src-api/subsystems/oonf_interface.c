@@ -50,6 +50,7 @@
 
 #include "core/oonf_logging.h"
 #include "core/oonf_subsystem.h"
+#include "subsystems/oonf_class.h"
 #include "subsystems/oonf_interface.h"
 #include "subsystems/oonf_timer.h"
 #include "subsystems/os_net.h"
@@ -87,6 +88,11 @@ static struct os_system_if_listener _iflistener = {
   .if_changed = oonf_interface_trigger_change,
 };
 
+static struct oonf_class _if_class = {
+  .name = OONF_CLASS_INTERFACE,
+  .size = sizeof(struct oonf_interface),
+};
+
 /**
  * Initialize interface subsystem
  * @return always returns 0
@@ -94,6 +100,7 @@ static struct os_system_if_listener _iflistener = {
 static int
 _init(void) {
   oonf_timer_add(&_change_timer_info);
+  oonf_class_add(&_if_class);
 
   avl_init(&oonf_interface_tree, avl_comp_strcasecmp, false);
   list_init_head(&_interface_listener);
@@ -114,6 +121,7 @@ _cleanup(void) {
   }
 
   os_system_iflistener_remove(&_iflistener);
+  oonf_class_remove(&_if_class);
   oonf_timer_remove(&_change_timer_info);
 }
 
@@ -231,9 +239,8 @@ _interface_add(const char *name, bool mesh) {
   interf = avl_find_element(&oonf_interface_tree, name, interf, _node);
   if (!interf) {
     /* allocate new interface */
-    interf = calloc(1, sizeof(*interf));
+    interf = oonf_class_malloc(&_if_class);
     if (interf == NULL) {
-      OONF_WARN(LOG_INTERFACE, "Not enough memory for interface structure");
       return NULL;
     }
 
@@ -301,7 +308,7 @@ _interface_remove(struct oonf_interface *interf, bool mesh) {
   avl_remove(&oonf_interface_tree, &interf->_node);
 
   oonf_timer_stop(&interf->_change_timer);
-  free(interf);
+  oonf_class_free(&_if_class, interf);
 }
 
 /**

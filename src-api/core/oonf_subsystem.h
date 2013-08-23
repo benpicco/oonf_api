@@ -113,7 +113,7 @@ struct oonf_subsystem {
   enum oonf_log_source logging;
 
   /* true if the subsystem is initialized */
-  bool _initialized;
+  bool _initialized, _unload_initiated;
 
   /* pointer to dlopen handle */
   void *_dlhandle;

@@ -254,6 +254,7 @@ oonf_cfg_loadplugins(void) {
     }
 
     if (!found) {
+      /* TODO: initiate shutdown */
       /* if not, unload it (if not static) */
       oonf_plugins_unload(plugin);
     }
