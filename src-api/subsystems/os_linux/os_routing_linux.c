@@ -136,7 +136,9 @@ os_routing_set(struct os_route *route, bool set, bool del_similar) {
   unsigned char scope;
   struct os_route os_rt;
   int seq;
+#ifdef OONF_LOG_DEBUG_INFO
   struct os_route_str rbuf;
+#endif
 
   memset(buffer, 0, sizeof(buffer));
 

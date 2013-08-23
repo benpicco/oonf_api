@@ -335,7 +335,9 @@ _avl_cmp_dupkey(const void *p1, const void *p2) {
 static void
 _cb_vtime(void *ptr) {
   struct oonf_duplicate_entry *entry = ptr;
+#ifdef OONF_LOG_DEBUG_INFO
   struct netaddr_str nbuf;
+#endif
 
   OONF_DEBUG(LOG_DUPLICATE_SET, "Duplicate entry timed out: %s/%u",
       netaddr_to_string(&nbuf, &entry->key.addr), entry->key.msg_type);

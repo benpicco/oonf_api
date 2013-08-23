@@ -24,6 +24,7 @@ SET(OONF_SUBSYSTEMS_INCLUDES oonf_class.h
                              oonf_stream_socket.h
                              oonf_telnet.h
                              oonf_timer.h
+                             os_clock.h
                              os_net.h
                              os_routing.h
                              os_system.h

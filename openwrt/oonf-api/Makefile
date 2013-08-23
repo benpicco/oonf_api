@@ -118,7 +118,7 @@ define Build/InstallDev
 		       $(1)/usr/include/oonf/config \
 	               $(1)/usr/include/oonf/rfc5444 \
 	               $(1)/usr/include/oonf/core \
-	               $(1)/usr/include/oonf/core/os_linux \
+	               $(1)/usr/include/oonf/core/os_generic \
 	               $(1)/usr/include/oonf/subsystems \
 	               $(1)/usr/include/oonf/subsystems/os_linux
         
@@ -135,8 +135,8 @@ define Build/InstallDev
 		$(PKG_INSTALL_DIR)/usr/include/oonf/core/*.h \
 		$(1)/usr/include/oonf/core
 	$(INSTALL_DATA) \
-		$(PKG_INSTALL_DIR)/usr/include/oonf/core/os_linux/*.h \
-		$(1)/usr/include/oonf/core/os_linux
+		$(PKG_INSTALL_DIR)/usr/include/oonf/core/os_generic/*.h \
+		$(1)/usr/include/oonf/core/os_generic
 	$(INSTALL_DATA) \
 		$(PKG_INSTALL_DIR)/usr/include/oonf/subsystems/*.h \
 		$(1)/usr/include/oonf/subsystems

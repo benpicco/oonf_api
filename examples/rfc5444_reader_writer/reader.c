@@ -122,6 +122,7 @@ _cb_blocktlv_messagetlvs_okay(struct rfc5444_reader_tlvblock_context *cont) {
   }
 
   /* tlv type 0 was not defined mandatory in block callback entries */
+  tlv = _message_consumer_entries[0].tlv;
   while (tlv) {
     /* values of TLVs are not aligned well in memory, so we have to copy them */
     memcpy(&value, tlv->single_value, sizeof(value));

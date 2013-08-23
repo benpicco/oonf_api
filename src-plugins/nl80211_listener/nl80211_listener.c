@@ -893,7 +893,7 @@ _cb_transmission_event(void *ptr __attribute__((unused))) {
 }
 
 static void
-_cb_nl_error(uint32_t seq, int error) {
+_cb_nl_error(uint32_t seq __attribute((unused)), int error __attribute((unused))) {
   OONF_DEBUG(LOG_NL80211, "%u: Received error %d", seq, error);
   _cb_transmission_event(NULL);
 }
@@ -905,7 +905,7 @@ _cb_nl_timeout(void) {
 }
 
 static void
-_cb_nl_done(uint32_t seq) {
+_cb_nl_done(uint32_t seq __attribute((unused))) {
   OONF_DEBUG(LOG_NL80211, "%u: Received done", seq);
   _cb_transmission_event(NULL);
 }
