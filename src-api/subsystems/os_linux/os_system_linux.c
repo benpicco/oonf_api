@@ -151,6 +151,9 @@ struct oonf_subsystem oonf_os_system_subsystem = {
   .cleanup = _cleanup,
 };
 
+/* tracking of used netlink sequence numbers */
+static uint32_t _seq_used = 0;
+
 /**
  * Initialize os-specific subsystem
  * @return -1 if an error happened, 0 otherwise
@@ -328,16 +331,16 @@ os_system_netlink_send(struct os_system_netlink *nl,
     struct nlmsghdr *nl_hdr) {
   OONF_DEBUG(LOG_OS_SYSTEM, "Prepare to send netlink message (%u bytes)",
       nl_hdr->nlmsg_len);
-  nl->seq_used = (nl->seq_used + 1) & INT32_MAX;
+  _seq_used = (_seq_used + 1) & INT32_MAX;
 
-  nl_hdr->nlmsg_seq = nl->seq_used;
+  nl_hdr->nlmsg_seq = _seq_used;
   nl_hdr->nlmsg_flags |= NLM_F_ACK | NLM_F_MULTI;
 
   abuf_memcpy(&nl->out, nl_hdr, nl_hdr->nlmsg_len);
 
   /* trigger write */
   oonf_socket_set_write(&nl->socket, true);
-  return nl->seq_used;
+  return _seq_used;
 }
 
 /**
@@ -493,8 +496,7 @@ _cb_handle_netlink_timeout(void *ptr) {
   if (nl->cb_timeout) {
     nl->cb_timeout();
   }
-
-  nl->seq_used = 0;
+  nl->msg_in_transit = 0;
 }
 
 /**
@@ -519,11 +521,12 @@ _flush_netlink_buffer(struct os_system_netlink *nl) {
   }
   else {
     OONF_DEBUG(LOG_OS_SYSTEM, "Sent %zd/%zu bytes for netlink seqno: %d",
-        ret, abuf_getlen(&nl->out), nl->seq_used);
-    nl->seq_sent = nl->seq_used;
+        ret, abuf_getlen(&nl->out), _seq_used);
     abuf_clear(&nl->out);
 
     oonf_socket_set_write(&nl->socket, false);
+
+    nl->msg_in_transit++;
   }
 }
 
@@ -539,7 +542,6 @@ _netlink_job_finished(struct os_system_netlink *nl) {
   }
   if (nl->msg_in_transit == 0) {
     oonf_timer_stop(&nl->timeout);
-    nl->seq_used = 0;
   }
 }
 

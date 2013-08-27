@@ -73,13 +73,15 @@
 
 /* printf size_t modifiers*/
 #if defined(WIN32)
-  #define PRINTF_SIZE_T_SPECIFIER    "Iu"
-  #define PRINTF_SSIZE_T_SPECIFIER   "Id"
-  #define PRINTF_PTRDIFF_T_SPECIFIER "Id"
+  #define PRINTF_SIZE_T_SPECIFIER     "Iu"
+  #define PRINTF_SIZE_T_HEX_SPECIFIER "Ix"
+  #define PRINTF_SSIZE_T_SPECIFIER    "Id"
+  #define PRINTF_PTRDIFF_T_SPECIFIER  "Id"
 #elif defined(__GNUC__)
-  #define PRINTF_SIZE_T_SPECIFIER    "zu"
-  #define PRINTF_SSIZE_T_SPECIFIER   "zd"
-  #define PRINTF_PTRDIFF_T_SPECIFIER "zd"
+  #define PRINTF_SIZE_T_SPECIFIER     "zu"
+  #define PRINTF_SIZE_T_HEX_SPECIFIER "zx"
+  #define PRINTF_SSIZE_T_SPECIFIER    "zd"
+  #define PRINTF_PTRDIFF_T_SPECIFIER  "zd"
 #else
   // TODO figure out which to use.
   #error Please implement size_t modifiers

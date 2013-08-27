@@ -174,7 +174,7 @@ oonf_class_resize(struct oonf_class *ci) {
     ext->_offset = ci->total_size;
     OONF_DEBUG(LOG_CLASS, "Class %s resized: "
         " '%s' has offset %" PRINTF_SIZE_T_SPECIFIER " and size %" PRINTF_SIZE_T_SPECIFIER "\n",
-               ci->name, ext->name, ext->_offset, ext->size);
+               ci->name, ext->ext_name, ext->_offset, ext->size);
 
     ci->total_size = _roundup(ci->total_size + ext->size);
   }
@@ -299,7 +299,7 @@ oonf_class_extension_add(struct oonf_class_extension *ext) {
   c = avl_find_element(&oonf_classes, ext->class_name, c, _node);
   if (c == NULL) {
     OONF_WARN(LOG_CLASS, "Unknown class %s for extension %s",
-        ext->name, ext->class_name);
+        ext->class_name, ext->ext_name);
     return -1;
   }
 
@@ -324,7 +324,7 @@ oonf_class_extension_add(struct oonf_class_extension *ext) {
 
     OONF_DEBUG(LOG_CLASS, "Class %s extended: %" PRINTF_SIZE_T_SPECIFIER " bytes,"
         " '%s' has offset %" PRINTF_SIZE_T_SPECIFIER " and length %" PRINTF_SIZE_T_SPECIFIER "\n",
-        c->name, c->total_size, ext->name, ext->_offset, ext->size);
+        c->name, c->total_size, ext->ext_name, ext->_offset, ext->size);
   }
 
   return 0;
@@ -338,6 +338,7 @@ void
 oonf_class_extension_remove(struct oonf_class_extension *ext) {
   if (list_is_node_added(&ext->_node)) {
     list_remove(&ext->_node);
+    ext->_offset = 0;
   }
 }
 
@@ -358,15 +359,15 @@ oonf_class_event(struct oonf_class *c, void *ptr, enum oonf_class_event evt) {
       OONF_CLASS_EVENT_NAME[evt], c->to_keystring(&buf, c, ptr));
   list_for_each_element(&c->_extensions, ext, _node) {
     if (evt == OONF_OBJECT_ADDED && ext->cb_add != NULL) {
-      OONF_DEBUG(LOG_CLASS, "Fire listener %s", ext->name);
+      OONF_DEBUG(LOG_CLASS, "Fire listener %s", ext->ext_name);
       ext->cb_add(ptr);
     }
     else if (evt == OONF_OBJECT_REMOVED && ext->cb_remove != NULL) {
-      OONF_DEBUG(LOG_CLASS, "Fire listener %s", ext->name);
+      OONF_DEBUG(LOG_CLASS, "Fire listener %s", ext->ext_name);
       ext->cb_remove(ptr);
     }
     else if (evt == OONF_OBJECT_CHANGED && ext->cb_change != NULL) {
-      OONF_DEBUG(LOG_CLASS, "Fire listener %s", ext->name);
+      OONF_DEBUG(LOG_CLASS, "Fire listener %s", ext->ext_name);
       ext->cb_change(ptr);
     }
   }
@@ -411,7 +412,7 @@ _free_freelist(struct oonf_class *ci) {
 static const char *
 _cb_to_keystring(struct oonf_objectkey_str *buf,
     struct oonf_class *class, void *ptr) {
-  snprintf(buf->buf, sizeof(*buf), "%s::0x%"PRINTF_SIZE_T_SPECIFIER"x",
+  snprintf(buf->buf, sizeof(*buf), "%s::0x%"PRINTF_SIZE_T_HEX_SPECIFIER,
       class->name, (size_t)ptr);
 
   return buf->buf;

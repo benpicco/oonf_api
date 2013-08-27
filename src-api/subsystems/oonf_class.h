@@ -109,7 +109,7 @@ struct oonf_class {
  */
 struct oonf_class_extension {
   /* name of the consumer */
-  const char *name;
+  const char *ext_name;
 
   /* name of the provider */
   const char *class_name;

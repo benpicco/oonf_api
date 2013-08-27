@@ -61,9 +61,6 @@ struct os_system_netlink {
   struct nlmsghdr *in;
   size_t in_len;
 
-  uint32_t seq_used;
-  uint32_t seq_sent;
-
   int msg_in_transit;
 
   void (*cb_message)(struct nlmsghdr *hdr);
