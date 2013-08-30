@@ -428,9 +428,11 @@ int
 os_system_ifaddr_set(struct os_system_address *addr) {
   uint8_t buffer[UIO_MAXIOV];
   struct nlmsghdr *msg;
-  struct netaddr_str nbuf;
   struct ifaddrmsg *ifaddrreq;
   int seq;
+#if defined(OONF_LOG_DEBUG_INFO)
+  struct netaddr_str nbuf;
+#endif
 
   memset(buffer, 0, sizeof(buffer));
 
