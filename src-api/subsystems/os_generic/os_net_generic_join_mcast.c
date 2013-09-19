@@ -141,9 +141,9 @@ os_net_join_mcast_send(int sock,
         netaddr_to_string(&buf1, oif->if_v4));
 
     if (setsockopt(sock, IPPROTO_IP, IP_MULTICAST_IF, netaddr_get_binptr(oif->if_v4), 4) < 0) {
-      OONF_WARN(log_src, "Cannot set multicast %s (src %s) on interface %s: %s (%d)\n",
-          oif->name,
+      OONF_WARN(log_src, "Cannot set multicast %s on interface %s (src %s): %s (%d)\n",
           netaddr_to_string(&buf2, multicast),
+          oif->name,
           netaddr_to_string(&buf1, oif->if_v4),
           strerror(errno), errno);
       return -1;
@@ -165,7 +165,10 @@ os_net_join_mcast_send(int sock,
 
     if (setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF,
         &oif->index, sizeof(oif->index)) < 0) {
-      OONF_WARN(log_src, "Cannot set multicast interface: %s (%d)\n",
+      OONF_WARN(log_src, "Cannot set multicast %s on interface %s (src %s): %s (%d)\n",
+          netaddr_to_string(&buf2, multicast),
+          oif->name,
+          netaddr_to_string(&buf1, oif->linklocal_v6_ptr),
           strerror(errno), errno);
       return -1;
     }
