@@ -153,4 +153,6 @@ EXPORT int os_net_update_interface(struct oonf_interface_data *, const char *);
 EXPORT int os_net_init_mesh_if(struct oonf_interface *);
 EXPORT void os_net_cleanup_mesh_if(struct oonf_interface *);
 
+EXPORT bool os_net_is_ipv6_supported(void);
+
 #endif /* OS_NET_H_ */

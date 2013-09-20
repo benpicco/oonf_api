@@ -53,6 +53,8 @@
 /* name of the loopback interface */
 #define IF_LOOPBACK_NAME "lo"
 
+EXPORT int os_net_linux_get_ioctl_fd(int af_type);
+
 /**
  * Close a file descriptor
  * @param fd filedescriptor

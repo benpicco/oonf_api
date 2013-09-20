@@ -325,15 +325,45 @@ os_net_cleanup_mesh_if(struct oonf_interface *interf) {
   return;
 }
 
+/**
+ * @return true if IPv6 is supported, false otherwise
+ */
+bool
+os_net_is_ipv6_supported(void) {
+  return _ioctl_v6 != -1;
+}
+
+/**
+ * Returns an operation system socket for ioctl usage
+ * @param af_type address family type
+ * @return socket file descriptor, -1 if not surrported
+ */
+int
+os_net_linux_get_ioctl_fd(int af_type) {
+  switch (af_type) {
+    case AF_INET:
+      return _ioctl_v4;
+    case AF_INET6:
+      return _ioctl_v6;
+    default:
+      return -1;
+  }
+}
+
+/**
+ * Set the required settings to allow multihop mesh routing
+ */
 static void
 _activate_if_routing(void) {
   if (_os_linux_writeToProc(PROC_IPFORWARD_V4, &_original_ipv4_forward, '1')) {
     OONF_WARN(LOG_OS_NET, "WARNING! Could not activate ip_forward for ipv4! "
         "You should manually ensure that ip_forward for ipv4 is activated!");
   }
-  if (_os_linux_writeToProc(PROC_IPFORWARD_V6, &_original_ipv6_forward, '1')) {
-    OONF_WARN(LOG_OS_NET, "WARNING! Could not activate ip_forward for ipv6! "
-        "You should manually ensure that ip_forward for ipv6 is activated!");
+  if (os_net_is_ipv6_supported()) {
+    if(_os_linux_writeToProc(PROC_IPFORWARD_V6, &_original_ipv6_forward, '1')) {
+      OONF_WARN(LOG_OS_NET, "WARNING! Could not activate ip_forward for ipv6! "
+          "You should manually ensure that ip_forward for ipv6 is activated!");
+    }
   }
 
   if (_os_linux_writeToProc(PROC_ALL_REDIRECT, &_original_icmp_redirect, '0')) {
@@ -351,6 +381,9 @@ _activate_if_routing(void) {
   }
 }
 
+/**
+ * Reset the multihop mesh routing settings to default
+ */
 static void
 _deactivate_if_routing(void) {
   if (_os_linux_writeToProc(PROC_ALL_REDIRECT, NULL, _original_icmp_redirect) != 0) {
@@ -369,9 +402,11 @@ _deactivate_if_routing(void) {
     OONF_WARN(LOG_OS_NET, "WARNING! Could not restore %s to %c!",
         PROC_IPFORWARD_V4, _original_ipv4_forward);
   }
-  if (_os_linux_writeToProc(PROC_IPFORWARD_V6, NULL, _original_ipv6_forward)) {
-    OONF_WARN(LOG_OS_NET, "WARNING! Could not restore %s to %c",
-        PROC_IPFORWARD_V6, _original_ipv6_forward);
+  if (os_net_is_ipv6_supported()) {
+    if (_os_linux_writeToProc(PROC_IPFORWARD_V6, NULL, _original_ipv6_forward)) {
+      OONF_WARN(LOG_OS_NET, "WARNING! Could not restore %s to %c",
+          PROC_IPFORWARD_V6, _original_ipv6_forward);
+    }
   }
 }
 

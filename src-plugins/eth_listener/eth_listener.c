@@ -108,16 +108,10 @@ static struct oonf_timer_entry _transmission_timer = {
   .info = &_transmission_timer_info
 };
 
-static int _ioctl_fd;
 static uint32_t _l2_origin;
 
 static int
 _init(void) {
-  _ioctl_fd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (_ioctl_fd == -1) {
-    return -1;
-  }
-
   oonf_timer_add(&_transmission_timer_info);
   _l2_origin = oonf_layer2_register_origin();
 
@@ -130,8 +124,6 @@ _cleanup(void) {
 
   oonf_timer_stop(&_transmission_timer);
   oonf_timer_remove(&_transmission_timer_info);
-
-  close (_ioctl_fd);
 }
 
 static void
@@ -157,7 +149,7 @@ _cb_transmission_event(void *ptr __attribute((unused))) {
     strscpy(req.ifr_name, "eth0", IF_NAMESIZE);
 
     /* request ethernet information from kernel */
-    err = ioctl(_ioctl_fd, SIOCETHTOOL, &req);
+    err = ioctl(os_net_linux_get_ioctl_fd(AF_INET), SIOCETHTOOL, &req);
     if (err != 0) {
       if (l2net != NULL) {
         oonf_layer2_net_remove(l2net, _l2_origin);
