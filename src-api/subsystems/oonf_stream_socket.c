@@ -354,9 +354,11 @@ oonf_stream_apply_managed(struct oonf_stream_managed *managed,
     return -1;
   }
 
-  if (_apply_managed_socket(managed,
-      &managed->socket_v6, &config->bindto_v6, config->port)) {
-    return -1;
+  if (os_net_is_ipv6_supported()) {
+    if (_apply_managed_socket(managed,
+        &managed->socket_v6, &config->bindto_v6, config->port)) {
+      return -1;
+    }
   }
   return 0;
 }

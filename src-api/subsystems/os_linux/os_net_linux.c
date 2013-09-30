@@ -107,10 +107,7 @@ _init(void) {
 
   _ioctl_v6 = socket(AF_INET6, SOCK_DGRAM, 0);
   if (_ioctl_v6 == -1) {
-    OONF_WARN(LOG_OS_NET, "Cannot open ipv6 ioctl socket: %s (%d)",
-        strerror(errno), errno);
-
-    /* do not stop here, system might just not support IPv6 */
+    OONF_INFO(LOG_OS_NET, "Node is not IPv6 capable");
   }
 
   return 0;
