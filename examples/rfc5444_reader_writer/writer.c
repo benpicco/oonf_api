@@ -42,6 +42,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#ifdef RIOT
+#include "net_help.h"
+#endif
+
 #include "common/common_types.h"
 #include "common/netaddr.h"
 #include "rfc5444/rfc5444_writer.h"
