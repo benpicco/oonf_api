@@ -18,10 +18,8 @@ endif
 # this has to be the absolute path of the RIOT-base dir
 export RIOTBASE =/home/benpicco/µkleos/riot/RIOT
 export OONFBASE =../..
-export RIOTLIBS =$(RIOTBASE)/../riot-libs
 
 EXTERNAL_MODULES +=$(OONFBASE)
-EXTERNAL_MODULES +=$(RIOTLIBS)
 export EXTERNAL_MODULES
 
 export CFLAGS = -DRIOT -DOONF_LOG_INFO -DOONF_LOG_DEBUG_INFO
@@ -34,12 +32,10 @@ USEMODULE += uart0
 USEMODULE += posix
 
 USEMODULE += net_help
-USEMODULE += cunit
-USEMODULE += compat_misc
 USEMODULE += oonf_common
 USEMODULE += oonf_rfc5444
 
 export INCLUDES += -I$(RIOTBASE)/sys/include -I$(RIOTBASE)/drivers/include -I$(RIOTBASE)/sys/net/include \
-		-I$(OONFBASE)/src-api -I$(OONFBASE)/examples -I$(RIOTLIBS)
+		-I$(OONFBASE)/src-api -I$(OONFBASE)/examples
 
 include $(RIOTBASE)/Makefile.include

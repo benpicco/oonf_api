@@ -58,8 +58,9 @@
 #endif
 
 #ifdef RIOT
-#include "compat_misc/compat_misc.h"
 #include "destiny/socket.h"
+#define INET_ADDRSTRLEN		(16)
+#define INET6_ADDRSTRLEN	(48)
 #endif
 
 #include <assert.h>
@@ -104,10 +105,10 @@ struct netaddr {
  * to all variants without casting and compiler warnings.
  */
 union netaddr_socket {
-  struct sockaddr_in v4;
-  struct sockaddr_in6 v6;
-  struct sockaddr std;
-  struct sockaddr_storage storage;
+  sockaddr6_t v4;
+  sockaddr6_t v6;
+  sockaddr6_t std;
+  sockaddr6_t storage;
 };
 
 /**
@@ -344,7 +345,7 @@ netaddr_set_prefix_length(struct netaddr *n, uint8_t prefix_len) {
  */
 static INLINE sa_family_t
 netaddr_socket_get_addressfamily(const union netaddr_socket *s) {
-  return s->std.sa_family;
+  return s->std.sin6_family;
 }
 
 #endif /* NETADDR_H_ */

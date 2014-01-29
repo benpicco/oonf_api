@@ -52,7 +52,9 @@
 #endif
 
 #ifdef RIOT
-#include "compat_misc/compat_misc.h"
+int getpagesize(void) {
+	return 512;
+}
 #endif
 
 #include "common/autobuf.h"

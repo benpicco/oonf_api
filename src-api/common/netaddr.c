@@ -182,12 +182,12 @@ netaddr_to_binary(void *dst, const struct netaddr *src, size_t len) {
 int
 netaddr_from_socket(struct netaddr *dst, const union netaddr_socket *src) {
   memset(dst->_addr, 0, sizeof(dst->_addr));
-  if (src->std.sa_family == AF_INET) {
+  if (src->std.sin6_family == AF_INET) {
     /* ipv4 */
-    memcpy(dst->_addr, &src->v4.sin_addr, 4);
+    memcpy(dst->_addr, &src->v4.sin6_addr, 4);
     dst->_prefix_len = 32;
   }
-  else if (src->std.sa_family == AF_INET6){
+  else if (src->std.sin6_family == AF_INET6){
     /* ipv6 */
     memcpy(dst->_addr, &src->v6.sin6_addr, 16);
     dst->_prefix_len = 128;
@@ -197,7 +197,7 @@ netaddr_from_socket(struct netaddr *dst, const union netaddr_socket *src) {
     dst->_type = AF_UNSPEC;
     return -1;
   }
-  dst->_type = (uint8_t)src->std.sa_family;
+  dst->_type = (uint8_t)src->std.sin6_family;
   return 0;
 }
 
@@ -211,12 +211,12 @@ netaddr_from_socket(struct netaddr *dst, const union netaddr_socket *src) {
 int
 netaddr_to_socket(union netaddr_socket *dst, const struct netaddr *src) {
   /* copy address type */
-  dst->std.sa_family = src->_type;
+  dst->std.sin6_family = src->_type;
 
   switch (src->_type) {
     case AF_INET:
       /* ipv4 */
-      memcpy(&dst->v4.sin_addr, src->_addr, 4);
+      memcpy(&dst->v4.sin6_addr, src->_addr, 4);
       break;
     case AF_INET6:
       /* ipv6 */
@@ -228,7 +228,7 @@ netaddr_to_socket(union netaddr_socket *dst, const struct netaddr *src) {
   }
 
   /* copy address type */
-  dst->std.sa_family= src->_type;
+  dst->std.sin6_family= src->_type;
   return 0;
 }
 
@@ -326,13 +326,13 @@ netaddr_socket_init(union netaddr_socket *combined, const struct netaddr *addr,
   switch (addr->_type) {
     case AF_INET:
       /* ipv4 */
-      memcpy(&combined->v4.sin_addr, addr->_addr, 4);
-      combined->v4.sin_port = htons(port);
+      memcpy(&combined->v4.sin6_addr, addr->_addr, 4);
+      combined->v4.sin6_port = HTONS(port);
       break;
     case AF_INET6:
       /* ipv6 */
       memcpy(&combined->v6.sin6_addr, addr->_addr, 16);
-      combined->v6.sin6_port = htons(port);
+      combined->v6.sin6_port = HTONS(port);
 #ifndef DONT_HAVE_SIN6_SCOPE_ID      
       combined->v6.sin6_scope_id = if_index;
 #endif
@@ -343,7 +343,7 @@ netaddr_socket_init(union netaddr_socket *combined, const struct netaddr *addr,
   }
 
   /* copy address type */
-  combined->std.sa_family = addr->_type;
+  combined->std.sin6_family = addr->_type;
   return 0;
 }
 
@@ -353,11 +353,11 @@ netaddr_socket_init(union netaddr_socket *combined, const struct netaddr *addr,
  */
 uint16_t
 netaddr_socket_get_port(const union netaddr_socket *sock) {
-  switch (sock->std.sa_family) {
+  switch (sock->std.sin6_family) {
     case AF_INET:
-      return ntohs(sock->v4.sin_port);
+      return NTOHS(sock->v4.sin6_port);
     case AF_INET6:
-      return ntohs(sock->v6.sin6_port);
+      return NTOHS(sock->v6.sin6_port);
     default:
       return 0;
   }
@@ -564,19 +564,19 @@ const char *
 netaddr_socket_to_string(struct netaddr_str *dst, const union netaddr_socket *src) {
   struct netaddr_str buf;
 
-  if (src->std.sa_family == AF_INET) {
+  if (src->std.sin6_family == AF_INET) {
     snprintf(dst->buf, sizeof(*dst), "%s:%d",
-        inet_ntop(AF_INET, &src->v4.sin_addr, buf.buf, sizeof(buf)),
-        ntohs(src->v4.sin_port));
+        inet_ntop(AF_INET, &src->v4.sin6_addr, buf.buf, sizeof(buf)),
+        NTOHS(src->v4.sin6_port));
   }
-  else if (src->std.sa_family == AF_INET6) {
+  else if (src->std.sin6_family == AF_INET6) {
 #ifndef DONT_HAVE_SIN6_SCOPE_ID
     if (src->v6.sin6_scope_id) {
       char scope_buf[IF_NAMESIZE];
 
       snprintf(dst->buf, sizeof(*dst), "[%s]:%d%%%s",
           inet_ntop(AF_INET6, &src->v6.sin6_addr, buf.buf, sizeof(buf)),
-          ntohs(src->v6.sin6_port),
+          NTOHS(src->v6.sin6_port),
           if_indextoname(src->v6.sin6_scope_id, scope_buf));
     }
     else
@@ -584,11 +584,11 @@ netaddr_socket_to_string(struct netaddr_str *dst, const union netaddr_socket *sr
     {
       snprintf(dst->buf, sizeof(*dst), "[%s]:%d",
           inet_ntop(AF_INET6, &src->v6.sin6_addr, buf.buf, sizeof(buf)),
-          ntohs(src->v6.sin6_port));
+          NTOHS(src->v6.sin6_port));
     }
   }
   else {
-    snprintf(dst->buf, sizeof(*dst), "\"Unknown socket type: %d\"", src->std.sa_family);
+    snprintf(dst->buf, sizeof(*dst), "\"Unknown socket type: %d\"", src->std.sin6_family);
   }
 
   return dst->buf;
@@ -634,13 +634,13 @@ int
 netaddr_cmp_to_socket(const struct netaddr *a1, const union netaddr_socket *a2) {
   int result = 0;
 
-  result = (int)a1->_type - (int)a2->std.sa_family;
+  result = (int)a1->_type - (int)a2->std.sin6_family;
   if (result) {
     return result;
   }
 
   if (a1->_type == AF_INET) {
-    result = memcmp(a1->_addr, &a2->v4.sin_addr, 4);
+    result = memcmp(a1->_addr, &a2->v4.sin6_addr, 4);
   }
   else if (a1->_type == AF_INET6) {
     /* ipv6 */
@@ -753,20 +753,20 @@ const char *
 inet_ntop(int af, const void *src, char *dst, socklen_t cnt)
 {
   if (af == AF_INET) {
-    struct sockaddr_in in;
+    sockaddr6_t in;
     memset(&in, 0, sizeof(in));
     in.sin_family = AF_INET;
-    memcpy(&in.sin_addr, src, sizeof(struct in_addr));
-    getnameinfo((struct sockaddr *)&in, sizeof(struct sockaddr_in),
+    memcpy(&in.sin6_addr, src, sizeof(struct in_addr));
+    getnameinfo((sockaddr6_t *)&in, sizeof(sockaddr6_t),
         dst, cnt, NULL, 0, NI_NUMERICHOST);
     return dst;
   }
   else if (af == AF_INET6) {
-    struct sockaddr_in6 in;
+    sockaddr6_t in;
     memset(&in, 0, sizeof(in));
     in.sin6_family = AF_INET6;
     memcpy(&in.sin6_addr, src, sizeof(struct in_addr6));
-    getnameinfo((struct sockaddr *)&in, sizeof(struct sockaddr_in6),
+    getnameinfo((sockaddr6_t *)&in, sizeof(sockaddr6_t),
         dst, cnt, NULL, 0, NI_NUMERICHOST);
     return dst;
   }
@@ -807,7 +807,7 @@ inet_pton(int af, const char *src, void *dst)
 
   sock = (union netaddr_socket *)res->ai_addr;
   if (af == AF_INET) {
-    memcpy(dst, &sock->v4.sin_addr, 4);
+    memcpy(dst, &sock->v4.sin6_addr, 4);
   }
   else {
     memcpy(dst, &sock->v6.sin6_addr, 16);
@@ -940,7 +940,7 @@ _subnetmask_to_prefixlen(const char *src) {
   }
 
   /* transform into host byte order */
-  v4 = ntohl(v4);
+  v4 = NTOHL(v4);
 
   shift = 0xffffffff;
   for (len = 31; len >= 0; len--) {
