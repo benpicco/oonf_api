@@ -10,14 +10,17 @@
 #	oonf_rfc5444	-	packetBB implementation, requires oonf_common
 
 ifneq (,$(findstring oonf_common,$(USEMODULE)))
-	DIRS += common
+	DIRS += src-api/common
 endif
 ifneq (,$(findstring oonf_rfc5444,$(USEMODULE)))
-	DIRS += rfc5444
+	DIRS += src-api/rfc5444
+endif
+ifneq (,$(findstring cunit,$(USEMODULE)))
+	DIRS += tests/cunit
 endif
 
 all:
 	mkdir -p $(BINDIR)
-	@for i in $(DIRS) ; do $(MAKE) -C src-api/$$i ; done ;
+	@for i in $(DIRS) ; do $(MAKE) -C $$i ; done ;
 
 clean:
